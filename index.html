@@ -12,11 +12,9 @@
   --bg:#ffffff;--bg2:#f7f6f2;--bg3:#f0efe9;
   --br:rgba(0,0,0,0.09);--br2:rgba(0,0,0,0.16);
   --green:#1D9E75;--green-l:#E1F5EE;--green-d:#085041;
-  --blue:#185FA5;--blue-l:#E6F1FB;--blue-d:#0C447C;
-  --amber:#BA7517;--amber-l:#FAEEDA;--amber-d:#633806;
-  --danger-l:#FAECE7;--danger-d:#712B13;
   --warn-l:#FAEEDA;--warn-d:#633806;
   --info-l:#E6F1FB;--info-d:#0C447C;
+  --danger-d:#712B13;
   --r-md:8px;--r-lg:12px;
 }
 @media(prefers-color-scheme:dark){:root{
@@ -24,15 +22,11 @@
   --bg:#1c1c1a;--bg2:#242422;--bg3:#2a2a28;
   --br:rgba(255,255,255,0.08);--br2:rgba(255,255,255,0.16);
   --green-l:#04342C;--green-d:#9FE1CB;
-  --blue-l:#042C53;--blue-d:#85B7EB;
-  --amber-l:#412402;--amber-d:#FAC775;
-  --danger-l:#4A1B0C;--danger-d:#F0997B;
   --warn-l:#412402;--warn-d:#FAC775;
   --info-l:#042C53;--info-d:#85B7EB;
+  --danger-d:#F0997B;
 }}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--tx);min-height:100vh;}
-
-/* AUTH SCREEN */
 #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;}
 .auth-box{background:var(--bg);border:0.5px solid var(--br);border-radius:var(--r-lg);padding:2.5rem;max-width:380px;width:100%;text-align:center;}
 .auth-logo{font-size:24px;font-weight:500;letter-spacing:-0.02em;margin-bottom:4px;}
@@ -44,35 +38,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .auth-btn:hover{opacity:0.88;}
 .auth-msg{font-size:13px;color:var(--green);margin-top:12px;line-height:1.6;display:none;}
 .auth-err{font-size:13px;color:var(--danger-d);margin-top:12px;display:none;}
-
-/* APP SHELL */
 #app{display:none;max-width:760px;margin:0 auto;padding:1.5rem 1rem 3rem;}
 .top-bar{display:flex;align-items:center;justify-content:space-between;padding-bottom:1rem;border-bottom:0.5px solid var(--br);margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;}
 .wordmark{font-size:20px;font-weight:500;letter-spacing:-0.02em;}
 .wordmark span{color:var(--tx3);font-weight:400;}
 .top-right{display:flex;align-items:center;gap:10px;}
 .user-pill{font-size:12px;color:var(--tx3);background:var(--bg2);border:0.5px solid var(--br);border-radius:20px;padding:4px 12px;}
-.signout-btn{font-size:12px;color:var(--tx3);background:transparent;border:none;cursor:pointer;padding:4px 0;}
-.signout-btn:hover{color:var(--tx);}
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:4px;animation:pulse 2s ease-in-out infinite;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px;animation:pulse 2s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
-
-/* NAV */
+.signout-btn{font-size:12px;color:var(--tx3);background:transparent;border:none;cursor:pointer;}
+.signout-btn:hover{color:var(--tx);}
 .nav{display:flex;gap:4px;margin-bottom:1.25rem;flex-wrap:wrap;}
 .nav-btn{padding:5px 14px;border-radius:20px;font-size:12px;border:0.5px solid var(--br2);background:transparent;color:var(--tx2);cursor:pointer;transition:all 0.15s;}
 .nav-btn:hover{background:var(--bg2);}
 .nav-btn.on{background:var(--tx);color:var(--bg);border-color:transparent;}
-
-/* VIEWS */
 .view{display:none;}.view.on{display:block;}
-
-/* COMPONENTS */
 .eyebrow{font-size:10px;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;}
 .sec-title{font-size:16px;font-weight:500;margin-bottom:1rem;}
 .card{background:var(--bg);border:0.5px solid var(--br);border-radius:var(--r-lg);padding:1rem 1.25rem;margin-bottom:1rem;}
 .metric{background:var(--bg2);border-radius:var(--r-md);padding:0.85rem 1rem;}
 .metric-label{font-size:11px;color:var(--tx3);margin-bottom:3px;}
-.metric-val{font-size:22px;font-weight:500;}
+.metric-val{font-size:20px;font-weight:500;}
 .metric-sub{font-size:11px;color:var(--tx2);margin-top:2px;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1rem;}
@@ -80,65 +66,76 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:0.5px solid var(--br);}
 .row:last-child{border-bottom:none;}
 .row-label{font-size:13px;color:var(--tx2);}
-.row-val{font-size:13px;font-weight:500;text-align:right;}
+.row-val{font-size:13px;font-weight:500;}
 .badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap;}
 .badge-open{background:var(--warn-l);color:var(--warn-d);}
 .badge-done{background:var(--green-l);color:var(--green-d);}
 .badge-soon{background:var(--info-l);color:var(--info-d);}
 .divider{height:0.5px;background:var(--br);margin:1rem 0;}
 .hint{font-size:12px;color:var(--tx3);margin-top:8px;line-height:1.6;}
-
-/* DECISIONS */
+.loading{text-align:center;padding:2rem;font-size:13px;color:var(--tx3);}
+.editable-wrap{cursor:pointer;}
+.editable-wrap:hover .edit-hint{opacity:1;}
+.edit-hint{font-size:10px;color:var(--tx3);opacity:0;transition:opacity 0.15s;}
+.field-display{font-size:13px;color:var(--tx2);line-height:1.6;}
+.field-meta{font-size:10px;color:var(--tx3);margin-top:3px;font-style:italic;}
+.edit-area{width:100%;padding:8px 10px;border:0.5px solid #378ADD;border-radius:var(--r-md);background:var(--bg2);color:var(--tx);font-size:13px;font-family:inherit;resize:vertical;min-height:56px;outline:none;margin-top:6px;display:block;}
+.edit-actions{display:flex;gap:6px;margin-top:6px;}
+.edit-save{padding:4px 14px;border-radius:var(--r-md);border:none;background:var(--tx);color:var(--bg);font-size:11px;cursor:pointer;}
+.edit-cancel{padding:4px 14px;border-radius:var(--r-md);border:0.5px solid var(--br2);background:transparent;color:var(--tx2);font-size:11px;cursor:pointer;}
 .d-item{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:0.5px solid var(--br);}
 .d-item:last-child{border-bottom:none;}
-.d-check{width:20px;height:20px;border-radius:5px;border:0.5px solid var(--br2);background:var(--bg2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all 0.15s;}
+.d-check{width:20px;height:20px;border-radius:5px;border:0.5px solid var(--br2);background:var(--bg2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:all 0.15s;}
 .d-check.done{background:var(--green-l);border-color:var(--green);}
 .d-check svg{display:none;}.d-check.done svg{display:block;}
-.d-body{flex:1;}
-.d-text{font-size:13px;color:var(--tx);line-height:1.6;}
+.d-body{flex:1;min-width:0;}
+.d-text{font-size:13px;line-height:1.6;}
 .d-text.done{color:var(--tx3);text-decoration:line-through;}
 .d-owner{font-size:11px;color:var(--tx3);margin-top:3px;}
-
-/* LOG */
 .log-item{display:flex;gap:12px;padding:11px 0;border-bottom:0.5px solid var(--br);}
 .log-item:last-child{border-bottom:none;}
 .log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
-.log-content{flex:1;}
+.log-content{flex:1;min-width:0;}
 .log-text{font-size:13px;color:var(--tx);line-height:1.6;}
 .log-meta{font-size:11px;color:var(--tx3);margin-top:3px;}
 .log-del{font-size:11px;color:var(--tx3);background:none;border:none;cursor:pointer;padding:0;flex-shrink:0;margin-top:4px;opacity:0;}
 .log-item:hover .log-del{opacity:1;}
-.log-form{display:flex;gap:8px;margin-top:1rem;}
-.log-form textarea{flex:1;font-size:13px;padding:8px 12px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);resize:none;height:60px;font-family:inherit;outline:none;}
+.log-form{display:flex;gap:8px;margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--br);}
+.log-form textarea{flex:1;font-size:13px;padding:8px 12px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);resize:none;height:56px;font-family:inherit;outline:none;}
 .log-form textarea:focus{border-color:#378ADD;}
 .log-form button{padding:8px 16px;border-radius:var(--r-md);border:0.5px solid var(--br2);background:var(--bg);color:var(--tx);font-size:12px;cursor:pointer;white-space:nowrap;align-self:flex-end;}
 .log-form button:hover{background:var(--bg2);}
-
-/* TEAM */
-.partner-row{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:0.5px solid var(--br);}
-.partner-row:last-child{border-bottom:none;}
+.partner-block{padding:14px 0;border-bottom:0.5px solid var(--br);}
+.partner-block:last-child{border-bottom:none;}
+.partner-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
 .avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0;}
 .av-w{background:#E6F1FB;color:#0C447C;}
 .av-b{background:#EAF3DE;color:#27500A;}
 .av-n{background:#FAEEDA;color:#633806;}
-.partner-info{flex:1;}
-.partner-name{font-size:13px;font-weight:500;}
-.partner-role{font-size:11px;color:var(--tx3);font-style:italic;margin-top:1px;}
-.partner-brings{font-size:12px;color:var(--tx2);margin-top:4px;line-height:1.5;}
-.eq-wrap{display:flex;align-items:center;gap:6px;margin-top:4px;}
-.eq-track{width:70px;height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;}
+.partner-name-el{font-size:13px;font-weight:500;}
+.partner-role-el{font-size:11px;color:var(--tx3);font-style:italic;}
+.eq-wrap{display:flex;align-items:center;gap:6px;margin-left:auto;}
+.eq-track{width:60px;height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;}
 .eq-fill{height:100%;border-radius:3px;}
-.eq-pct{font-size:11px;font-weight:500;color:var(--tx);}
-
-/* MARGINS */
+.eq-pct{font-size:11px;font-weight:500;}
+.collab-q{padding:13px 0;border-bottom:0.5px solid var(--br);}
+.collab-q:last-child{border-bottom:none;}
+.collab-q-text{font-size:13px;font-weight:500;line-height:1.5;margin-bottom:10px;}
+.answers-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+.answer-card{background:var(--bg2);border-radius:var(--r-md);padding:8px 12px;}
+.answer-author{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;}
+.answer-text{font-size:13px;line-height:1.6;}
+.answer-date{font-size:10px;color:var(--tx3);margin-top:3px;}
+.add-answer-btn{font-size:12px;color:#185FA5;background:none;border:none;cursor:pointer;padding:0;}
+.add-answer-btn:hover{text-decoration:underline;}
+.answer-form{margin-top:8px;display:none;}
+.answer-form textarea{width:100%;padding:8px 12px;border:0.5px solid #378ADD;border-radius:var(--r-md);background:var(--bg2);color:var(--tx);font-size:13px;font-family:inherit;resize:none;height:70px;outline:none;}
 .m-tabs{display:flex;gap:6px;margin-bottom:1rem;}
 .m-tab{padding:4px 12px;border-radius:20px;font-size:12px;border:0.5px solid var(--br2);background:transparent;color:var(--tx2);cursor:pointer;}
 .m-tab.on{background:var(--tx);color:var(--bg);border-color:transparent;}
 .bar-wrap{height:26px;border-radius:4px;overflow:hidden;display:flex;margin-bottom:8px;}
 .bar-cost{background:var(--bg2);display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;color:var(--tx2);font-weight:500;transition:width 0.35s;}
 .bar-margin{background:var(--green);display:flex;align-items:center;padding-left:8px;font-size:11px;color:#04342C;font-weight:500;transition:width 0.35s;}
-
-/* PHASE */
 .phase-row{display:grid;grid-template-columns:90px 1fr;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--br);align-items:start;}
 .phase-row:last-child{border-bottom:none;}
 .phase-t{font-size:11px;color:var(--tx3);line-height:1.6;}
@@ -146,18 +143,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .phase-desc{font-size:12px;color:var(--tx2);line-height:1.6;}
 .phase-bar{height:3px;border-radius:2px;margin-top:8px;background:var(--br);}
 .phase-fill{height:100%;border-radius:2px;}
-
-/* LOADING */
-.loading{text-align:center;padding:3rem;font-size:13px;color:var(--tx3);}
 </style>
 </head>
 <body>
 
-<!-- AUTH -->
 <div id="auth-screen">
   <div class="auth-box">
     <div class="auth-logo">100xbtr <span>OS</span></div>
-    <div class="auth-sub">Enter your email and we'll send you a magic link to sign in. No password needed.</div>
+    <div class="auth-sub">Enter your email to receive a magic sign-in link. No password needed.</div>
     <input class="auth-input" type="email" id="auth-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()"/>
     <button class="auth-btn" onclick="sendMagicLink()">Send magic link</button>
     <div class="auth-msg" id="auth-msg">Check your email — a sign-in link is on its way.</div>
@@ -165,7 +158,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="top-bar">
     <div class="wordmark">100xbtr <span>company OS</span></div>
@@ -174,7 +166,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="signout-btn" onclick="signOut()">sign out</button>
     </div>
   </div>
-
   <div class="nav">
     <button class="nav-btn on" onclick="show('home')">Overview</button>
     <button class="nav-btn" onclick="show('decisions')">Decisions</button>
@@ -185,24 +176,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="nav-btn" onclick="show('log')">Log</button>
   </div>
 
-  <!-- OVERVIEW -->
   <div class="view on" id="v-home">
     <div class="grid3">
-      <div class="metric">
-        <div class="metric-label">Status</div>
-        <div class="metric-val">Pre-launch</div>
-        <div class="metric-sub">LLC formation pending</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Open decisions</div>
-        <div class="metric-val" id="open-count">—</div>
-        <div class="metric-sub">before first build</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">First prototype</div>
-        <div class="metric-val">~6 mo</div>
-        <div class="metric-sub">listenable, not for sale</div>
-      </div>
+      <div class="metric"><div class="metric-label">Status</div><div class="metric-val">Pre-launch</div><div class="metric-sub">LLC formation pending</div></div>
+      <div class="metric"><div class="metric-label">Open decisions</div><div class="metric-val" id="open-count">—</div><div class="metric-sub">before first build</div></div>
+      <div class="metric"><div class="metric-label">First prototype</div><div class="metric-val">~6 mo</div><div class="metric-sub">listenable, not for sale</div></div>
     </div>
     <div class="grid2">
       <div class="card">
@@ -213,91 +191,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="card">
         <div class="eyebrow">North star</div>
         <div style="font-size:14px;font-weight:500;margin-bottom:4px;">Ojas — Devon Turnbull</div>
-        <div style="font-size:12px;color:var(--tx2);line-height:1.6;margin-bottom:8px;">Maker-artist cult following → Klipsch collab → $8,498/pair, sold out. That's the trajectory.</div>
+        <div style="font-size:12px;color:var(--tx2);line-height:1.6;margin-bottom:8px;">Maker-artist cult following → Klipsch collab → $8,498/pair sold out. That's the trajectory.</div>
         <div style="font-size:12px;color:var(--tx3);">Our edge: CNC + cabinetry + EE + 30yr design credibility</div>
       </div>
     </div>
     <div class="card">
-      <div class="eyebrow">Immediate milestones</div>
-      <div class="phase-row">
-        <div class="phase-t">This week</div>
-        <div><div class="phase-name">Will + Brendan — founding meeting</div><div class="phase-desc">Align on technical direction, roles, and whether to proceed.</div></div>
-      </div>
-      <div class="phase-row">
-        <div class="phase-t">Next week</div>
-        <div><div class="phase-name">All three founders — equity + first build</div><div class="phase-desc">Agree on equity split, collaboration approach, and the spec for speaker #1.</div></div>
-      </div>
-      <div class="phase-row">
-        <div class="phase-t">Month 1</div>
-        <div><div class="phase-name">Form LLC, close open decisions</div><div class="phase-desc">Register 100xbtr LLC. Draft founders agreement. Order first components.</div></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="eyebrow">Recent log entries</div>
+      <div class="eyebrow">Recent activity</div>
       <div id="home-log-preview"><div class="loading">Loading...</div></div>
     </div>
   </div>
 
-  <!-- DECISIONS -->
   <div class="view" id="v-decisions">
     <div class="eyebrow">Open decisions</div>
     <div class="sec-title">Must be resolved before the first build starts</div>
     <div class="card" id="decisions-list"><div class="loading">Loading...</div></div>
-    <div class="hint">Any founder can check off a decision. The change is live for everyone instantly.</div>
+    <div class="hint">Any founder can check off a decision. Changes are live and logged automatically.</div>
   </div>
 
-  <!-- TEAM -->
   <div class="view" id="v-team">
     <div class="eyebrow">Founding team</div>
     <div class="sec-title">Three makers, one practice</div>
     <div class="card" style="margin-bottom:1rem;">
       <div class="eyebrow">On collaboration</div>
-      <div style="font-size:13px;line-height:1.8;margin-bottom:8px;">100xbtr is a collaborative practice, not a hierarchy. Titles and reporting lines come later, if at all. What matters first is that each person's contribution is understood, valued, and protected — and that decisions get made without gridlock.</div>
-      <div style="font-size:12px;color:var(--tx2);line-height:1.6;">Roles and domains are open questions to be worked out together. What's listed below reflects what each person brings — not what they're confined to.</div>
+      <div style="font-size:13px;line-height:1.8;margin-bottom:8px;">100xbtr is a collaborative practice, not a hierarchy. Titles and reporting lines come later, if at all. What matters first is that each person's contribution is understood, valued, and protected.</div>
+      <div style="font-size:12px;color:var(--tx2);line-height:1.6;">Click any field below to edit it. Every change is attributed and logged.</div>
     </div>
+    <div class="card" id="team-card" style="margin-bottom:1rem;"><div class="loading">Loading...</div></div>
     <div class="card" style="margin-bottom:1rem;">
-      <div class="partner-row">
-        <div class="avatar av-w">WR</div>
-        <div class="partner-info">
-          <div class="partner-name">Will Rollins</div>
-          <div class="partner-role">role to be defined together</div>
-          <div class="partner-brings">CNC fabrication, 30yr design practice, parametric modeling, brand instinct, business experience, partnerships</div>
-          <div class="eq-wrap"><div class="eq-track"><div class="eq-fill" style="width:100%;background:#378ADD;"></div></div><span class="eq-pct">34%</span></div>
-        </div>
-      </div>
-      <div class="partner-row">
-        <div class="avatar av-b">BR</div>
-        <div class="partner-info">
-          <div class="partner-name">Brendan</div>
-          <div class="partner-role">role to be defined together</div>
-          <div class="partner-brings">Cabinetry shop, master woodworker, hi-fi enthusiast and critical listener, production knowledge, long shared history with Will</div>
-          <div class="eq-wrap"><div class="eq-track"><div class="eq-fill" style="width:100%;background:#1D9E75;"></div></div><span class="eq-pct">34%</span></div>
-        </div>
-      </div>
-      <div class="partner-row">
-        <div class="avatar av-n">NM</div>
-        <div class="partner-info">
-          <div class="partner-name">Nishant</div>
-          <div class="partner-role">role to be defined together</div>
-          <div class="partner-brings">Masters in EE, active speaker design projects, Klipsch factory knowledge, horn speaker research, crossover design</div>
-          <div class="eq-wrap"><div class="eq-track"><div class="eq-fill" style="width:94%;background:#EF9F27;"></div></div><span class="eq-pct">32%</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="card" style="margin-bottom:1rem;">
-      <div class="eyebrow">Collaboration questions — for the first meeting</div>
-      <div class="d-item">
-        <div style="font-size:13px;color:var(--tx);line-height:1.6;padding:3px 0;">Do we want formal titles at all — or does the work define the roles?</div>
-      </div>
-      <div class="d-item">
-        <div style="font-size:13px;color:var(--tx);line-height:1.6;padding:3px 0;">When we genuinely disagree on a design decision, how do we resolve it?</div>
-      </div>
-      <div class="d-item">
-        <div style="font-size:13px;color:var(--tx);line-height:1.6;padding:3px 0;">Are there things each of us will not compromise on — and can we name them now?</div>
-      </div>
-      <div class="d-item">
-        <div style="font-size:13px;color:var(--tx);line-height:1.6;padding:3px 0;">What does each of us most want to be known for in this work?</div>
-      </div>
+      <div class="eyebrow">Collaboration questions — answer as a team</div>
+      <div id="collab-qs"><div class="loading">Loading...</div></div>
     </div>
     <div class="card">
       <div class="eyebrow">Assets & vesting</div>
@@ -311,16 +233,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <!-- FIRST BUILD -->
   <div class="view" id="v-product">
     <div class="eyebrow">First build</div>
     <div class="sec-title">The speaker that makes this real</div>
-    <div class="grid2" style="margin-bottom:1rem;">
-      <div class="metric"><div class="metric-label">Type</div><div class="metric-val" style="font-size:15px;">Horn-loaded bookshelf</div><div class="metric-sub">Smaller, faster to iterate</div></div>
-      <div class="metric"><div class="metric-label">Target price</div><div class="metric-val">$2,500–3,500</div><div class="metric-sub">per pair, direct sale</div></div>
-      <div class="metric"><div class="metric-label">Prototype deadline</div><div class="metric-val">~6 months</div><div class="metric-sub">listenable, not for sale yet</div></div>
-      <div class="metric"><div class="metric-label">Name</div><div class="metric-val" style="font-size:15px;">TBD together</div><div class="metric-sub">decide with all three founders</div></div>
-    </div>
+    <div class="card" id="build-card" style="margin-bottom:1rem;"><div class="loading">Loading...</div></div>
     <div class="card" style="margin-bottom:1rem;">
       <div class="eyebrow">Why horn-loaded</div>
       <div class="row"><span class="row-label">High efficiency</span><span class="row-val">98+ dB/W/m — sounds alive</span></div>
@@ -330,15 +246,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="row"><span class="row-label">Ojas proof of market</span><span class="row-val">$8,498/pair, sold out</span></div>
     </div>
     <div class="card">
-      <div class="eyebrow">Engineering questions for Nishant</div>
-      <div class="d-item"><div style="font-size:13px;color:var(--tx);line-height:1.6;padding:3px 0;">What horn geometry are we starting with?</div></div>
-      <div class="d-item"><div style="font-size:13px;color:var(--tx);line-height:1.6;padding:3px 0;">What drivers — and what's the rough component cost per pair?</div></div>
-      <div class="d-item"><div style="font-size:13px;color:var(--tx);line-height:1.6;padding:3px 0;">What makes this design genuinely special vs what already exists?</div></div>
-      <div class="d-item"><div style="font-size:13px;color:var(--tx);line-height:1.6;padding:3px 0;">How long to a simulation we can validate before cutting wood?</div></div>
+      <div class="eyebrow">Engineering questions — click to answer</div>
+      <div id="build-qs"><div class="loading">Loading...</div></div>
     </div>
   </div>
 
-  <!-- MARGINS -->
   <div class="view" id="v-money">
     <div class="eyebrow">Economics</div>
     <div class="sec-title">Why the margins are real</div>
@@ -347,106 +259,96 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="m-tab" onclick="setTier(1)">$3,500/pr</button>
       <button class="m-tab" onclick="setTier(2)">$7,500/pr</button>
     </div>
-    <div class="bar-wrap">
-      <div class="bar-cost" id="bc" style="width:64%">cost</div>
-      <div class="bar-margin" id="bm" style="width:36%">margin</div>
-    </div>
+    <div class="bar-wrap"><div class="bar-cost" id="bc" style="width:64%">cost</div><div class="bar-margin" id="bm" style="width:36%">margin</div></div>
     <div class="card" style="margin-bottom:1rem;">
-      <div class="row"><span class="row-label">Drivers (sourced)</span><span class="row-val" id="m-drv">$280</span></div>
+      <div class="row"><span class="row-label">Drivers</span><span class="row-val" id="m-drv">$280</span></div>
       <div class="row"><span class="row-label">Crossover components</span><span class="row-val" id="m-xo">$120</span></div>
       <div class="row"><span class="row-label">Cabinet materials</span><span class="row-val" id="m-cab">$180</span></div>
-      <div class="row"><span class="row-label">Labor (valued at cost)</span><span class="row-val" id="m-lab">$300</span></div>
+      <div class="row"><span class="row-label">Labor</span><span class="row-val" id="m-lab">$300</span></div>
       <div class="row"><span class="row-label">Finishing + hardware</span><span class="row-val" id="m-fin">$80</span></div>
-      <div class="row" style="border-top:0.5px solid var(--br2);padding-top:10px;margin-top:4px;">
-        <span class="row-label" style="font-weight:500;color:var(--tx);">Total COGS</span>
-        <span class="row-val" id="m-cogs">$960</span>
-      </div>
+      <div class="row" style="padding-top:10px;margin-top:4px;border-top:0.5px solid var(--br2);"><span class="row-label" style="font-weight:500;color:var(--tx);">Total COGS</span><span class="row-val" id="m-cogs">$960</span></div>
     </div>
     <div class="grid3">
       <div class="metric"><div class="metric-label">Sale price</div><div class="metric-val" id="m-price">$1,500</div></div>
       <div class="metric"><div class="metric-label">Gross profit</div><div class="metric-val" id="m-profit">$540</div></div>
       <div class="metric"><div class="metric-label">Gross margin</div><div class="metric-val" id="m-pct">36%</div><div class="metric-sub" id="m-note">10 pairs = $5K</div></div>
     </div>
-    <div class="hint" id="m-desc" style="margin-top:10px;">At entry pricing you're proving the product, not the business. Margins are real but thin — focus on building reputation.</div>
+    <div class="hint" id="m-desc" style="margin-top:10px;">At entry pricing you're proving the product, not the business. Build reputation first.</div>
   </div>
 
-  <!-- ROADMAP -->
   <div class="view" id="v-roadmap">
     <div class="eyebrow">Roadmap to exit</div>
     <div class="sec-title">The four phases</div>
     <div class="card">
-      <div class="phase-row">
-        <div><div class="phase-t">Phase 1</div><div class="phase-t">Months 1–6</div></div>
-        <div><div class="phase-name">Build the proof</div><div class="phase-desc">Design and build 2–3 reference pairs. Develop brand identity and founding story. Spend $3–5K on components. Target: 1 paying customer + press-ready photography.</div><div class="phase-bar"><div class="phase-fill" style="width:15%;background:#9FE1CB;"></div></div></div>
-      </div>
-      <div class="phase-row">
-        <div><div class="phase-t">Phase 2</div><div class="phase-t">Months 6–18</div></div>
-        <div><div class="phase-name">Go to market</div><div class="phase-desc">Sell via AudiogoN, US Audio Mart, Instagram. Target interior designers and custom home builders in LA. Goal: 8–15 pairs at $2–5K = $16–75K revenue.</div><div class="phase-bar"><div class="phase-fill" style="width:0%;background:#FAC775;"></div></div></div>
-      </div>
-      <div class="phase-row">
-        <div><div class="phase-t">Phase 3</div><div class="phase-t">Years 2–4</div></div>
-        <div><div class="phase-name">Build the brand asset</div><div class="phase-desc">Expand to 2–3 product lines. Get reviewed by Stereophile or The Absolute Sound. Partner with AV integrators. Target: $250K–$500K/yr revenue.</div><div class="phase-bar"><div class="phase-fill" style="width:0%;background:#85B7EB;"></div></div></div>
-      </div>
-      <div class="phase-row">
-        <div><div class="phase-t">Phase 4</div><div class="phase-t">Years 5–10</div></div>
-        <div><div class="phase-name">Exit</div><div class="phase-desc">Documented sales, press coverage, strong margins, proprietary design language = acquirable. Likely buyers: McIntosh Group, Sound United, or private equity.</div><div class="phase-bar"><div class="phase-fill" style="width:0%;background:#AFA9EC;"></div></div></div>
-      </div>
+      <div class="phase-row"><div><div class="phase-t">Phase 1</div><div class="phase-t">Months 1–6</div></div><div><div class="phase-name">Build the proof</div><div class="phase-desc">Design and build 2–3 reference pairs. Develop brand identity and founding story. Spend $3–5K on components. Target: 1 paying customer + press-ready photography.</div><div class="phase-bar"><div class="phase-fill" style="width:15%;background:#9FE1CB;"></div></div></div></div>
+      <div class="phase-row"><div><div class="phase-t">Phase 2</div><div class="phase-t">Months 6–18</div></div><div><div class="phase-name">Go to market</div><div class="phase-desc">Sell via AudiogoN, US Audio Mart, Instagram. Target interior designers and custom home builders in LA. Goal: 8–15 pairs at $2–5K = $16–75K revenue.</div><div class="phase-bar"><div class="phase-fill" style="width:0%;background:#FAC775;"></div></div></div></div>
+      <div class="phase-row"><div><div class="phase-t">Phase 3</div><div class="phase-t">Years 2–4</div></div><div><div class="phase-name">Build the brand asset</div><div class="phase-desc">Expand to 2–3 product lines. Get reviewed by Stereophile or The Absolute Sound. Partner with AV integrators. Target: $250K–$500K/yr revenue.</div><div class="phase-bar"><div class="phase-fill" style="width:0%;background:#85B7EB;"></div></div></div></div>
+      <div class="phase-row"><div><div class="phase-t">Phase 4</div><div class="phase-t">Years 5–10</div></div><div><div class="phase-name">Exit</div><div class="phase-desc">Documented sales, press, strong margins, proprietary design language = acquirable. Likely buyers: McIntosh Group, Sound United, or private equity.</div><div class="phase-bar"><div class="phase-fill" style="width:0%;background:#AFA9EC;"></div></div></div></div>
     </div>
   </div>
 
-  <!-- LOG -->
   <div class="view" id="v-log">
     <div class="eyebrow">Decision log</div>
     <div class="sec-title">The institutional memory</div>
-    <div class="card">
-      <div id="log-list"><div class="loading">Loading...</div></div>
-      <div class="log-form">
-        <textarea id="log-input" placeholder="Log a decision, insight, or key moment..."></textarea>
-        <button onclick="addLog()">Add entry</button>
-      </div>
-    </div>
-    <div class="hint">Every founder can add to this log. Entries are timestamped with your email and visible to the whole team in real time.</div>
+    <div class="card"><div id="log-list"><div class="loading">Loading...</div></div></div>
+    <div class="hint">Every edit, checked decision, answered question, and manual entry appears here — attributed and timestamped. This is the full history of how 100xbtr was built.</div>
   </div>
-
-</div><!-- /app -->
+</div>
 
 <script>
-const SUPABASE_URL = 'https://uzhcjxolnfzcezbntzrz.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6aGNqeG9sbmZ6Y2V6Ym50enJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNzUzMDksImV4cCI6MjA5MDY1MTMwOX0.M92v-r1_hYvIj0FLNiXokWn-UFbH_HYK5UCNGuwhQNc';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL='https://uzhcjxolnfzcezbntzrz.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6aGNqeG9sbmZ6Y2V6Ym50enJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNzUzMDksImV4cCI6MjA5MDY1MTMwOX0.M92v-r1_hYvIj0FLNiXokWn-UFbH_HYK5UCNGuwhQNc';
+const ALLOWED_EMAILS=['zolaray25@gmail.com','fraektaard@gmail.com','nishbphoto@gmail.com'];
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let currentUser=null,userShort='';
+const COLORS={'zolaray25':'#378ADD','fraektaard':'#1D9E75','nishbphoto':'#EF9F27'};
+const gc=a=>COLORS[a]||'#888780';
+const fmtDT=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const fmtD=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+let fieldCache={};
 
-let currentUser = null;
-
-const ALLOWED_EMAILS = ['zolaray25@gmail.com', 'fraektaard@gmail.com', 'nishbphoto@gmail.com'];
-
-const DEFAULT_DECISIONS = [
-  {id:'d1', text:'Horn speakers confirmed as technical direction', owner:'Nishant leads — all three agree', done:false, badge:'open'},
-  {id:'d2', text:'Nishant commits as a founding partner', owner:'Needs explicit yes before LLC formation', done:false, badge:'open'},
-  {id:'d3', text:'Equity split agreed in principle', owner:'Starting point: Will 34%, Brendan 34%, Nishant 32%', done:false, badge:'open'},
-  {id:'d4', text:'Collaboration model and roles defined', owner:'Formal titles optional — process matters more', done:false, badge:'open'},
-  {id:'d5', text:'First speaker named, specced, and deadline set', owner:'Bookshelf horn, $2.5–3.5K target, prototype ~6 months', done:false, badge:'open'},
-  {id:'d6', text:'LLC formed and founders agreement drafted', owner:'Will initiates — $300–500 via Stripe Atlas or attorney', done:false, badge:'soon'},
-  {id:'d7', text:'100xbetter existing entity status resolved', owner:'Attorney check — convert, amend, or form fresh LLC', done:false, badge:'open'},
+const DD=[
+  {id:'d1',text:'Horn speakers confirmed as technical direction',owner:'Nishant leads — all three agree',done:false,badge:'open'},
+  {id:'d2',text:'Nishant commits as a founding partner',owner:'Needs explicit yes before LLC formation',done:false,badge:'open'},
+  {id:'d3',text:'Equity split agreed in principle',owner:'Starting point: Will 34%, Brendan 34%, Nishant 32%',done:false,badge:'open'},
+  {id:'d4',text:'Collaboration model and roles defined',owner:'Formal titles optional — process matters more',done:false,badge:'open'},
+  {id:'d5',text:'First speaker named, specced, and deadline set',owner:'Bookshelf horn, $2.5–3.5K target, prototype ~6 months',done:false,badge:'open'},
+  {id:'d6',text:'LLC formed and founders agreement drafted',owner:'Will initiates — $300–500 via Stripe Atlas or attorney',done:false,badge:'soon'},
+  {id:'d7',text:'100xbetter existing entity status resolved',owner:'Attorney check — convert, amend, or form fresh LLC',done:false,badge:'open'},
 ];
-
-const DEFAULT_LOG = [
-  {text:'Company direction agreed: horn loudspeakers, high-end to boutique ($1,500–$8,500/pair), part-time to start, build-to-sell in 5–10 years.', author:'will', color:'#1D9E75'},
-  {text:'Brand name confirmed: 100xbtr. A genuine value statement and a knowing joke about audiophile culture. Name predates the speakers — that\'s the story.', author:'will', color:'#1D9E75'},
-  {text:'North star reference set: Ojas (Devon Turnbull). Trajectory: maker-artist → Klipsch collab → $8,498/pair sold out.', author:'will', color:'#1D9E75'},
-  {text:'Will + Brendan meeting scheduled. Three-founder meeting (+ Nishant) early next week. Claude engaged as ongoing advisor throughout.', author:'will', color:'#378ADD'},
+const DF=[
+  {id:'will-brings',label:'Will brings',value:'CNC fabrication, 30yr design practice, parametric modeling, brand instinct, business experience, partnerships',section:'team'},
+  {id:'brendan-brings',label:'Brendan brings',value:'Cabinetry shop, master woodworker, hi-fi enthusiast and critical listener, production knowledge, long shared history with Will',section:'team'},
+  {id:'nishant-brings',label:'Nishant brings',value:'Masters in EE, active speaker design projects, Klipsch factory knowledge, horn speaker research, crossover design',section:'team'},
+  {id:'build-name',label:'Speaker name',value:'TBD — decide together at the first build meeting',section:'build'},
+  {id:'build-type',label:'Type',value:'Horn-loaded bookshelf — smaller, faster to iterate, proof of concept',section:'build'},
+  {id:'build-price',label:'Target price',value:'$2,500–3,500 per pair, direct sale',section:'build'},
+  {id:'build-deadline',label:'Prototype deadline',value:'~6 months — listenable, not for sale yet',section:'build'},
+];
+const DCQ=[
+  {id:'cq1',question:'Do we want formal titles at all — or does the work define the roles?',category:'team'},
+  {id:'cq2',question:'When we genuinely disagree on a design decision, how do we resolve it?',category:'team'},
+  {id:'cq3',question:'Are there things each of us will not compromise on — and can we name them now?',category:'team'},
+  {id:'cq4',question:'What does each of us most want to be known for in this work?',category:'team'},
+  {id:'bq1',question:'What horn geometry are we starting with?',category:'build'},
+  {id:'bq2',question:'What drivers — and what is the rough component cost per pair?',category:'build'},
+  {id:'bq3',question:'What makes this design genuinely special vs what already exists?',category:'build'},
+  {id:'bq4',question:'How long to a simulation we can validate before cutting wood?',category:'build'},
+];
+const DL=[
+  {text:'Company direction agreed: horn loudspeakers, high-end to boutique, part-time to start, build-to-sell in 5–10 years.',author:'zolaray25',color:'#378ADD'},
+  {text:'Brand name confirmed: 100xbtr. A genuine value statement and a knowing joke about audiophile culture.',author:'zolaray25',color:'#378ADD'},
+  {text:'North star set: Ojas (Devon Turnbull). Maker-artist → Klipsch collab → $8,498/pair sold out.',author:'zolaray25',color:'#378ADD'},
+  {text:'100xbtr OS launched. All three founders have access. This log is the institutional memory.',author:'zolaray25',color:'#1D9E75'},
 ];
 
 async function sendMagicLink(){
-  const email = document.getElementById('auth-email').value.trim().toLowerCase();
-  const msg = document.getElementById('auth-msg');
-  const err = document.getElementById('auth-err');
-  msg.style.display='none'; err.style.display='none';
+  const email=document.getElementById('auth-email').value.trim().toLowerCase();
+  const msg=document.getElementById('auth-msg'),err=document.getElementById('auth-err');
+  msg.style.display='none';err.style.display='none';
   if(!email){err.textContent='Please enter your email.';err.style.display='block';return;}
-  if(ALLOWED_EMAILS[0]!=='WILL_EMAIL' && !ALLOWED_EMAILS.includes(email)){
-    err.textContent='This email is not registered for 100xbtr OS. Ask Will to add you.';
-    err.style.display='block';return;
-  }
-  const {error} = await sb.auth.signInWithOtp({email, options:{emailRedirectTo: window.location.href}});
+  if(!ALLOWED_EMAILS.includes(email)){err.textContent='This email is not registered. Ask Will to add you.';err.style.display='block';return;}
+  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.href}});
   if(error){err.textContent=error.message;err.style.display='block';}
   else{msg.style.display='block';}
 }
@@ -457,12 +359,13 @@ async function signOut(){
   document.getElementById('auth-screen').style.display='flex';
 }
 
-sb.auth.onAuthStateChange(async (event, session)=>{
+sb.auth.onAuthStateChange(async(event,session)=>{
   if(session?.user){
-    currentUser = session.user;
+    currentUser=session.user;
+    userShort=currentUser.email.split('@')[0];
     document.getElementById('auth-screen').style.display='none';
     document.getElementById('app').style.display='block';
-    document.getElementById('user-email-display').textContent = currentUser.email;
+    document.getElementById('user-email-display').textContent=currentUser.email;
     await initDB();
     loadAll();
     setupRealtime();
@@ -470,103 +373,204 @@ sb.auth.onAuthStateChange(async (event, session)=>{
 });
 
 async function initDB(){
-  const {data:dec} = await sb.from('decisions').select('id').limit(1);
-  if(!dec||dec.length===0){
-    await sb.from('decisions').insert(DEFAULT_DECISIONS.map(d=>({
-      id:d.id, text:d.text, owner:d.owner, done:false, badge:d.badge
-    })));
-  }
-  const {data:log} = await sb.from('log_entries').select('id').limit(1);
-  if(!log||log.length===0){
-    await sb.from('log_entries').insert(DEFAULT_LOG.map((l,i)=>({
-      text:l.text, author:l.author, color:l.color,
-      created_at: new Date(Date.now()-(DEFAULT_LOG.length-i)*60000).toISOString()
-    })));
-  }
+  const checks=await Promise.all([
+    sb.from('decisions').select('id').limit(1),
+    sb.from('editable_fields').select('id').limit(1),
+    sb.from('collab_questions').select('id').limit(1),
+    sb.from('log_entries').select('id').limit(1),
+  ]);
+  if(!checks[0].data||!checks[0].data.length) await sb.from('decisions').insert(DD.map(d=>({id:d.id,text:d.text,owner:d.owner,done:false,badge:d.badge})));
+  if(!checks[1].data||!checks[1].data.length) await sb.from('editable_fields').insert(DF.map(f=>({id:f.id,label:f.label,value:f.value,section:f.section})));
+  if(!checks[2].data||!checks[2].data.length) await sb.from('collab_questions').insert(DCQ.map(q=>({id:q.id,question:q.question,category:q.category})));
+  if(!checks[3].data||!checks[3].data.length) await sb.from('log_entries').insert(DL.map((l,i)=>({text:l.text,author:l.author,color:l.color,created_at:new Date(Date.now()-(DL.length-i)*60000).toISOString()})));
 }
 
 function setupRealtime(){
-  sb.channel('realtime-decisions')
-    .on('postgres_changes',{event:'*',schema:'public',table:'decisions'},()=>loadDecisions())
-    .subscribe();
-  sb.channel('realtime-log')
-    .on('postgres_changes',{event:'*',schema:'public',table:'log_entries'},()=>loadLog())
-    .subscribe();
+  sb.channel('rt').on('postgres_changes',{event:'*',schema:'public',table:'decisions'},()=>loadDecisions()).on('postgres_changes',{event:'*',schema:'public',table:'log_entries'},()=>loadLog()).on('postgres_changes',{event:'*',schema:'public',table:'editable_fields'},()=>loadFields()).on('postgres_changes',{event:'*',schema:'public',table:'collab_questions'},()=>loadQs()).on('postgres_changes',{event:'*',schema:'public',table:'collab_answers'},()=>loadQs()).subscribe();
 }
 
-async function loadAll(){
-  loadDecisions();
-  loadLog();
-}
+function loadAll(){loadDecisions();loadLog();loadFields();loadQs();}
 
 async function loadDecisions(){
-  const {data} = await sb.from('decisions').select('*').order('created_at',{ascending:true});
-  if(!data) return;
-  const open = data.filter(d=>!d.done).length;
-  document.getElementById('open-count').textContent = open;
-  const list = document.getElementById('decisions-list');
-  list.innerHTML = data.map(d=>`
+  const {data}=await sb.from('decisions').select('*').order('created_at',{ascending:true});
+  if(!data)return;
+  document.getElementById('open-count').textContent=data.filter(d=>!d.done).length;
+  document.getElementById('decisions-list').innerHTML=data.map(d=>`
     <div class="d-item">
-      <div class="d-check${d.done?' done':''}" onclick="toggleDecision('${d.id}',${d.done})">
-        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
-      <div class="d-body">
-        <div class="d-text${d.done?' done':''}">${d.text}</div>
-        <div class="d-owner">${d.owner}</div>
-      </div>
+      <div class="d-check${d.done?' done':''}" onclick="toggleDecision('${d.id}',${d.done})"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="d-body"><div class="d-text${d.done?' done':''}">${d.text}</div><div class="d-owner">${d.owner}</div></div>
       <span class="badge badge-${d.done?'done':d.badge}">${d.done?'decided':d.badge}</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-async function toggleDecision(id, currentDone){
-  await sb.from('decisions').update({done:!currentDone}).eq('id',id);
+async function toggleDecision(id,cur){
+  await sb.from('decisions').update({done:!cur}).eq('id',id);
+  const {data}=await sb.from('decisions').select('text').eq('id',id).single();
+  await autoLog(`${userShort} ${!cur?'marked as decided':'reopened'}: "${data.text}"`);
+}
+
+async function loadFields(){
+  const {data}=await sb.from('editable_fields').select('*');
+  if(!data)return;
+  data.forEach(f=>{fieldCache[f.id]=f;});
+  renderTeam(data.filter(f=>f.section==='team'));
+  renderBuild(data.filter(f=>f.section==='build'));
+}
+
+function makeEditableField(f,displayStyle){
+  const val=f?f.value:'';
+  const meta=f&&f.updated_by?`last edited by ${f.updated_by} · ${fmtD(f.updated_at)}`:'click to edit';
+  return `<div class="editable-wrap" id="ew-${f.id}" onclick="startEdit('${f.id}')">
+    <div class="field-display" style="${displayStyle||''}" id="fd-${f.id}">${val||'<span style="color:var(--tx3);">click to add...</span>'}</div>
+    <div class="field-meta" id="fm-${f.id}">${meta}</div>
+    <div id="ec-${f.id}" style="display:none;"></div>
+  </div>`;
+}
+
+function renderTeam(fields){
+  const members=[
+    {key:'will-brings',name:'Will Rollins',av:'av-w',ini:'WR',pct:'34%',color:'#378ADD',w:100},
+    {key:'brendan-brings',name:'Brendan',av:'av-b',ini:'BR',pct:'34%',color:'#1D9E75',w:100},
+    {key:'nishant-brings',name:'Nishant',av:'av-n',ini:'NM',pct:'32%',color:'#EF9F27',w:94},
+  ];
+  document.getElementById('team-card').innerHTML=members.map(m=>{
+    const f=fields.find(x=>x.id===m.key)||{id:m.key,value:'',updated_by:null,updated_at:null};
+    return `<div class="partner-block">
+      <div class="partner-header">
+        <div class="avatar ${m.av}">${m.ini}</div>
+        <div><div class="partner-name-el">${m.name}</div><div class="partner-role-el">role to be defined together</div></div>
+        <div class="eq-wrap"><div class="eq-track"><div class="eq-fill" style="width:${m.w}%;background:${m.color};"></div></div><span class="eq-pct">${m.pct}</span></div>
+      </div>
+      ${makeEditableField(f,'color:var(--tx2);')}
+    </div>`;
+  }).join('');
+}
+
+function renderBuild(fields){
+  const specs=[{key:'build-name',label:'Speaker name'},{key:'build-type',label:'Type'},{key:'build-price',label:'Target price'},{key:'build-deadline',label:'Prototype deadline'}];
+  document.getElementById('build-card').innerHTML=`<div class="eyebrow" style="margin-bottom:1rem;">Specs — click any value to edit</div>`+specs.map(s=>{
+    const f=fields.find(x=>x.id===s.key)||{id:s.key,value:'',updated_by:null,updated_at:null};
+    return `<div class="row" style="align-items:flex-start;padding:10px 0;">
+      <span class="row-label" style="flex-shrink:0;margin-right:16px;padding-top:2px;">${s.label}</span>
+      <div style="flex:1;text-align:right;">
+        ${makeEditableField(f,'font-weight:500;text-align:right;')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function startEdit(fieldId){
+  const ec=document.getElementById('ec-'+fieldId);
+  if(ec.style.display==='block')return;
+  const cur=(fieldCache[fieldId]&&fieldCache[fieldId].value)||'';
+  ec.style.display='block';
+  ec.innerHTML=`<textarea class="edit-area" id="ta-${fieldId}">${cur}</textarea>
+    <div class="edit-actions">
+      <button class="edit-save" onclick="saveField('${fieldId}');event.stopPropagation();">Save</button>
+      <button class="edit-cancel" onclick="cancelEdit('${fieldId}');event.stopPropagation();">Cancel</button>
+    </div>`;
+  document.getElementById('ew-'+fieldId).onclick=null;
+  document.getElementById('ta-'+fieldId).focus();
+}
+
+function cancelEdit(fieldId){
+  const ec=document.getElementById('ec-'+fieldId);
+  ec.style.display='none';ec.innerHTML='';
+  document.getElementById('ew-'+fieldId).onclick=()=>startEdit(fieldId);
+}
+
+async function saveField(fieldId){
+  const val=document.getElementById('ta-'+fieldId).value.trim();
+  if(!val){cancelEdit(fieldId);return;}
+  const label=(fieldCache[fieldId]&&fieldCache[fieldId].label)||fieldId;
+  await sb.from('editable_fields').update({value:val,updated_by:userShort,updated_at:new Date().toISOString()}).eq('id',fieldId);
+  await autoLog(`${userShort} updated "${label}": ${val.substring(0,100)}${val.length>100?'...':''}`);
+  cancelEdit(fieldId);
+}
+
+async function loadQs(){
+  const [{data:qs},{data:ans}]=await Promise.all([
+    sb.from('collab_questions').select('*').order('id'),
+    sb.from('collab_answers').select('*').order('created_at'),
+  ]);
+  if(!qs)return;
+  renderQContainer('collab-qs',qs.filter(q=>q.category==='team'),ans||[]);
+  renderQContainer('build-qs',qs.filter(q=>q.category==='build'),ans||[]);
+}
+
+function renderQContainer(cid,qs,allAns){
+  const el=document.getElementById(cid);
+  if(!el)return;
+  el.innerHTML=qs.map(q=>{
+    const qAns=allAns.filter(a=>a.question_id===q.id);
+    return `<div class="collab-q">
+      <div class="collab-q-text">${q.question}</div>
+      <div class="answers-list">
+        ${qAns.length===0?'<div style="font-size:12px;color:var(--tx3);padding:2px 0;">No answers yet — be the first.</div>':''}
+        ${qAns.map(a=>`<div class="answer-card"><div class="answer-author" style="color:${gc(a.author)};">${a.author}</div><div class="answer-text">${a.text}</div><div class="answer-date">${fmtD(a.created_at)}</div></div>`).join('')}
+      </div>
+      <div class="answer-form" id="af-${q.id}">
+        <textarea id="ata-${q.id}" placeholder="Your answer..."></textarea>
+        <div class="edit-actions" style="margin-top:6px;">
+          <button class="edit-save" onclick="saveAnswer('${q.id}');event.stopPropagation();">Save</button>
+          <button class="edit-cancel" onclick="document.getElementById('af-${q.id}').style.display='none';">Cancel</button>
+        </div>
+      </div>
+      <button class="add-answer-btn" onclick="toggleAF('${q.id}')">+ Add your answer</button>
+    </div>`;
+  }).join('');
+}
+
+function toggleAF(qId){
+  const f=document.getElementById('af-'+qId);
+  f.style.display=f.style.display==='block'?'none':'block';
+  if(f.style.display==='block')document.getElementById('ata-'+qId).focus();
+}
+
+async function saveAnswer(qId){
+  const ta=document.getElementById('ata-'+qId);
+  const text=ta.value.trim();
+  if(!text)return;
+  const {data:q}=await sb.from('collab_questions').select('question').eq('id',qId).single();
+  await sb.from('collab_answers').insert({question_id:qId,text,author:userShort,created_at:new Date().toISOString()});
+  await autoLog(`${userShort} answered "${q.question.substring(0,55)}...": ${text.substring(0,80)}${text.length>80?'...':''}`);
+  ta.value='';
+  document.getElementById('af-'+qId).style.display='none';
 }
 
 async function loadLog(){
-  const {data} = await sb.from('log_entries').select('*').order('created_at',{ascending:false});
-  if(!data) return;
-  const render = (entries, limit=null) => (limit?entries.slice(0,limit):entries).map(e=>`
+  const {data}=await sb.from('log_entries').select('*').order('created_at',{ascending:false});
+  if(!data)return;
+  const rows=(entries,lim)=>(lim?entries.slice(0,lim):entries).map(e=>`
     <div class="log-item">
-      <div class="log-dot" style="background:${e.color||'#378ADD'};margin-top:5px;"></div>
-      <div class="log-content">
-        <div class="log-text">${e.text}</div>
-        <div class="log-meta">${e.author} · ${new Date(e.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
-      </div>
-      <button class="log-del" onclick="deleteLog('${e.id}')" title="Delete">✕</button>
-    </div>
-  `).join('');
-  const logList = document.getElementById('log-list');
-  if(logList) logList.innerHTML = render(data) + `<div class="log-form">
-    <textarea id="log-input" placeholder="Log a decision, insight, or key moment..."></textarea>
-    <button onclick="addLog()">Add entry</button>
-  </div>`;
-  const preview = document.getElementById('home-log-preview');
-  if(preview) preview.innerHTML = data.length ? render(data,3) : '<div style="font-size:13px;color:var(--tx3);padding:8px 0;">No entries yet.</div>';
+      <div class="log-dot" style="background:${e.color||'#378ADD'};"></div>
+      <div class="log-content"><div class="log-text">${e.text}</div><div class="log-meta">${e.author} · ${fmtDT(e.created_at)}</div></div>
+      <button class="log-del" onclick="delLog('${e.id}')" title="Delete">✕</button>
+    </div>`).join('');
+  const ll=document.getElementById('log-list');
+  if(ll) ll.innerHTML=rows(data)+`<div class="log-form"><textarea id="log-input" placeholder="Add a note, decision, or moment..."></textarea><button onclick="manualLog()">Add</button></div>`;
+  const hp=document.getElementById('home-log-preview');
+  if(hp) hp.innerHTML=data.length?rows(data,4):'<div style="font-size:13px;color:var(--tx3);padding:8px 0;">No entries yet.</div>';
 }
 
-async function addLog(){
-  const input = document.getElementById('log-input');
-  const text = input.value.trim();
-  if(!text) return;
-  const colors = ['#1D9E75','#378ADD','#EF9F27','#D85A30','#7F77DD'];
-  const color = colors[Math.floor(Math.random()*colors.length)];
-  const short = currentUser.email.split('@')[0];
-  await sb.from('log_entries').insert({text, author:short, color, created_at:new Date().toISOString()});
-  input.value='';
+async function autoLog(text){
+  await sb.from('log_entries').insert({text,author:userShort,color:gc(userShort),created_at:new Date().toISOString()});
 }
-
-async function deleteLog(id){
-  if(!confirm('Delete this entry?')) return;
+async function manualLog(){
+  const inp=document.getElementById('log-input');
+  const text=inp.value.trim();
+  if(!text)return;
+  await autoLog(text);
+  inp.value='';
+}
+async function delLog(id){
+  if(!confirm('Delete this entry?'))return;
   await sb.from('log_entries').delete().eq('id',id);
 }
 
 const views=['home','decisions','team','product','money','roadmap','log'];
 function show(id){
-  views.forEach((v,i)=>{
-    document.getElementById('v-'+v).classList.remove('on');
-    document.querySelectorAll('.nav-btn')[i].classList.remove('on');
-  });
+  views.forEach((v,i)=>{document.getElementById('v-'+v).classList.remove('on');document.querySelectorAll('.nav-btn')[i].classList.remove('on');});
   document.getElementById('v-'+id).classList.add('on');
   document.querySelectorAll('.nav-btn')[views.indexOf(id)].classList.add('on');
 }
@@ -578,16 +582,8 @@ const tiers=[
 ];
 function setTier(i){
   document.querySelectorAll('.m-tab').forEach((t,j)=>t.classList.toggle('on',i===j));
-  const t=tiers[i];
-  const cogs=t.drv+t.xo+t.cab+t.lab+t.fin;
-  const profit=t.price-cogs;
-  const margin=Math.round(profit/t.price*100);
-  const cp=Math.round(cogs/t.price*100);
-  document.getElementById('m-drv').textContent='$'+t.drv;
-  document.getElementById('m-xo').textContent='$'+t.xo;
-  document.getElementById('m-cab').textContent='$'+t.cab;
-  document.getElementById('m-lab').textContent='$'+t.lab;
-  document.getElementById('m-fin').textContent='$'+t.fin;
+  const t=tiers[i];const cogs=t.drv+t.xo+t.cab+t.lab+t.fin;const profit=t.price-cogs;const margin=Math.round(profit/t.price*100);const cp=Math.round(cogs/t.price*100);
+  ['drv','xo','cab','lab','fin'].forEach(k=>document.getElementById('m-'+k).textContent='$'+t[k]);
   document.getElementById('m-cogs').textContent='$'+cogs;
   document.getElementById('m-price').textContent='$'+t.price.toLocaleString();
   document.getElementById('m-profit').textContent='$'+profit.toLocaleString();
