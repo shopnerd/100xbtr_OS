@@ -55,6 +55,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .row:last-child{border-bottom:none;}
 .row-label{font-size:13px;color:var(--tx2);flex-shrink:0;margin-right:16px;}
 .row-val{font-size:13px;font-weight:500;text-align:right;}
+.d-view-btn{padding:4px 12px;border-radius:20px;font-size:11px;border:0.5px solid var(--br2);background:transparent;color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;}
+.d-view-btn:hover{background:var(--bg2);}
+.d-view-btn.on{background:var(--tx);color:var(--bg);border-color:transparent;}
+.d-item{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:0.5px solid var(--br);cursor:grab;transition:background 0.1s;}
+.d-item:active{cursor:grabbing;}
+.d-item:last-child{border-bottom:none;}
+.d-item.dragging{opacity:0.4;}
+.d-item.drag-over{background:var(--bg2);border-radius:var(--r-md);}
+.d-handle{color:var(--tx3);font-size:14px;flex-shrink:0;margin-top:3px;cursor:grab;user-select:none;opacity:0.4;}
+.d-handle:hover{opacity:1;}
+.d-priority{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px;}
+.d-check{width:20px;height:20px;border-radius:5px;border:0.5px solid var(--br2);background:var(--bg2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:all 0.15s;}
+.d-check.done{background:var(--green-l);border-color:var(--green);}
+.d-check svg{display:none;}.d-check.done svg{display:block;}
+.d-body{flex:1;min-width:0;}
+.d-text{font-size:13px;line-height:1.6;cursor:text;}
+.d-text.done{color:var(--tx3);text-decoration:line-through;}
+.d-text.editing{outline:none;border-bottom:1px solid #378ADD;background:transparent;display:block;width:100%;font-family:inherit;font-size:13px;line-height:1.6;color:var(--tx);}
+.d-owner{font-size:11px;color:var(--tx3);margin-top:3px;cursor:text;}
+.d-owner.editing{outline:none;border-bottom:1px dashed var(--br2);background:transparent;display:block;width:100%;font-family:inherit;font-size:11px;color:var(--tx2);}
 .badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap;}
 .badge-open{background:var(--warn-l);color:var(--warn-d);}
 .badge-done{background:var(--green-l);color:var(--green-d);}
@@ -186,16 +206,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="view" id="v-decisions">
     <div class="eyebrow">Open decisions</div>
     <div class="sec-title">Must be resolved before the first build starts</div>
+
+    <div style="display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:11px;color:var(--tx3);margin-right:4px;text-transform:uppercase;letter-spacing:0.05em;font-weight:500;">View</span>
+      <button class="d-view-btn on" onclick="setDView('all')">All</button>
+      <button class="d-view-btn" onclick="setDView('open')">Open only</button>
+      <button class="d-view-btn" onclick="setDView('decided')">Decided</button>
+      <div style="width:0.5px;height:16px;background:var(--br2);margin:0 4px;"></div>
+      <button class="d-view-btn" onclick="setDView('high')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E24B4A;margin-right:4px;vertical-align:middle;"></span>High</button>
+      <button class="d-view-btn" onclick="setDView('medium')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#EF9F27;margin-right:4px;vertical-align:middle;"></span>Medium</button>
+      <button class="d-view-btn" onclick="setDView('low')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1D9E75;margin-right:4px;vertical-align:middle;"></span>Low</button>
+    </div>
+
     <div class="card" id="decisions-list"><div class="loading">Loading...</div></div>
+
     <div class="card" style="padding:0.85rem 1.25rem;">
       <div class="eyebrow" style="margin-bottom:8px;">Add a decision</div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <input id="new-d-text" class="add-input" placeholder="Decision to make...">
-        <input id="new-d-owner" class="add-input" placeholder="Who owns this? (optional)">
-        <button class="add-btn" style="align-self:flex-start;" onclick="addDecision()">+ Add decision</button>
+        <input id="new-d-owner" class="add-input" placeholder="Comments (optional)">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span style="font-size:11px;color:var(--tx3);">Priority:</span>
+          <select id="new-d-priority" style="font-size:12px;padding:4px 8px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);outline:none;">
+            <option value="none">None</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <button class="add-btn" style="margin-left:auto;" onclick="addDecision()">+ Add decision</button>
+        </div>
       </div>
     </div>
-    <div class="hint">Any founder can check off or add a decision. Changes are live and logged automatically.</div>
+    <div class="hint">Drag to reorder. Click any decision text to edit it. Changes are live and logged.</div>
   </div>
 
   <!-- TEAM -->
@@ -362,16 +404,111 @@ async function loadAll(){
   await Promise.all([loadDecisions(),loadLog(),loadFields(),loadQs()]);
 }
 
+let dView='all';
+let dragSrc=null;
+const PRIORITY_COLORS={'high':'#E24B4A','medium':'#EF9F27','low':'#1D9E75','none':'transparent'};
+
+function setDView(v){
+  dView=v;
+  document.querySelectorAll('.d-view-btn').forEach(b=>b.classList.remove('on'));
+  event.target.closest('.d-view-btn').classList.add('on');
+  renderDecisions(window._lastDecisions||[]);
+}
+
 async function loadDecisions(){
-  const{data}=await sb.from('decisions').select('*').order('created_at',{ascending:true});
+  const{data}=await sb.from('decisions').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:true});
   if(!data)return;
+  window._lastDecisions=data;
   document.getElementById('open-count').textContent=data.filter(d=>!d.done).length;
-  document.getElementById('decisions-list').innerHTML=data.map(d=>`
-    <div class="d-item">
+  renderDecisions(data);
+}
+
+function renderDecisions(data){
+  let filtered=data;
+  if(dView==='open')filtered=data.filter(d=>!d.done);
+  else if(dView==='decided')filtered=data.filter(d=>d.done);
+  else if(dView==='high')filtered=data.filter(d=>d.priority==='high');
+  else if(dView==='medium')filtered=data.filter(d=>d.priority==='medium');
+  else if(dView==='low')filtered=data.filter(d=>d.priority==='low');
+
+  const list=document.getElementById('decisions-list');
+  if(!list)return;
+  list.innerHTML=filtered.map(d=>{
+    const pc=PRIORITY_COLORS[d.priority||'none'];
+    const showDot=d.priority&&d.priority!=='none';
+    return `<div class="d-item" id="di-${d.id}" draggable="true"
+      ondragstart="dragStart(event,'${d.id}')"
+      ondragover="dragOver(event,'${d.id}')"
+      ondrop="dragDrop(event,'${d.id}')"
+      ondragend="dragEnd()">
+      <div class="d-handle" title="Drag to reorder">⠿</div>
+      ${showDot?`<div class="d-priority" style="background:${pc};margin-top:6px;"></div>`:'<div style="width:8px;flex-shrink:0;"></div>'}
       <div class="d-check${d.done?' done':''}" onclick="toggleD('${d.id}',${d.done})"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-      <div class="d-body"><div class="d-text${d.done?' done':''}">${d.text}</div><div class="d-owner">${d.owner}</div></div>
-      <span class="badge badge-${d.done?'done':d.badge}">${d.done?'decided':d.badge}</span>
-    </div>`).join('');
+      <div class="d-body">
+        <div class="d-text${d.done?' done':''}"
+          contenteditable="true"
+          onblur="saveDecisionText('${d.id}',this)"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+          >${d.text}</div>
+        <div class="d-owner"
+          contenteditable="true"
+          onblur="saveDecisionOwner('${d.id}',this)"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+          >${d.owner||''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+        <span class="badge badge-${d.done?'done':d.badge||'open'}">${d.done?'decided':d.badge||'open'}</span>
+        ${d.priority&&d.priority!=='none'?`<span style="font-size:10px;color:${pc};">${d.priority}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function dragStart(e,id){
+  dragSrc=id;
+  document.getElementById('di-'+id).classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function dragOver(e,id){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('.d-item').forEach(el=>el.classList.remove('drag-over'));
+  if(id!==dragSrc)document.getElementById('di-'+id).classList.add('drag-over');
+}
+async function dragDrop(e,targetId){
+  e.preventDefault();
+  if(!dragSrc||dragSrc===targetId)return;
+  const data=window._lastDecisions||[];
+  const srcIdx=data.findIndex(d=>d.id===dragSrc);
+  const tgtIdx=data.findIndex(d=>d.id===targetId);
+  if(srcIdx<0||tgtIdx<0)return;
+  const reordered=[...data];
+  const[moved]=reordered.splice(srcIdx,1);
+  reordered.splice(tgtIdx,0,moved);
+  window._lastDecisions=reordered;
+  renderDecisions(reordered);
+  await Promise.all(reordered.map((d,i)=>sb.from('decisions').update({sort_order:i}).eq('id',d.id)));
+  await alog(`${who} reordered decisions`);
+}
+function dragEnd(){
+  dragSrc=null;
+  document.querySelectorAll('.d-item').forEach(el=>{el.classList.remove('dragging');el.classList.remove('drag-over');});
+}
+
+async function saveDecisionText(id,el){
+  const newText=el.innerText.trim();
+  const orig=(window._lastDecisions||[]).find(d=>d.id===id);
+  if(!orig||newText===orig.text)return;
+  await sb.from('decisions').update({text:newText}).eq('id',id);
+  await alog(`${who} edited decision: "${newText.substring(0,60)}"`);
+}
+
+async function saveDecisionOwner(id,el){
+  const newOwner=el.innerText.trim();
+  const orig=(window._lastDecisions||[]).find(d=>d.id===id);
+  if(!orig||newOwner===(orig.owner||''))return;
+  await sb.from('decisions').update({owner:newOwner}).eq('id',id);
+  await alog(`${who} updated comment on decision: "${newOwner.substring(0,60)}"`);
 }
 
 async function toggleD(id,cur){
@@ -383,12 +520,15 @@ async function toggleD(id,cur){
 async function addDecision(){
   const text=document.getElementById('new-d-text').value.trim();
   const owner=document.getElementById('new-d-owner').value.trim();
+  const priority=document.getElementById('new-d-priority').value;
   if(!text)return;
   const id='d-'+Date.now();
-  await sb.from('decisions').insert({id,text,owner:owner||`added by ${who}`,done:false,badge:'open'});
+  const sortOrder=(window._lastDecisions||[]).length;
+  await sb.from('decisions').insert({id,text,owner:owner||'',done:false,badge:'open',priority:priority==='none'?null:priority,sort_order:sortOrder});
   await alog(`${who} added decision: "${text}"`);
   document.getElementById('new-d-text').value='';
   document.getElementById('new-d-owner').value='';
+  document.getElementById('new-d-priority').value='none';
 }
 
 async function loadFields(){
