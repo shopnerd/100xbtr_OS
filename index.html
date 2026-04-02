@@ -576,6 +576,8 @@ async function addField(section, label){
   await alog(`${who} added to ${section}: "${value.substring(0,60)}"`);
   inp.value='';
 }
+
+async function loadQs(){
   const[{data:qs},{data:ans}]=await Promise.all([
     sb.from('collab_questions').select('*').order('id'),
     sb.from('collab_answers').select('*').order('created_at'),
