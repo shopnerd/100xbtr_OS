@@ -78,6 +78,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .edit-actions{display:flex;gap:6px;margin-top:6px;}
 .btn-save{padding:4px 14px;border-radius:var(--r-md);border:none;background:var(--tx);color:var(--bg);font-size:11px;cursor:pointer;}
 .btn-cancel{padding:4px 14px;border-radius:var(--r-md);border:0.5px solid var(--br2);background:transparent;color:var(--tx2);font-size:11px;cursor:pointer;}
+.add-row{padding:10px 0;border-top:0.5px solid var(--br);margin-top:4px;display:flex;gap:8px;align-items:center;}
+.add-input{flex:1;font-size:13px;padding:7px 10px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);outline:none;}
+.add-input:focus{border-color:#378ADD;}
+.add-btn{padding:5px 14px;border-radius:var(--r-md);border:0.5px solid var(--br2);background:var(--bg);color:var(--tx);font-size:12px;cursor:pointer;white-space:nowrap;}
+.add-btn:hover{background:var(--bg2);}
 .d-item{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:0.5px solid var(--br);}
 .d-item:last-child{border-bottom:none;}
 .d-check{width:20px;height:20px;border-radius:5px;border:0.5px solid var(--br2);background:var(--bg2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:all 0.15s;}
@@ -131,6 +136,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bar-wrap{height:26px;border-radius:4px;overflow:hidden;display:flex;margin-bottom:8px;}
 .bar-cost{background:var(--bg2);display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;color:var(--tx2);font-weight:500;transition:width 0.35s;}
 .bar-margin{background:var(--green);display:flex;align-items:center;padding-left:8px;font-size:11px;color:#04342C;font-weight:500;transition:width 0.35s;}
+.margin-input{width:80px;font-size:13px;font-weight:500;padding:3px 6px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);text-align:right;outline:none;}
+.margin-input:focus{border-color:#378ADD;}
 .phase-row{display:grid;grid-template-columns:90px 1fr;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--br);align-items:start;}
 .phase-row:last-child{border-bottom:none;}
 .phase-t{font-size:11px;color:var(--tx3);line-height:1.6;}
@@ -142,7 +149,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div id="auth-screen">
   <div class="auth-box">
-    <div class="auth-logo">100xbtr <span>OS</span></div>
+    <div class="auth-logo">100xbtr<span>_sound</span></div>
     <div class="auth-sub">Sign in with your Google account to access the company OS.</div>
     <button class="auth-btn" onclick="signInGoogle()">
       <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
@@ -170,6 +177,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="nav-btn" onclick="show('log')">Log</button>
   </div>
 
+  <!-- OVERVIEW -->
   <div class="view on" id="v-home">
     <div class="grid3">
       <div class="metric"><div class="metric-label">Status</div><div class="metric-val">Pre-launch</div><div class="metric-sub">LLC formation pending</div></div>
@@ -177,36 +185,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="metric"><div class="metric-label">First prototype</div><div class="metric-val">~6 mo</div><div class="metric-sub">listenable, not for sale</div></div>
     </div>
     <div class="grid2">
-      <div class="card">
-        <div class="eyebrow">The mission</div>
-        <div style="font-size:13px;line-height:1.8;margin-bottom:8px;">Make horn loudspeakers that are genuinely, obsessively better — in sound, in craft, in design. Objects worth keeping for a lifetime.</div>
-        <div style="font-size:12px;color:var(--tx2);line-height:1.6;">Named for a value held since 1995. Both a legitimate claim and a knowing joke about audiophile culture.</div>
-      </div>
-      <div class="card">
-        <div class="eyebrow">North star</div>
-        <div style="font-size:14px;font-weight:500;margin-bottom:4px;">Ojas — Devon Turnbull</div>
-        <div style="font-size:12px;color:var(--tx2);line-height:1.6;margin-bottom:8px;">Maker-artist cult following → Klipsch collab → $8,498/pair sold out. That's the trajectory.</div>
-        <div style="font-size:12px;color:var(--tx3);">Our edge: CNC + cabinetry + EE + 30yr design credibility</div>
-      </div>
+      <div class="card" id="mission-card"><div class="loading">Loading...</div></div>
+      <div class="card" id="northstar-card"><div class="loading">Loading...</div></div>
     </div>
     <div class="card"><div class="eyebrow">Recent activity</div><div id="home-log-preview"><div class="loading">Loading...</div></div></div>
   </div>
 
+  <!-- DECISIONS -->
   <div class="view" id="v-decisions">
     <div class="eyebrow">Open decisions</div>
     <div class="sec-title">Must be resolved before the first build starts</div>
     <div class="card" id="decisions-list"><div class="loading">Loading...</div></div>
-    <div class="card" style="padding:0.75rem 1.25rem;">
-      <div style="font-size:11px;color:var(--tx3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;font-weight:500;">Add a decision</div>
+    <div class="card" style="padding:0.85rem 1.25rem;">
+      <div class="eyebrow" style="margin-bottom:8px;">Add a decision</div>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <input id="new-d-text" placeholder="Decision to make..." style="font-size:13px;padding:7px 10px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);outline:none;width:100%;">
-        <input id="new-d-owner" placeholder="Who owns this? (optional)" style="font-size:13px;padding:7px 10px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);outline:none;width:100%;">
-        <button onclick="addDecision()" style="align-self:flex-start;padding:5px 14px;border-radius:var(--r-md);border:0.5px solid var(--br2);background:var(--bg);color:var(--tx);font-size:12px;cursor:pointer;">+ Add decision</button>
+        <input id="new-d-text" class="add-input" placeholder="Decision to make...">
+        <input id="new-d-owner" class="add-input" placeholder="Who owns this? (optional)">
+        <button class="add-btn" style="align-self:flex-start;" onclick="addDecision()">+ Add decision</button>
       </div>
     </div>
     <div class="hint">Any founder can check off or add a decision. Changes are live and logged automatically.</div>
   </div>
 
+  <!-- TEAM -->
   <div class="view" id="v-team">
     <div class="eyebrow">Founding team</div>
     <div class="sec-title">Three makers, one practice</div>
@@ -220,6 +221,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="card" id="assets-card"><div class="loading">Loading...</div></div>
   </div>
 
+  <!-- FIRST BUILD -->
   <div class="view" id="v-product">
     <div class="eyebrow">First build</div>
     <div class="sec-title">The speaker that makes this real</div>
@@ -228,37 +230,45 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="card"><div class="eyebrow">Engineering questions — click to answer</div><div id="build-qs"><div class="loading">Loading...</div></div></div>
   </div>
 
+  <!-- MARGINS -->
   <div class="view" id="v-money">
-    <div class="eyebrow">Economics</div><div class="sec-title">Why the margins are real</div>
+    <div class="eyebrow">Economics</div>
+    <div class="sec-title">Why the margins are real</div>
+    <div class="hint" style="margin-bottom:1rem;margin-top:0;">All values are editable — update them as your real costs become clearer.</div>
     <div class="m-tabs">
-      <button class="m-tab on" onclick="setTier(0)">$1,500/pr</button>
-      <button class="m-tab" onclick="setTier(1)">$3,500/pr</button>
-      <button class="m-tab" onclick="setTier(2)">$7,500/pr</button>
+      <button class="m-tab on" onclick="setTier(0)">Entry</button>
+      <button class="m-tab" onclick="setTier(1)">Mid</button>
+      <button class="m-tab" onclick="setTier(2)">Boutique</button>
     </div>
     <div class="bar-wrap"><div class="bar-cost" id="bc" style="width:64%">cost</div><div class="bar-margin" id="bm" style="width:36%">margin</div></div>
     <div class="card" style="margin-bottom:1rem;">
-      <div class="row"><span class="row-label">Drivers</span><span class="row-val" id="m-drv">$280</span></div>
-      <div class="row"><span class="row-label">Crossover components</span><span class="row-val" id="m-xo">$120</span></div>
-      <div class="row"><span class="row-label">Cabinet materials</span><span class="row-val" id="m-cab">$180</span></div>
-      <div class="row"><span class="row-label">Labor</span><span class="row-val" id="m-lab">$300</span></div>
-      <div class="row"><span class="row-label">Finishing + hardware</span><span class="row-val" id="m-fin">$80</span></div>
+      <div class="row"><span class="row-label">Sale price / pair</span><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;color:var(--tx3);">$</span><input class="margin-input" id="m-price-input" value="1500" oninput="recalc()"></div></div>
+      <div class="row"><span class="row-label">Drivers</span><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;color:var(--tx3);">$</span><input class="margin-input" id="m-drv-input" value="280" oninput="recalc()"></div></div>
+      <div class="row"><span class="row-label">Crossover components</span><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;color:var(--tx3);">$</span><input class="margin-input" id="m-xo-input" value="120" oninput="recalc()"></div></div>
+      <div class="row"><span class="row-label">Cabinet materials</span><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;color:var(--tx3);">$</span><input class="margin-input" id="m-cab-input" value="180" oninput="recalc()"></div></div>
+      <div class="row"><span class="row-label">Labor</span><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;color:var(--tx3);">$</span><input class="margin-input" id="m-lab-input" value="300" oninput="recalc()"></div></div>
+      <div class="row"><span class="row-label">Finishing + hardware</span><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;color:var(--tx3);">$</span><input class="margin-input" id="m-fin-input" value="80" oninput="recalc()"></div></div>
       <div class="row" style="padding-top:10px;margin-top:4px;border-top:0.5px solid var(--br2);"><span class="row-label" style="font-weight:500;color:var(--tx);">Total COGS</span><span class="row-val" id="m-cogs">$960</span></div>
     </div>
     <div class="grid3">
-      <div class="metric"><div class="metric-label">Sale price</div><div class="metric-val" id="m-price">$1,500</div></div>
+      <div class="metric"><div class="metric-label">Sale price</div><div class="metric-val" id="m-price-out">$1,500</div></div>
       <div class="metric"><div class="metric-label">Gross profit</div><div class="metric-val" id="m-profit">$540</div></div>
       <div class="metric"><div class="metric-label">Gross margin</div><div class="metric-val" id="m-pct">36%</div><div class="metric-sub" id="m-note">10 pairs = $5K</div></div>
     </div>
-    <div class="hint" id="m-desc" style="margin-top:10px;">At entry pricing you're proving the product, not the business. Build reputation first.</div>
+    <div class="hint" id="m-desc" style="margin-top:10px;"></div>
   </div>
 
+  <!-- ROADMAP -->
   <div class="view" id="v-roadmap">
-    <div class="eyebrow">Roadmap to exit</div><div class="sec-title">The four phases</div>
+    <div class="eyebrow">Roadmap to exit</div>
+    <div class="sec-title">The four phases</div>
     <div class="card" id="roadmap-card"><div class="loading">Loading...</div></div>
   </div>
 
+  <!-- LOG -->
   <div class="view" id="v-log">
-    <div class="eyebrow">Decision log</div><div class="sec-title">The institutional memory</div>
+    <div class="eyebrow">Decision log</div>
+    <div class="sec-title">The institutional memory</div>
     <div class="card"><div id="log-list"><div class="loading">Loading...</div></div></div>
     <div class="hint">Every edit, checked decision, answered question, and manual entry appears here — attributed and timestamped.</div>
   </div>
@@ -286,12 +296,6 @@ const DD=[
   {id:'d6',text:'LLC formed and founders agreement drafted',owner:'Will initiates — $300–500 via Stripe Atlas or attorney',done:false,badge:'soon'},
   {id:'d7',text:'100xbetter existing entity status resolved',owner:'Attorney check — convert, amend, or form fresh LLC',done:false,badge:'open'},
 ];
-const DL=[
-  {text:'Company direction agreed: horn loudspeakers, high-end to boutique, part-time to start, build-to-sell in 5–10 years.',author:'zolaray25',color:'#378ADD'},
-  {text:'Brand name confirmed: 100xbtr. A genuine value statement and a knowing joke about audiophile culture.',author:'zolaray25',color:'#378ADD'},
-  {text:'North star set: Ojas (Devon Turnbull). Maker-artist → Klipsch collab → $8,498/pair sold out.',author:'zolaray25',color:'#378ADD'},
-  {text:'100xbtr OS launched. All three founders have access. This log is the institutional memory.',author:'zolaray25',color:'#1D9E75'},
-];
 const DCQ=[
   {id:'cq1',question:'Do we want formal titles at all — or does the work define the roles?',category:'team'},
   {id:'cq2',question:'When we genuinely disagree on a design decision, how do we resolve it?',category:'team'},
@@ -301,6 +305,12 @@ const DCQ=[
   {id:'bq2',question:'What drivers — and what is the rough component cost per pair?',category:'build'},
   {id:'bq3',question:'What makes this design genuinely special vs what already exists?',category:'build'},
   {id:'bq4',question:'How long to a simulation we can validate before cutting wood?',category:'build'},
+];
+const DL=[
+  {text:'Company direction agreed: horn loudspeakers, high-end to boutique, part-time to start, build-to-sell in 5–10 years.',author:'zolaray25',color:'#378ADD'},
+  {text:'Brand name confirmed: 100xbtr. A genuine value statement and a knowing joke about audiophile culture.',author:'zolaray25',color:'#378ADD'},
+  {text:'North star set: Ojas (Devon Turnbull). Maker-artist → Klipsch collab → $8,498/pair sold out.',author:'zolaray25',color:'#378ADD'},
+  {text:'100xbtr_sound OS launched. All three founders have access.',author:'zolaray25',color:'#1D9E75'},
 ];
 
 async function signInGoogle(){
@@ -379,11 +389,24 @@ async function toggleD(id,cur){
   await alog(`${who} ${!cur?'marked decided':'reopened'}: "${data.text}"`);
 }
 
+async function addDecision(){
+  const text=document.getElementById('new-d-text').value.trim();
+  const owner=document.getElementById('new-d-owner').value.trim();
+  if(!text)return;
+  const id='d-'+Date.now();
+  await sb.from('decisions').insert({id,text,owner:owner||`added by ${who}`,done:false,badge:'open'});
+  await alog(`${who} added decision: "${text}"`);
+  document.getElementById('new-d-text').value='';
+  document.getElementById('new-d-owner').value='';
+}
+
 async function loadFields(){
   const{data,error}=await sb.from('editable_fields').select('*');
   if(error||!data)return;
   fc={};
   data.forEach(f=>fc[f.id]=f);
+  renderMission(data);
+  renderNorthStar(data);
   renderTeam(data.filter(f=>f.section==='team'));
   renderBuild(data.filter(f=>f.section==='build'));
   renderAssets(data.filter(f=>f.section==='assets'));
@@ -399,6 +422,43 @@ function ef(id,style){
     <div class="em" id="em-${id}">${meta}</div>
     <div id="ec-${id}" style="display:none;"></div>
   </div>`;
+}
+
+function renderMission(data){
+  const el=document.getElementById('mission-card');
+  if(!el)return;
+  el.innerHTML=`<div class="eyebrow">The mission</div>${ef('mission-text','font-size:13px;line-height:1.8;margin-bottom:8px;color:var(--tx);')}`;
+  if(!fc['mission-text']?.value){
+    const f={id:'mission-text',value:'Make horn loudspeakers that are genuinely, obsessively better — in sound, in craft, in design. Objects worth keeping for a lifetime.',updated_by:null,updated_at:null};
+    fc['mission-text']=f;
+    sb.from('editable_fields').insert({id:'mission-text',label:'Mission',value:f.value,section:'overview'});
+    document.getElementById('fd-mission-text').textContent=f.value;
+    document.getElementById('em-mission-text').textContent='click to edit';
+  }
+}
+
+function renderNorthStar(data){
+  const el=document.getElementById('northstar-card');
+  if(!el)return;
+  el.innerHTML=`<div class="eyebrow">North star</div>
+    ${ef('northstar-name','font-size:14px;font-weight:500;margin-bottom:4px;color:var(--tx);')}
+    ${ef('northstar-desc','font-size:12px;color:var(--tx2);line-height:1.6;margin-bottom:8px;')}
+    ${ef('northstar-edge','font-size:12px;color:var(--tx3);')}`;
+  const defaults={
+    'northstar-name':'Ojas — Devon Turnbull',
+    'northstar-desc':"Maker-artist cult following → Klipsch collab → $8,498/pair sold out. That's the trajectory.",
+    'northstar-edge':'Our edge: CNC + cabinetry + EE + 30yr design credibility',
+  };
+  Object.entries(defaults).forEach(([id,value])=>{
+    if(!fc[id]?.value){
+      fc[id]={id,value,updated_by:null,updated_at:null};
+      sb.from('editable_fields').insert({id,label:id,value,section:'overview'});
+      const el2=document.getElementById('fd-'+id);
+      if(el2)el2.textContent=value;
+      const em=document.getElementById('em-'+id);
+      if(em)em.textContent='click to edit';
+    }
+  });
 }
 
 function renderTeam(data){
@@ -454,10 +514,10 @@ function renderAssets(data){
         <div style="flex:1;text-align:right;">${ef(r.id,'font-size:13px;font-weight:500;text-align:right;')}</div>
       </div>`).join('')+
     `<div class="divider"></div>
-    <div style="font-size:12px;color:var(--tx2);line-height:1.7;">Vesting: ${ef('vesting-text','font-size:12px;color:var(--tx2);display:inline;')}</div>
-    <div style="padding:10px 0;border-top:0.5px solid var(--br);margin-top:12px;display:flex;gap:8px;align-items:center;">
-      <input id="new-f-assets" placeholder="Add an asset or note..." style="flex:1;font-size:13px;padding:7px 10px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);outline:none;" onkeydown="if(event.key==='Enter')addField('assets')">
-      <button onclick="addField('assets')" style="padding:5px 14px;border-radius:var(--r-md);border:0.5px solid var(--br2);background:var(--bg);color:var(--tx);font-size:12px;cursor:pointer;white-space:nowrap;">+ Add</button>
+    <div style="font-size:12px;color:var(--tx2);line-height:1.7;">Vesting: ${ef('vesting-text','font-size:12px;color:var(--tx2);')}</div>
+    <div class="add-row">
+      <input id="new-f-assets" class="add-input" placeholder="Add an asset or note..." onkeydown="if(event.key==='Enter')addField('assets')">
+      <button class="add-btn" onclick="addField('assets')">+ Add</button>
     </div>`;
 }
 
@@ -477,9 +537,9 @@ function renderHorn(data){
         <span class="row-label" style="padding-top:2px;">${r.label}</span>
         <div style="flex:1;text-align:right;">${ef(r.id,'font-size:13px;font-weight:500;text-align:right;')}</div>
       </div>`).join('')+
-    `<div style="padding:10px 0;border-top:0.5px solid var(--br);margin-top:4px;display:flex;gap:8px;align-items:center;">
-      <input id="new-f-horn" placeholder="Add a reason..." style="flex:1;font-size:13px;padding:7px 10px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);outline:none;" onkeydown="if(event.key==='Enter')addField('horn')">
-      <button onclick="addField('horn')" style="padding:5px 14px;border-radius:var(--r-md);border:0.5px solid var(--br2);background:var(--bg);color:var(--tx);font-size:12px;cursor:pointer;white-space:nowrap;">+ Add</button>
+    `<div class="add-row">
+      <input id="new-f-horn" class="add-input" placeholder="Add a reason..." onkeydown="if(event.key==='Enter')addField('horn')">
+      <button class="add-btn" onclick="addField('horn')">+ Add</button>
     </div>`;
 }
 
@@ -501,12 +561,9 @@ function renderRoadmap(data){
         <div class="phase-bar"><div class="phase-fill" style="width:${p.pct};background:${p.clr};"></div></div>
       </div>
     </div>`).join('')+
-    `<div style="padding:12px 0;border-top:0.5px solid var(--br);margin-top:4px;">
-      <div style="font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:0.05em;font-weight:500;margin-bottom:8px;">Add a milestone or note</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input id="new-f-roadmap" placeholder="New milestone, note, or update..." style="flex:1;font-size:13px;padding:7px 10px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);outline:none;" onkeydown="if(event.key==='Enter')addField('roadmap')">
-        <button onclick="addField('roadmap')" style="padding:5px 14px;border-radius:var(--r-md);border:0.5px solid var(--br2);background:var(--bg);color:var(--tx);font-size:12px;cursor:pointer;white-space:nowrap;">+ Add</button>
-      </div>
+    `<div class="add-row">
+      <input id="new-f-roadmap" class="add-input" placeholder="Add a milestone or note..." onkeydown="if(event.key==='Enter')addField('roadmap')">
+      <button class="add-btn" onclick="addField('roadmap')">+ Add</button>
     </div>`;
 }
 
@@ -544,35 +601,13 @@ async function saveField(id){
   cancelEdit(id);
 }
 
-async function addDecision(){
-  const text=document.getElementById('new-d-text').value.trim();
-  const owner=document.getElementById('new-d-owner').value.trim();
-  if(!text)return;
-  const id='d-'+Date.now();
-  await sb.from('decisions').insert({id,text,owner:owner||`added by ${who}`,done:false,badge:'open'});
-  await alog(`${who} added decision: "${text}"`);
-  document.getElementById('new-d-text').value='';
-  document.getElementById('new-d-owner').value='';
-}
-
-async function addQuestion(category){
-  const inp=document.getElementById('new-q-'+category);
-  if(!inp)return;
-  const text=inp.value.trim();
-  if(!text)return;
-  const id='q-'+Date.now();
-  await sb.from('collab_questions').insert({id,question:text,category});
-  await alog(`${who} added question to ${category}: "${text}"`);
-  inp.value='';
-}
-
-async function addField(section, label){
+async function addField(section){
   const inp=document.getElementById('new-f-'+section);
   if(!inp)return;
   const value=inp.value.trim();
   if(!value)return;
   const id=section+'-'+Date.now();
-  await sb.from('editable_fields').insert({id,label:label||value.substring(0,30),value,section,updated_by:who,updated_at:new Date().toISOString()});
+  await sb.from('editable_fields').insert({id,label:value.substring(0,30),value,section,updated_by:who,updated_at:new Date().toISOString()});
   await alog(`${who} added to ${section}: "${value.substring(0,60)}"`);
   inp.value='';
 }
@@ -609,10 +644,21 @@ function renderQs(cid,qs,allAns){
       <button class="add-ans-btn" onclick="toggleAF('${q.id}')">+ Add your answer</button>
     </div>`;
   }).join('')+
-  `<div style="padding:12px 0;border-top:0.5px solid var(--br);margin-top:4px;display:flex;gap:8px;align-items:center;">
-    <input id="new-q-${cat}" placeholder="Add a new question..." style="flex:1;font-size:13px;padding:7px 10px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);outline:none;" onkeydown="if(event.key==='Enter')addQuestion('${cat}')">
-    <button onclick="addQuestion('${cat}')" style="padding:5px 14px;border-radius:var(--r-md);border:0.5px solid var(--br2);background:var(--bg);color:var(--tx);font-size:12px;cursor:pointer;white-space:nowrap;">+ Add</button>
+  `<div class="add-row">
+    <input id="new-q-${cat}" class="add-input" placeholder="Add a new question..." onkeydown="if(event.key==='Enter')addQuestion('${cat}')">
+    <button class="add-btn" onclick="addQuestion('${cat}')">+ Add</button>
   </div>`;
+}
+
+async function addQuestion(category){
+  const inp=document.getElementById('new-q-'+category);
+  if(!inp)return;
+  const text=inp.value.trim();
+  if(!text)return;
+  const id='q-'+Date.now();
+  await sb.from('collab_questions').insert({id,question:text,category});
+  await alog(`${who} added question: "${text}"`);
+  inp.value='';
 }
 
 function toggleAF(qId){
@@ -674,25 +720,42 @@ function show(id){
   document.querySelectorAll('.nav-btn')[views.indexOf(id)].classList.add('on');
 }
 
-const tiers=[
+const TIERS=[
   {price:1500,drv:280,xo:120,cab:180,lab:300,fin:80,desc:"At entry pricing you're proving the product, not the business. Build reputation first."},
   {price:3500,drv:420,xo:200,cab:260,lab:400,fin:120,desc:"The sweet spot for a direct-sale boutique brand. Strong margins, credible price point."},
   {price:7500,drv:700,xo:380,cab:420,lab:600,fin:200,desc:"Competing with Ojas and DeVore. 10 pairs a year is a real business at this margin."}
 ];
+
 function setTier(i){
   document.querySelectorAll('.m-tab').forEach((t,j)=>t.classList.toggle('on',i===j));
-  const t=tiers[i];const cogs=t.drv+t.xo+t.cab+t.lab+t.fin;
-  const profit=t.price-cogs;const margin=Math.round(profit/t.price*100);const cp=Math.round(cogs/t.price*100);
-  ['drv','xo','cab','lab','fin'].forEach(k=>document.getElementById('m-'+k).textContent='$'+t[k]);
-  document.getElementById('m-cogs').textContent='$'+cogs;
-  document.getElementById('m-price').textContent='$'+t.price.toLocaleString();
+  const t=TIERS[i];
+  document.getElementById('m-price-input').value=t.price;
+  document.getElementById('m-drv-input').value=t.drv;
+  document.getElementById('m-xo-input').value=t.xo;
+  document.getElementById('m-cab-input').value=t.cab;
+  document.getElementById('m-lab-input').value=t.lab;
+  document.getElementById('m-fin-input').value=t.fin;
+  document.getElementById('m-desc').textContent=t.desc;
+  recalc();
+}
+
+function recalc(){
+  const v=id=>parseInt(document.getElementById(id).value)||0;
+  const price=v('m-price-input');
+  const cogs=v('m-drv-input')+v('m-xo-input')+v('m-cab-input')+v('m-lab-input')+v('m-fin-input');
+  const profit=price-cogs;
+  const margin=price>0?Math.round(profit/price*100):0;
+  const cp=price>0?Math.round(cogs/price*100):0;
+  document.getElementById('m-cogs').textContent='$'+cogs.toLocaleString();
+  document.getElementById('m-price-out').textContent='$'+price.toLocaleString();
   document.getElementById('m-profit').textContent='$'+profit.toLocaleString();
   document.getElementById('m-pct').textContent=margin+'%';
   document.getElementById('m-note').textContent='10 pairs = $'+Math.round(profit*10/1000)+'K profit';
-  document.getElementById('m-desc').textContent=t.desc;
-  document.getElementById('bc').style.width=cp+'%';
-  document.getElementById('bm').style.width=(100-cp)+'%';
+  document.getElementById('bc').style.width=Math.max(0,cp)+'%';
+  document.getElementById('bm').style.width=Math.max(0,100-cp)+'%';
 }
+
+recalc();
 </script>
 </body>
 </html>
