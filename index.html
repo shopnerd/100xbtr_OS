@@ -32,11 +32,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .auth-logo{font-size:24px;font-weight:500;letter-spacing:-0.02em;margin-bottom:4px;}
 .auth-logo span{color:var(--tx3);font-weight:400;}
 .auth-sub{font-size:13px;color:var(--tx2);margin-bottom:2rem;line-height:1.6;}
-.auth-input{width:100%;padding:10px 14px;border:0.5px solid var(--br2);border-radius:var(--r-md);background:var(--bg2);color:var(--tx);font-size:14px;margin-bottom:10px;outline:none;}
-.auth-input:focus{border-color:#378ADD;}
-.auth-btn{width:100%;padding:10px 14px;border-radius:var(--r-md);border:none;background:var(--tx);color:var(--bg);font-size:14px;font-weight:500;cursor:pointer;}
+.auth-btn{width:100%;padding:10px 14px;border-radius:var(--r-md);border:none;background:var(--tx);color:var(--bg);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;}
 .auth-btn:hover{opacity:0.88;}
-.auth-msg{font-size:13px;color:var(--green);margin-top:12px;line-height:1.6;display:none;}
 .auth-err{font-size:13px;color:var(--danger-d);margin-top:12px;display:none;}
 #app{display:none;max-width:760px;margin:0 auto;padding:1.5rem 1rem 3rem;}
 .top-bar{display:flex;align-items:center;justify-content:space-between;padding-bottom:1rem;border-bottom:0.5px solid var(--br);margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;}
@@ -65,8 +62,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 @media(max-width:480px){.grid2,.grid3{grid-template-columns:1fr 1fr;}}
 .row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:0.5px solid var(--br);}
 .row:last-child{border-bottom:none;}
-.row-label{font-size:13px;color:var(--tx2);}
-.row-val{font-size:13px;font-weight:500;}
+.row-label{font-size:13px;color:var(--tx2);flex-shrink:0;margin-right:16px;}
+.row-val{font-size:13px;font-weight:500;text-align:right;}
 .badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap;}
 .badge-open{background:var(--warn-l);color:var(--warn-d);}
 .badge-done{background:var(--green-l);color:var(--green-d);}
@@ -74,15 +71,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .divider{height:0.5px;background:var(--br);margin:1rem 0;}
 .hint{font-size:12px;color:var(--tx3);margin-top:8px;line-height:1.6;}
 .loading{text-align:center;padding:2rem;font-size:13px;color:var(--tx3);}
-.editable-wrap{cursor:pointer;}
-.editable-wrap:hover .edit-hint{opacity:1;}
-.edit-hint{font-size:10px;color:var(--tx3);opacity:0;transition:opacity 0.15s;}
-.field-display{font-size:13px;color:var(--tx2);line-height:1.6;}
-.field-meta{font-size:10px;color:var(--tx3);margin-top:3px;font-style:italic;}
+.ew{cursor:pointer;margin-bottom:2px;}
+.ew:hover .em{opacity:1;}
+.em{font-size:10px;color:var(--tx3);margin-top:2px;font-style:italic;opacity:0.6;transition:opacity 0.15s;}
 .edit-area{width:100%;padding:8px 10px;border:0.5px solid #378ADD;border-radius:var(--r-md);background:var(--bg2);color:var(--tx);font-size:13px;font-family:inherit;resize:vertical;min-height:56px;outline:none;margin-top:6px;display:block;}
 .edit-actions{display:flex;gap:6px;margin-top:6px;}
-.edit-save{padding:4px 14px;border-radius:var(--r-md);border:none;background:var(--tx);color:var(--bg);font-size:11px;cursor:pointer;}
-.edit-cancel{padding:4px 14px;border-radius:var(--r-md);border:0.5px solid var(--br2);background:transparent;color:var(--tx2);font-size:11px;cursor:pointer;}
+.btn-save{padding:4px 14px;border-radius:var(--r-md);border:none;background:var(--tx);color:var(--bg);font-size:11px;cursor:pointer;}
+.btn-cancel{padding:4px 14px;border-radius:var(--r-md);border:0.5px solid var(--br2);background:transparent;color:var(--tx2);font-size:11px;cursor:pointer;}
 .d-item{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:0.5px solid var(--br);}
 .d-item:last-child{border-bottom:none;}
 .d-check{width:20px;height:20px;border-radius:5px;border:0.5px solid var(--br2);background:var(--bg2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:all 0.15s;}
@@ -112,24 +107,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .av-w{background:#E6F1FB;color:#0C447C;}
 .av-b{background:#EAF3DE;color:#27500A;}
 .av-n{background:#FAEEDA;color:#633806;}
-.partner-name-el{font-size:13px;font-weight:500;}
-.partner-role-el{font-size:11px;color:var(--tx3);font-style:italic;}
+.pname{font-size:13px;font-weight:500;}
+.prole{font-size:11px;color:var(--tx3);font-style:italic;}
 .eq-wrap{display:flex;align-items:center;gap:6px;margin-left:auto;}
 .eq-track{width:60px;height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;}
 .eq-fill{height:100%;border-radius:3px;}
 .eq-pct{font-size:11px;font-weight:500;}
 .collab-q{padding:13px 0;border-bottom:0.5px solid var(--br);}
 .collab-q:last-child{border-bottom:none;}
-.collab-q-text{font-size:13px;font-weight:500;line-height:1.5;margin-bottom:10px;}
-.answers-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
-.answer-card{background:var(--bg2);border-radius:var(--r-md);padding:8px 12px;}
-.answer-author{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;}
-.answer-text{font-size:13px;line-height:1.6;}
-.answer-date{font-size:10px;color:var(--tx3);margin-top:3px;}
-.add-answer-btn{font-size:12px;color:#185FA5;background:none;border:none;cursor:pointer;padding:0;}
-.add-answer-btn:hover{text-decoration:underline;}
-.answer-form{margin-top:8px;display:none;}
-.answer-form textarea{width:100%;padding:8px 12px;border:0.5px solid #378ADD;border-radius:var(--r-md);background:var(--bg2);color:var(--tx);font-size:13px;font-family:inherit;resize:none;height:70px;outline:none;}
+.cq-text{font-size:13px;font-weight:500;line-height:1.5;margin-bottom:10px;}
+.ans-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+.ans-card{background:var(--bg2);border-radius:var(--r-md);padding:8px 12px;}
+.ans-author{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;}
+.ans-text{font-size:13px;line-height:1.6;}
+.ans-date{font-size:10px;color:var(--tx3);margin-top:3px;}
+.add-ans-btn{font-size:12px;color:#185FA5;background:none;border:none;cursor:pointer;padding:0;}
+.add-ans-btn:hover{text-decoration:underline;}
+.ans-form{margin-top:8px;display:none;}
+.ans-form textarea{width:100%;padding:8px 12px;border:0.5px solid #378ADD;border-radius:var(--r-md);background:var(--bg2);color:var(--tx);font-size:13px;font-family:inherit;resize:none;height:70px;outline:none;}
 .m-tabs{display:flex;gap:6px;margin-bottom:1rem;}
 .m-tab{padding:4px 12px;border-radius:20px;font-size:12px;border:0.5px solid var(--br2);background:transparent;color:var(--tx2);cursor:pointer;}
 .m-tab.on{background:var(--tx);color:var(--bg);border-color:transparent;}
@@ -139,8 +134,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .phase-row{display:grid;grid-template-columns:90px 1fr;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--br);align-items:start;}
 .phase-row:last-child{border-bottom:none;}
 .phase-t{font-size:11px;color:var(--tx3);line-height:1.6;}
-.phase-name{font-size:13px;font-weight:500;margin-bottom:3px;}
-.phase-desc{font-size:12px;color:var(--tx2);line-height:1.6;}
 .phase-bar{height:3px;border-radius:2px;margin-top:8px;background:var(--br);}
 .phase-fill{height:100%;border-radius:2px;}
 </style>
@@ -151,11 +144,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="auth-box">
     <div class="auth-logo">100xbtr <span>OS</span></div>
     <div class="auth-sub">Sign in with your Google account to access the company OS.</div>
-    <button class="auth-btn" onclick="signInWithGoogle()" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+    <button class="auth-btn" onclick="signInGoogle()">
       <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
       Sign in with Google
     </button>
-    <div class="auth-err" id="auth-err" style="margin-top:12px;font-size:13px;color:var(--danger-d);display:none;"></div>
+    <div class="auth-err" id="auth-err"></div>
   </div>
 </div>
 
@@ -196,10 +189,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div style="font-size:12px;color:var(--tx3);">Our edge: CNC + cabinetry + EE + 30yr design credibility</div>
       </div>
     </div>
-    <div class="card">
-      <div class="eyebrow">Recent activity</div>
-      <div id="home-log-preview"><div class="loading">Loading...</div></div>
-    </div>
+    <div class="card"><div class="eyebrow">Recent activity</div><div id="home-log-preview"><div class="loading">Loading...</div></div></div>
   </div>
 
   <div class="view" id="v-decisions">
@@ -218,33 +208,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div style="font-size:12px;color:var(--tx2);line-height:1.6;">Click any field below to edit it. Every change is attributed and logged.</div>
     </div>
     <div class="card" id="team-card" style="margin-bottom:1rem;"><div class="loading">Loading...</div></div>
-    <div class="card" style="margin-bottom:1rem;">
-      <div class="eyebrow">Collaboration questions — answer as a team</div>
-      <div id="collab-qs"><div class="loading">Loading...</div></div>
-    </div>
-    <div class="card" id="assets-card">
-      <div class="eyebrow">Assets & vesting</div>
-      <div class="loading">Loading...</div>
-    </div>
+    <div class="card" style="margin-bottom:1rem;"><div class="eyebrow">Collaboration questions — answer as a team</div><div id="collab-qs"><div class="loading">Loading...</div></div></div>
+    <div class="card" id="assets-card"><div class="loading">Loading...</div></div>
   </div>
 
   <div class="view" id="v-product">
     <div class="eyebrow">First build</div>
     <div class="sec-title">The speaker that makes this real</div>
     <div class="card" id="build-card" style="margin-bottom:1rem;"><div class="loading">Loading...</div></div>
-    <div class="card" id="horn-card" style="margin-bottom:1rem;">
-      <div class="eyebrow">Why horn-loaded</div>
-      <div class="loading">Loading...</div>
-    </div>
-    <div class="card">
-      <div class="eyebrow">Engineering questions — click to answer</div>
-      <div id="build-qs"><div class="loading">Loading...</div></div>
-    </div>
+    <div class="card" id="horn-card" style="margin-bottom:1rem;"><div class="loading">Loading...</div></div>
+    <div class="card"><div class="eyebrow">Engineering questions — click to answer</div><div id="build-qs"><div class="loading">Loading...</div></div></div>
   </div>
 
   <div class="view" id="v-money">
-    <div class="eyebrow">Economics</div>
-    <div class="sec-title">Why the margins are real</div>
+    <div class="eyebrow">Economics</div><div class="sec-title">Why the margins are real</div>
     <div class="m-tabs">
       <button class="m-tab on" onclick="setTier(0)">$1,500/pr</button>
       <button class="m-tab" onclick="setTier(1)">$3,500/pr</button>
@@ -268,30 +245,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 
   <div class="view" id="v-roadmap">
-    <div class="eyebrow">Roadmap to exit</div>
-    <div class="sec-title">The four phases</div>
+    <div class="eyebrow">Roadmap to exit</div><div class="sec-title">The four phases</div>
     <div class="card" id="roadmap-card"><div class="loading">Loading...</div></div>
   </div>
 
   <div class="view" id="v-log">
-    <div class="eyebrow">Decision log</div>
-    <div class="sec-title">The institutional memory</div>
+    <div class="eyebrow">Decision log</div><div class="sec-title">The institutional memory</div>
     <div class="card"><div id="log-list"><div class="loading">Loading...</div></div></div>
-    <div class="hint">Every edit, checked decision, answered question, and manual entry appears here — attributed and timestamped. This is the full history of how 100xbtr was built.</div>
+    <div class="hint">Every edit, checked decision, answered question, and manual entry appears here — attributed and timestamped.</div>
   </div>
 </div>
 
 <script>
-const SUPABASE_URL='https://uzhcjxolnfzcezbntzrz.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6aGNqeG9sbmZ6Y2V6Ym50enJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNzUzMDksImV4cCI6MjA5MDY1MTMwOX0.M92v-r1_hYvIj0FLNiXokWn-UFbH_HYK5UCNGuwhQNc';
-const ALLOWED_EMAILS=['zolaray25@gmail.com','fraektaard@gmail.com','nishbphoto@gmail.com'];
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-let currentUser=null,userShort='';
-const COLORS={'zolaray25':'#378ADD','fraektaard':'#1D9E75','nishbphoto':'#EF9F27'};
-const gc=a=>COLORS[a]||'#888780';
+const SURL='https://uzhcjxolnfzcezbntzrz.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6aGNqeG9sbmZ6Y2V6Ym50enJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNzUzMDksImV4cCI6MjA5MDY1MTMwOX0.M92v-r1_hYvIj0FLNiXokWn-UFbH_HYK5UCNGuwhQNc';
+const ALLOWED=['zolaray25@gmail.com','fraektaard@gmail.com','nishbphoto@gmail.com'];
+const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-auth',persistSession:true,detectSessionInUrl:true}});
+
+let user=null,who='';
+const C={'zolaray25':'#378ADD','fraektaard':'#1D9E75','nishbphoto':'#EF9F27'};
+const gc=a=>C[a]||'#888780';
 const fmtDT=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
 const fmtD=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-let fieldCache={};
+let fc={};
 
 const DD=[
   {id:'d1',text:'Horn speakers confirmed as technical direction',owner:'Nishant leads — all three agree',done:false,badge:'open'},
@@ -302,33 +278,11 @@ const DD=[
   {id:'d6',text:'LLC formed and founders agreement drafted',owner:'Will initiates — $300–500 via Stripe Atlas or attorney',done:false,badge:'soon'},
   {id:'d7',text:'100xbetter existing entity status resolved',owner:'Attorney check — convert, amend, or form fresh LLC',done:false,badge:'open'},
 ];
-const DF=[
-  {id:'will-brings',label:'Will brings',value:'CNC fabrication, 30yr design practice, parametric modeling, brand instinct, business experience, partnerships',section:'team'},
-  {id:'brendan-brings',label:'Brendan brings',value:'Cabinetry shop, master woodworker, hi-fi enthusiast and critical listener, production knowledge, long shared history with Will',section:'team'},
-  {id:'nishant-brings',label:'Nishant brings',value:'Masters in EE, active speaker design projects, Klipsch factory knowledge, horn speaker research, crossover design',section:'team'},
-  {id:'asset-will',label:'Will — CNC',value:'~$35K value',section:'assets'},
-  {id:'asset-brendan',label:'Brendan — shop',value:'~$40K+ value',section:'assets'},
-  {id:'asset-nishant',label:'Nishant — IP',value:'irreplaceable',section:'assets'},
-  {id:'asset-brand',label:'Brand credibility',value:'brand credibility',section:'assets'},
-  {id:'asset-cash',label:'Cash year 1',value:'~$6–9K',section:'assets'},
-  {id:'vesting-text',label:'Vesting terms',value:'3-year schedule, 6-month cliff. Nobody earns full equity until 3 years of contribution. Protects all three partners equally.',section:'assets'},
-  {id:'build-name',label:'Speaker name',value:'TBD — decide together at the first build meeting',section:'build'},
-  {id:'build-type',label:'Type',value:'Horn-loaded bookshelf — smaller, faster to iterate, proof of concept',section:'build'},
-  {id:'build-price',label:'Target price',value:'$2,500–3,500 per pair, direct sale',section:'build'},
-  {id:'build-deadline',label:'Prototype deadline',value:'~6 months — listenable, not for sale yet',section:'build'},
-  {id:'horn-1',label:'Horn reason 1',value:'98+ dB/W/m — sounds alive',section:'horn'},
-  {id:'horn-2',label:'Horn reason 2',value:'CNC precision = your moat',section:'horn'},
-  {id:'horn-3',label:'Horn reason 3',value:'most brands avoid it',section:'horn'},
-  {id:'horn-4',label:'Horn reason 4',value:'factory visit + active research',section:'horn'},
-  {id:'horn-5',label:'Horn reason 5',value:'$8,498/pair, sold out',section:'horn'},
-  {id:'phase-1-name',label:'Phase 1 name',value:'Build the proof',section:'roadmap'},
-  {id:'phase-1-desc',label:'Phase 1 description',value:'Design and build 2–3 reference pairs. Develop brand identity and founding story. Spend $3–5K on components. Target: 1 paying customer + press-ready photography.',section:'roadmap'},
-  {id:'phase-2-name',label:'Phase 2 name',value:'Go to market',section:'roadmap'},
-  {id:'phase-2-desc',label:'Phase 2 description',value:'Sell via AudiogoN, US Audio Mart, Instagram. Target interior designers and custom home builders in LA. Goal: 8–15 pairs at $2–5K = $16–75K revenue.',section:'roadmap'},
-  {id:'phase-3-name',label:'Phase 3 name',value:'Build the brand asset',section:'roadmap'},
-  {id:'phase-3-desc',label:'Phase 3 description',value:'Expand to 2–3 product lines. Get reviewed by Stereophile or The Absolute Sound. Partner with AV integrators. Target: $250K–$500K/yr revenue.',section:'roadmap'},
-  {id:'phase-4-name',label:'Phase 4 name',value:'Exit',section:'roadmap'},
-  {id:'phase-4-desc',label:'Phase 4 description',value:'Documented sales, press, strong margins, proprietary design language = acquirable. Likely buyers: McIntosh Group, Sound United, or private equity.',section:'roadmap'},
+const DL=[
+  {text:'Company direction agreed: horn loudspeakers, high-end to boutique, part-time to start, build-to-sell in 5–10 years.',author:'zolaray25',color:'#378ADD'},
+  {text:'Brand name confirmed: 100xbtr. A genuine value statement and a knowing joke about audiophile culture.',author:'zolaray25',color:'#378ADD'},
+  {text:'North star set: Ojas (Devon Turnbull). Maker-artist → Klipsch collab → $8,498/pair sold out.',author:'zolaray25',color:'#378ADD'},
+  {text:'100xbtr OS launched. All three founders have access. This log is the institutional memory.',author:'zolaray25',color:'#1D9E75'},
 ];
 const DCQ=[
   {id:'cq1',question:'Do we want formal titles at all — or does the work define the roles?',category:'team'},
@@ -340,104 +294,88 @@ const DCQ=[
   {id:'bq3',question:'What makes this design genuinely special vs what already exists?',category:'build'},
   {id:'bq4',question:'How long to a simulation we can validate before cutting wood?',category:'build'},
 ];
-const DL=[
-  {text:'Company direction agreed: horn loudspeakers, high-end to boutique, part-time to start, build-to-sell in 5–10 years.',author:'zolaray25',color:'#378ADD'},
-  {text:'Brand name confirmed: 100xbtr. A genuine value statement and a knowing joke about audiophile culture.',author:'zolaray25',color:'#378ADD'},
-  {text:'North star set: Ojas (Devon Turnbull). Maker-artist → Klipsch collab → $8,498/pair sold out.',author:'zolaray25',color:'#378ADD'},
-  {text:'100xbtr OS launched. All three founders have access. This log is the institutional memory.',author:'zolaray25',color:'#1D9E75'},
-];
 
-async function signInWithGoogle(){
+async function signInGoogle(){
   const err=document.getElementById('auth-err');
   err.style.display='none';
-  const {error}=await sb.auth.signInWithOAuth({
-    provider:'google',
-    options:{redirectTo:window.location.href}
-  });
+  const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+window.location.pathname}});
   if(error){err.textContent=error.message;err.style.display='block';}
 }
 
 async function signOut(){
   await sb.auth.signOut();
-  window.location.href=window.location.href.split('#')[0];
+  window.location.reload();
 }
 
-async function initAuth(){
-  const {data:{session}}=await sb.auth.getSession();
-  if(session?.user) await handleUser(session.user);
-}
-
-async function handleUser(user){
-  const email=user.email.toLowerCase();
-  if(!ALLOWED_EMAILS.includes(email)){
-    await sb.auth.signOut();
-    const err=document.getElementById('auth-err');
-    err.textContent='This Google account is not registered. Ask Will to add you.';
-    err.style.display='block';
-    return;
-  }
-  currentUser=user;
-  userShort=email.split('@')[0];
+async function startApp(u){
+  const email=u.email.toLowerCase();
+  if(!ALLOWED.includes(email)){await sb.auth.signOut();return;}
+  user=u;who=email.split('@')[0];
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('user-email-display').textContent=email;
   await initDB();
-  loadAll();
+  await loadAll();
   setupRealtime();
 }
 
-sb.auth.onAuthStateChange(async(event,session)=>{
-  if(event==='SIGNED_IN'&&session?.user) await handleUser(session.user);
-  if(event==='SIGNED_OUT'){
-    document.getElementById('app').style.display='none';
-    document.getElementById('auth-screen').style.display='flex';
-  }
+sb.auth.onAuthStateChange((event,session)=>{
+  if(event==='SIGNED_IN'&&session?.user)startApp(session.user);
 });
 
-initAuth();
+(async()=>{
+  const{data:{session}}=await sb.auth.getSession();
+  if(session?.user)await startApp(session.user);
+})();
 
 async function initDB(){
-  const checks=await Promise.all([
+  const[d,f,q,l]=await Promise.all([
     sb.from('decisions').select('id').limit(1),
     sb.from('editable_fields').select('id').limit(1),
     sb.from('collab_questions').select('id').limit(1),
     sb.from('log_entries').select('id').limit(1),
   ]);
-  if(!checks[0].data||!checks[0].data.length) await sb.from('decisions').insert(DD.map(d=>({id:d.id,text:d.text,owner:d.owner,done:false,badge:d.badge})));
-  if(!checks[1].data||!checks[1].data.length) await sb.from('editable_fields').insert(DF.map(f=>({id:f.id,label:f.label,value:f.value,section:f.section})));
-  if(!checks[2].data||!checks[2].data.length) await sb.from('collab_questions').insert(DCQ.map(q=>({id:q.id,question:q.question,category:q.category})));
-  if(!checks[3].data||!checks[3].data.length) await sb.from('log_entries').insert(DL.map((l,i)=>({text:l.text,author:l.author,color:l.color,created_at:new Date(Date.now()-(DL.length-i)*60000).toISOString()})));
+  if(!d.data?.length)await sb.from('decisions').insert(DD.map(x=>({id:x.id,text:x.text,owner:x.owner,done:false,badge:x.badge})));
+  if(!q.data?.length)await sb.from('collab_questions').insert(DCQ.map(x=>({id:x.id,question:x.question,category:x.category})));
+  if(!l.data?.length)await sb.from('log_entries').insert(DL.map((x,i)=>({text:x.text,author:x.author,color:x.color,created_at:new Date(Date.now()-(DL.length-i)*60000).toISOString()})));
 }
 
 function setupRealtime(){
-  sb.channel('rt').on('postgres_changes',{event:'*',schema:'public',table:'decisions'},()=>loadDecisions()).on('postgres_changes',{event:'*',schema:'public',table:'log_entries'},()=>loadLog()).on('postgres_changes',{event:'*',schema:'public',table:'editable_fields'},()=>loadFields()).on('postgres_changes',{event:'*',schema:'public',table:'collab_questions'},()=>loadQs()).on('postgres_changes',{event:'*',schema:'public',table:'collab_answers'},()=>loadQs()).subscribe();
+  sb.channel('rt-os')
+    .on('postgres_changes',{event:'*',schema:'public',table:'decisions'},loadDecisions)
+    .on('postgres_changes',{event:'*',schema:'public',table:'log_entries'},loadLog)
+    .on('postgres_changes',{event:'*',schema:'public',table:'editable_fields'},loadFields)
+    .on('postgres_changes',{event:'*',schema:'public',table:'collab_answers'},loadQs)
+    .subscribe();
 }
 
-function loadAll(){loadDecisions();loadLog();loadFields();loadQs();}
+async function loadAll(){
+  await Promise.all([loadDecisions(),loadLog(),loadFields(),loadQs()]);
+}
 
 async function loadDecisions(){
-  const {data}=await sb.from('decisions').select('*').order('created_at',{ascending:true});
+  const{data}=await sb.from('decisions').select('*').order('created_at',{ascending:true});
   if(!data)return;
   document.getElementById('open-count').textContent=data.filter(d=>!d.done).length;
   document.getElementById('decisions-list').innerHTML=data.map(d=>`
     <div class="d-item">
-      <div class="d-check${d.done?' done':''}" onclick="toggleDecision('${d.id}',${d.done})"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="d-check${d.done?' done':''}" onclick="toggleD('${d.id}',${d.done})"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>
       <div class="d-body"><div class="d-text${d.done?' done':''}">${d.text}</div><div class="d-owner">${d.owner}</div></div>
       <span class="badge badge-${d.done?'done':d.badge}">${d.done?'decided':d.badge}</span>
     </div>`).join('');
 }
 
-async function toggleDecision(id,cur){
+async function toggleD(id,cur){
   await sb.from('decisions').update({done:!cur}).eq('id',id);
-  const {data}=await sb.from('decisions').select('text').eq('id',id).single();
-  await autoLog(`${userShort} ${!cur?'marked as decided':'reopened'}: "${data.text}"`);
+  const{data}=await sb.from('decisions').select('text').eq('id',id).single();
+  await alog(`${who} ${!cur?'marked decided':'reopened'}: "${data.text}"`);
 }
 
 async function loadFields(){
-  const {data,error}=await sb.from('editable_fields').select('*');
-  if(error){console.error('loadFields error:',error);return;}
-  if(!data){console.error('loadFields: no data');return;}
-  data.forEach(f=>{fieldCache[f.id]=f;});
+  const{data,error}=await sb.from('editable_fields').select('*');
+  if(error||!data)return;
+  fc={};
+  data.forEach(f=>fc[f.id]=f);
   renderTeam(data.filter(f=>f.section==='team'));
   renderBuild(data.filter(f=>f.section==='build'));
   renderAssets(data.filter(f=>f.section==='assets'));
@@ -445,215 +383,219 @@ async function loadFields(){
   renderRoadmap(data.filter(f=>f.section==='roadmap'));
 }
 
-function renderAssets(fields){
-  const rows=[
-    {key:'asset-will',label:'Will — 4×8 CNC mill'},
-    {key:'asset-brendan',label:'Brendan — cabinetry shop + tools'},
-    {key:'asset-nishant',label:'Nishant — speaker design IP + EE'},
-    {key:'asset-brand',label:'Will + Brendan — 30yr design track record'},
-    {key:'asset-cash',label:'Cash needed year 1'},
-  ];
-  const vesting=fields.find(f=>f.id==='vesting-text')||{id:'vesting-text',value:'3-year schedule, 6-month cliff. Nobody earns full equity until 3 years of contribution.',updated_by:null,updated_at:null};
-  const card=document.getElementById('assets-card');
-  card.innerHTML=`<div class="eyebrow">Assets & vesting</div>`+
-    rows.map(r=>{
-      const f=fields.find(x=>x.id===r.key)||{id:r.key,value:'',updated_by:null,updated_at:null};
-      return `<div class="row" style="align-items:flex-start;">
-        <span class="row-label" style="flex-shrink:0;margin-right:16px;padding-top:2px;">${r.label}</span>
-        <div style="flex:1;text-align:right;">${makeEditableField(f,'font-weight:500;text-align:right;font-size:13px;')}</div>
-      </div>`;
-    }).join('')+
-    `<div class="divider"></div>
-    <div style="font-size:12px;color:var(--tx2);line-height:1.7;">Vesting: ${makeEditableField(vesting,'font-size:12px;color:var(--tx2);')}</div>`;
-}
-
-function renderHorn(fields){
-  const rows=[
-    {key:'horn-1',label:'High efficiency'},
-    {key:'horn-2',label:'Cabinet is the product'},
-    {key:'horn-3',label:'Complexity = barrier to copy'},
-    {key:'horn-4',label:"Nishant's expertise"},
-    {key:'horn-5',label:'Ojas proof of market'},
-  ];
-  const card=document.getElementById('horn-card');
-  if(!card)return;
-  card.innerHTML=`<div class="eyebrow">Why horn-loaded</div>`+
-    rows.map(r=>{
-      const f=fields.find(x=>x.id===r.key)||{id:r.key,value:'',updated_by:null,updated_at:null};
-      return `<div class="row" style="align-items:flex-start;">
-        <span class="row-label" style="flex-shrink:0;margin-right:16px;padding-top:2px;">${r.label}</span>
-        <div style="flex:1;text-align:right;">${makeEditableField(f,'font-weight:500;text-align:right;font-size:13px;')}</div>
-      </div>`;
-    }).join('');
-}
-
-function renderRoadmap(fields){
-  const phases=[
-    {n:'1',time:'Months 1–6',nkey:'phase-1-name',dkey:'phase-1-desc',color:'#9FE1CB',pct:'15%'},
-    {n:'2',time:'Months 6–18',nkey:'phase-2-name',dkey:'phase-2-desc',color:'#FAC775',pct:'0%'},
-    {n:'3',time:'Years 2–4',nkey:'phase-3-name',dkey:'phase-3-desc',color:'#85B7EB',pct:'0%'},
-    {n:'4',time:'Years 5–10',nkey:'phase-4-name',dkey:'phase-4-desc',color:'#AFA9EC',pct:'0%'},
-  ];
-  const card=document.getElementById('roadmap-card');
-  if(!card)return;
-  card.innerHTML=phases.map(p=>{
-    const fn=fields.find(x=>x.id===p.nkey)||{id:p.nkey,value:'',updated_by:null,updated_at:null};
-    const fd=fields.find(x=>x.id===p.dkey)||{id:p.dkey,value:'',updated_by:null,updated_at:null};
-    return `<div class="phase-row">
-      <div><div class="phase-t">Phase ${p.n}</div><div class="phase-t">${p.time}</div></div>
-      <div>
-        <div style="margin-bottom:4px;">${makeEditableField(fn,'font-size:13px;font-weight:500;')}</div>
-        ${makeEditableField(fd,'font-size:12px;color:var(--tx2);line-height:1.6;')}
-        <div class="phase-bar"><div class="phase-fill" style="width:${p.pct};background:${p.color};"></div></div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function makeEditableField(f,displayStyle){
-  const val=f?f.value:'';
-  const meta=f&&f.updated_by?`last edited by ${f.updated_by} · ${fmtD(f.updated_at)}`:'click to edit';
-  return `<div class="editable-wrap" id="ew-${f.id}" onclick="startEdit('${f.id}')">
-    <div class="field-display" style="${displayStyle||''}" id="fd-${f.id}">${val||'<span style="color:var(--tx3);">click to add...</span>'}</div>
-    <div class="field-meta" id="fm-${f.id}">${meta}</div>
-    <div id="ec-${f.id}" style="display:none;"></div>
+function ef(id,style){
+  const f=fc[id]||{id,value:'',updated_by:null,updated_at:null};
+  const meta=f.updated_by?`${f.updated_by} · ${fmtD(f.updated_at)}`:'click to edit';
+  return `<div class="ew" id="ew-${id}" onclick="startEdit('${id}')">
+    <div style="${style||'font-size:13px;color:var(--tx2);line-height:1.6;'}" id="fd-${id}">${f.value||'<span style="color:var(--tx3);">click to add...</span>'}</div>
+    <div class="em" id="em-${id}">${meta}</div>
+    <div id="ec-${id}" style="display:none;"></div>
   </div>`;
 }
 
-function renderTeam(fields){
+function renderTeam(data){
   const members=[
-    {key:'will-brings',name:'Will Rollins',av:'av-w',ini:'WR',pct:'34%',color:'#378ADD',w:100},
-    {key:'brendan-brings',name:'Brendan',av:'av-b',ini:'BR',pct:'34%',color:'#1D9E75',w:100},
-    {key:'nishant-brings',name:'Nishant',av:'av-n',ini:'NM',pct:'32%',color:'#EF9F27',w:94},
+    {id:'will-brings',name:'Will Rollins',av:'av-w',ini:'WR',pct:'34%',clr:'#378ADD',w:100},
+    {id:'brendan-brings',name:'Brendan',av:'av-b',ini:'BR',pct:'34%',clr:'#1D9E75',w:100},
+    {id:'nishant-brings',name:'Nishant',av:'av-n',ini:'NM',pct:'32%',clr:'#EF9F27',w:94},
   ];
-  document.getElementById('team-card').innerHTML=members.map(m=>{
-    const f=fields.find(x=>x.id===m.key)||{id:m.key,value:'',updated_by:null,updated_at:null};
-    return `<div class="partner-block">
+  const el=document.getElementById('team-card');
+  if(!el)return;
+  el.innerHTML=members.map(m=>`
+    <div class="partner-block">
       <div class="partner-header">
         <div class="avatar ${m.av}">${m.ini}</div>
-        <div><div class="partner-name-el">${m.name}</div><div class="partner-role-el">role to be defined together</div></div>
-        <div class="eq-wrap"><div class="eq-track"><div class="eq-fill" style="width:${m.w}%;background:${m.color};"></div></div><span class="eq-pct">${m.pct}</span></div>
+        <div><div class="pname">${m.name}</div><div class="prole">role to be defined together</div></div>
+        <div class="eq-wrap"><div class="eq-track"><div class="eq-fill" style="width:${m.w}%;background:${m.clr};"></div></div><span class="eq-pct">${m.pct}</span></div>
       </div>
-      ${makeEditableField(f,'color:var(--tx2);')}
-    </div>`;
-  }).join('');
+      ${ef(m.id)}
+    </div>`).join('');
 }
 
-function renderBuild(fields){
-  const specs=[{key:'build-name',label:'Speaker name'},{key:'build-type',label:'Type'},{key:'build-price',label:'Target price'},{key:'build-deadline',label:'Prototype deadline'}];
-  document.getElementById('build-card').innerHTML=`<div class="eyebrow" style="margin-bottom:1rem;">Specs — click any value to edit</div>`+specs.map(s=>{
-    const f=fields.find(x=>x.id===s.key)||{id:s.key,value:'',updated_by:null,updated_at:null};
-    return `<div class="row" style="align-items:flex-start;padding:10px 0;">
-      <span class="row-label" style="flex-shrink:0;margin-right:16px;padding-top:2px;">${s.label}</span>
-      <div style="flex:1;text-align:right;">
-        ${makeEditableField(f,'font-weight:500;text-align:right;')}
-      </div>
-    </div>`;
-  }).join('');
+function renderBuild(data){
+  const specs=[
+    {id:'build-name',label:'Speaker name'},
+    {id:'build-type',label:'Type'},
+    {id:'build-price',label:'Target price'},
+    {id:'build-deadline',label:'Prototype deadline'},
+  ];
+  const el=document.getElementById('build-card');
+  if(!el)return;
+  el.innerHTML=`<div class="eyebrow" style="margin-bottom:1rem;">Specs — click any value to edit</div>`+
+    specs.map(s=>`
+      <div class="row" style="align-items:flex-start;padding:10px 0;">
+        <span class="row-label" style="padding-top:2px;">${s.label}</span>
+        <div style="flex:1;text-align:right;">${ef(s.id,'font-size:13px;font-weight:500;text-align:right;')}</div>
+      </div>`).join('');
 }
 
-function startEdit(fieldId){
-  const ec=document.getElementById('ec-'+fieldId);
-  if(ec.style.display==='block')return;
-  const cur=(fieldCache[fieldId]&&fieldCache[fieldId].value)||'';
+function renderAssets(data){
+  const rows=[
+    {id:'asset-will',label:'Will — 4×8 CNC mill'},
+    {id:'asset-brendan',label:'Brendan — cabinetry shop + tools'},
+    {id:'asset-nishant',label:'Nishant — speaker design IP + EE'},
+    {id:'asset-brand',label:'Will + Brendan — 30yr design track record'},
+    {id:'asset-cash',label:'Cash needed year 1'},
+  ];
+  const el=document.getElementById('assets-card');
+  if(!el)return;
+  el.innerHTML=`<div class="eyebrow">Assets & vesting</div>`+
+    rows.map(r=>`
+      <div class="row" style="align-items:flex-start;padding:8px 0;">
+        <span class="row-label" style="padding-top:2px;">${r.label}</span>
+        <div style="flex:1;text-align:right;">${ef(r.id,'font-size:13px;font-weight:500;text-align:right;')}</div>
+      </div>`).join('')+
+    `<div class="divider"></div>
+    <div style="font-size:12px;color:var(--tx2);line-height:1.7;">Vesting: ${ef('vesting-text','font-size:12px;color:var(--tx2);display:inline;')}</div>`;
+}
+
+function renderHorn(data){
+  const rows=[
+    {id:'horn-1',label:'High efficiency'},
+    {id:'horn-2',label:'Cabinet is the product'},
+    {id:'horn-3',label:'Complexity = barrier to copy'},
+    {id:'horn-4',label:"Nishant's expertise"},
+    {id:'horn-5',label:'Ojas proof of market'},
+  ];
+  const el=document.getElementById('horn-card');
+  if(!el)return;
+  el.innerHTML=`<div class="eyebrow">Why horn-loaded</div>`+
+    rows.map(r=>`
+      <div class="row" style="align-items:flex-start;padding:8px 0;">
+        <span class="row-label" style="padding-top:2px;">${r.label}</span>
+        <div style="flex:1;text-align:right;">${ef(r.id,'font-size:13px;font-weight:500;text-align:right;')}</div>
+      </div>`).join('');
+}
+
+function renderRoadmap(data){
+  const phases=[
+    {n:'1',time:'Months 1–6',nid:'phase-1-name',did:'phase-1-desc',clr:'#9FE1CB',pct:'15%'},
+    {n:'2',time:'Months 6–18',nid:'phase-2-name',did:'phase-2-desc',clr:'#FAC775',pct:'0%'},
+    {n:'3',time:'Years 2–4',nid:'phase-3-name',did:'phase-3-desc',clr:'#85B7EB',pct:'0%'},
+    {n:'4',time:'Years 5–10',nid:'phase-4-name',did:'phase-4-desc',clr:'#AFA9EC',pct:'0%'},
+  ];
+  const el=document.getElementById('roadmap-card');
+  if(!el)return;
+  el.innerHTML=phases.map(p=>`
+    <div class="phase-row">
+      <div><div class="phase-t">Phase ${p.n}</div><div class="phase-t">${p.time}</div></div>
+      <div>
+        ${ef(p.nid,'font-size:13px;font-weight:500;')}
+        ${ef(p.did,'font-size:12px;color:var(--tx2);line-height:1.6;margin-top:4px;')}
+        <div class="phase-bar"><div class="phase-fill" style="width:${p.pct};background:${p.clr};"></div></div>
+      </div>
+    </div>`).join('');
+}
+
+function startEdit(id){
+  const ec=document.getElementById('ec-'+id);
+  if(!ec||ec.style.display==='block')return;
+  const cur=(fc[id]&&fc[id].value)||'';
   ec.style.display='block';
-  ec.innerHTML=`<textarea class="edit-area" id="ta-${fieldId}">${cur}</textarea>
+  ec.innerHTML=`<textarea class="edit-area" id="ta-${id}">${cur}</textarea>
     <div class="edit-actions">
-      <button class="edit-save" onclick="saveField('${fieldId}');event.stopPropagation();">Save</button>
-      <button class="edit-cancel" onclick="cancelEdit('${fieldId}');event.stopPropagation();">Cancel</button>
+      <button class="btn-save" onclick="saveField('${id}');event.stopPropagation();">Save</button>
+      <button class="btn-cancel" onclick="cancelEdit('${id}');event.stopPropagation();">Cancel</button>
     </div>`;
-  document.getElementById('ew-'+fieldId).onclick=null;
-  document.getElementById('ta-'+fieldId).focus();
+  const ew=document.getElementById('ew-'+id);
+  if(ew)ew.onclick=null;
+  setTimeout(()=>{const ta=document.getElementById('ta-'+id);if(ta)ta.focus();},50);
 }
 
-function cancelEdit(fieldId){
-  const ec=document.getElementById('ec-'+fieldId);
-  ec.style.display='none';ec.innerHTML='';
-  document.getElementById('ew-'+fieldId).onclick=()=>startEdit(fieldId);
+function cancelEdit(id){
+  const ec=document.getElementById('ec-'+id);
+  if(ec){ec.style.display='none';ec.innerHTML='';}
+  const ew=document.getElementById('ew-'+id);
+  if(ew)ew.onclick=()=>startEdit(id);
 }
 
-async function saveField(fieldId){
-  const val=document.getElementById('ta-'+fieldId).value.trim();
-  if(!val){cancelEdit(fieldId);return;}
-  const label=(fieldCache[fieldId]&&fieldCache[fieldId].label)||fieldId;
-  await sb.from('editable_fields').update({value:val,updated_by:userShort,updated_at:new Date().toISOString()}).eq('id',fieldId);
-  await autoLog(`${userShort} updated "${label}": ${val.substring(0,100)}${val.length>100?'...':''}`);
-  cancelEdit(fieldId);
+async function saveField(id){
+  const ta=document.getElementById('ta-'+id);
+  if(!ta)return;
+  const val=ta.value.trim();
+  if(!val){cancelEdit(id);return;}
+  const label=(fc[id]&&fc[id].label)||id;
+  const{error}=await sb.from('editable_fields').update({value:val,updated_by:who,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error){alert('Save failed: '+error.message);return;}
+  await alog(`${who} updated "${label}": ${val.substring(0,80)}${val.length>80?'...':''}`);
+  cancelEdit(id);
 }
 
 async function loadQs(){
-  const [{data:qs},{data:ans}]=await Promise.all([
+  const[{data:qs},{data:ans}]=await Promise.all([
     sb.from('collab_questions').select('*').order('id'),
     sb.from('collab_answers').select('*').order('created_at'),
   ]);
   if(!qs)return;
-  renderQContainer('collab-qs',qs.filter(q=>q.category==='team'),ans||[]);
-  renderQContainer('build-qs',qs.filter(q=>q.category==='build'),ans||[]);
+  renderQs('collab-qs',qs.filter(q=>q.category==='team'),ans||[]);
+  renderQs('build-qs',qs.filter(q=>q.category==='build'),ans||[]);
 }
 
-function renderQContainer(cid,qs,allAns){
+function renderQs(cid,qs,allAns){
   const el=document.getElementById(cid);
   if(!el)return;
   el.innerHTML=qs.map(q=>{
-    const qAns=allAns.filter(a=>a.question_id===q.id);
+    const qa=allAns.filter(a=>a.question_id===q.id);
     return `<div class="collab-q">
-      <div class="collab-q-text">${q.question}</div>
-      <div class="answers-list">
-        ${qAns.length===0?'<div style="font-size:12px;color:var(--tx3);padding:2px 0;">No answers yet — be the first.</div>':''}
-        ${qAns.map(a=>`<div class="answer-card"><div class="answer-author" style="color:${gc(a.author)};">${a.author}</div><div class="answer-text">${a.text}</div><div class="answer-date">${fmtD(a.created_at)}</div></div>`).join('')}
+      <div class="cq-text">${q.question}</div>
+      <div class="ans-list">
+        ${qa.length===0?'<div style="font-size:12px;color:var(--tx3);padding:2px 0;">No answers yet — be the first.</div>':''}
+        ${qa.map(a=>`<div class="ans-card"><div class="ans-author" style="color:${gc(a.author)};">${a.author}</div><div class="ans-text">${a.text}</div><div class="ans-date">${fmtD(a.created_at)}</div></div>`).join('')}
       </div>
-      <div class="answer-form" id="af-${q.id}">
+      <div class="ans-form" id="af-${q.id}">
         <textarea id="ata-${q.id}" placeholder="Your answer..."></textarea>
         <div class="edit-actions" style="margin-top:6px;">
-          <button class="edit-save" onclick="saveAnswer('${q.id}');event.stopPropagation();">Save</button>
-          <button class="edit-cancel" onclick="document.getElementById('af-${q.id}').style.display='none';">Cancel</button>
+          <button class="btn-save" onclick="saveAns('${q.id}');event.stopPropagation();">Save</button>
+          <button class="btn-cancel" onclick="document.getElementById('af-${q.id}').style.display='none';">Cancel</button>
         </div>
       </div>
-      <button class="add-answer-btn" onclick="toggleAF('${q.id}')">+ Add your answer</button>
+      <button class="add-ans-btn" onclick="toggleAF('${q.id}')">+ Add your answer</button>
     </div>`;
   }).join('');
 }
 
 function toggleAF(qId){
   const f=document.getElementById('af-'+qId);
+  if(!f)return;
   f.style.display=f.style.display==='block'?'none':'block';
-  if(f.style.display==='block')document.getElementById('ata-'+qId).focus();
+  if(f.style.display==='block'){const ta=document.getElementById('ata-'+qId);if(ta)ta.focus();}
 }
 
-async function saveAnswer(qId){
+async function saveAns(qId){
   const ta=document.getElementById('ata-'+qId);
+  if(!ta)return;
   const text=ta.value.trim();
   if(!text)return;
-  const {data:q}=await sb.from('collab_questions').select('question').eq('id',qId).single();
-  await sb.from('collab_answers').insert({question_id:qId,text,author:userShort,created_at:new Date().toISOString()});
-  await autoLog(`${userShort} answered "${q.question.substring(0,55)}...": ${text.substring(0,80)}${text.length>80?'...':''}`);
+  const{data:q}=await sb.from('collab_questions').select('question').eq('id',qId).single();
+  await sb.from('collab_answers').insert({question_id:qId,text,author:who,created_at:new Date().toISOString()});
+  await alog(`${who} answered "${q.question.substring(0,55)}...": ${text.substring(0,80)}${text.length>80?'...':''}`);
   ta.value='';
   document.getElementById('af-'+qId).style.display='none';
 }
 
 async function loadLog(){
-  const {data}=await sb.from('log_entries').select('*').order('created_at',{ascending:false});
+  const{data}=await sb.from('log_entries').select('*').order('created_at',{ascending:false});
   if(!data)return;
   const rows=(entries,lim)=>(lim?entries.slice(0,lim):entries).map(e=>`
     <div class="log-item">
       <div class="log-dot" style="background:${e.color||'#378ADD'};"></div>
       <div class="log-content"><div class="log-text">${e.text}</div><div class="log-meta">${e.author} · ${fmtDT(e.created_at)}</div></div>
-      <button class="log-del" onclick="delLog('${e.id}')" title="Delete">✕</button>
+      <button class="log-del" onclick="delLog('${e.id}')">✕</button>
     </div>`).join('');
   const ll=document.getElementById('log-list');
-  if(ll) ll.innerHTML=rows(data)+`<div class="log-form"><textarea id="log-input" placeholder="Add a note, decision, or moment..."></textarea><button onclick="manualLog()">Add</button></div>`;
+  if(ll)ll.innerHTML=rows(data)+`<div class="log-form"><textarea id="log-input" placeholder="Add a note, decision, or moment..."></textarea><button onclick="mlog()">Add</button></div>`;
   const hp=document.getElementById('home-log-preview');
-  if(hp) hp.innerHTML=data.length?rows(data,4):'<div style="font-size:13px;color:var(--tx3);padding:8px 0;">No entries yet.</div>';
+  if(hp)hp.innerHTML=data.length?rows(data,4):'<div style="font-size:13px;color:var(--tx3);padding:8px 0;">No entries yet.</div>';
 }
 
-async function autoLog(text){
-  await sb.from('log_entries').insert({text,author:userShort,color:gc(userShort),created_at:new Date().toISOString()});
+async function alog(text){
+  await sb.from('log_entries').insert({text,author:who,color:gc(who),created_at:new Date().toISOString()});
 }
-async function manualLog(){
+async function mlog(){
   const inp=document.getElementById('log-input');
-  const text=inp.value.trim();
+  const text=inp?.value.trim();
   if(!text)return;
-  await autoLog(text);
+  await alog(text);
   inp.value='';
 }
 async function delLog(id){
@@ -663,7 +605,10 @@ async function delLog(id){
 
 const views=['home','decisions','team','product','money','roadmap','log'];
 function show(id){
-  views.forEach((v,i)=>{document.getElementById('v-'+v).classList.remove('on');document.querySelectorAll('.nav-btn')[i].classList.remove('on');});
+  views.forEach((v,i)=>{
+    document.getElementById('v-'+v).classList.remove('on');
+    document.querySelectorAll('.nav-btn')[i].classList.remove('on');
+  });
   document.getElementById('v-'+id).classList.add('on');
   document.querySelectorAll('.nav-btn')[views.indexOf(id)].classList.add('on');
 }
@@ -675,7 +620,8 @@ const tiers=[
 ];
 function setTier(i){
   document.querySelectorAll('.m-tab').forEach((t,j)=>t.classList.toggle('on',i===j));
-  const t=tiers[i];const cogs=t.drv+t.xo+t.cab+t.lab+t.fin;const profit=t.price-cogs;const margin=Math.round(profit/t.price*100);const cp=Math.round(cogs/t.price*100);
+  const t=tiers[i];const cogs=t.drv+t.xo+t.cab+t.lab+t.fin;
+  const profit=t.price-cogs;const margin=Math.round(profit/t.price*100);const cp=Math.round(cogs/t.price*100);
   ['drv','xo','cab','lab','fin'].forEach(k=>document.getElementById('m-'+k).textContent='$'+t[k]);
   document.getElementById('m-cogs').textContent='$'+cogs;
   document.getElementById('m-price').textContent='$'+t.price.toLocaleString();
