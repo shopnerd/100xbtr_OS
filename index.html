@@ -222,15 +222,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="eyebrow">Collaboration questions — answer as a team</div>
       <div id="collab-qs"><div class="loading">Loading...</div></div>
     </div>
-    <div class="card">
+    <div class="card" id="assets-card">
       <div class="eyebrow">Assets & vesting</div>
-      <div class="row"><span class="row-label">Will — 4×8 CNC mill</span><span class="row-val">~$35K value</span></div>
-      <div class="row"><span class="row-label">Brendan — cabinetry shop + tools</span><span class="row-val">~$40K+ value</span></div>
-      <div class="row"><span class="row-label">Nishant — speaker design IP + EE</span><span class="row-val">irreplaceable</span></div>
-      <div class="row"><span class="row-label">Will + Brendan — 30yr design track record</span><span class="row-val">brand credibility</span></div>
-      <div class="row"><span class="row-label">Cash needed year 1</span><span class="row-val">~$6–9K</span></div>
-      <div class="divider"></div>
-      <div style="font-size:12px;color:var(--tx2);line-height:1.7;">Vesting: 3-year schedule, 6-month cliff. Nobody earns full equity until 3 years of contribution. Protects all three partners equally.</div>
+      <div class="loading">Loading...</div>
     </div>
   </div>
 
@@ -238,13 +232,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="eyebrow">First build</div>
     <div class="sec-title">The speaker that makes this real</div>
     <div class="card" id="build-card" style="margin-bottom:1rem;"><div class="loading">Loading...</div></div>
-    <div class="card" style="margin-bottom:1rem;">
+    <div class="card" id="horn-card" style="margin-bottom:1rem;">
       <div class="eyebrow">Why horn-loaded</div>
-      <div class="row"><span class="row-label">High efficiency</span><span class="row-val">98+ dB/W/m — sounds alive</span></div>
-      <div class="row"><span class="row-label">Cabinet is the product</span><span class="row-val">CNC precision = your moat</span></div>
-      <div class="row"><span class="row-label">Complexity = barrier to copy</span><span class="row-val">most brands avoid it</span></div>
-      <div class="row"><span class="row-label">Nishant's expertise</span><span class="row-val">factory visit + active research</span></div>
-      <div class="row"><span class="row-label">Ojas proof of market</span><span class="row-val">$8,498/pair, sold out</span></div>
+      <div class="loading">Loading...</div>
     </div>
     <div class="card">
       <div class="eyebrow">Engineering questions — click to answer</div>
@@ -280,12 +270,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="view" id="v-roadmap">
     <div class="eyebrow">Roadmap to exit</div>
     <div class="sec-title">The four phases</div>
-    <div class="card">
-      <div class="phase-row"><div><div class="phase-t">Phase 1</div><div class="phase-t">Months 1–6</div></div><div><div class="phase-name">Build the proof</div><div class="phase-desc">Design and build 2–3 reference pairs. Develop brand identity and founding story. Spend $3–5K on components. Target: 1 paying customer + press-ready photography.</div><div class="phase-bar"><div class="phase-fill" style="width:15%;background:#9FE1CB;"></div></div></div></div>
-      <div class="phase-row"><div><div class="phase-t">Phase 2</div><div class="phase-t">Months 6–18</div></div><div><div class="phase-name">Go to market</div><div class="phase-desc">Sell via AudiogoN, US Audio Mart, Instagram. Target interior designers and custom home builders in LA. Goal: 8–15 pairs at $2–5K = $16–75K revenue.</div><div class="phase-bar"><div class="phase-fill" style="width:0%;background:#FAC775;"></div></div></div></div>
-      <div class="phase-row"><div><div class="phase-t">Phase 3</div><div class="phase-t">Years 2–4</div></div><div><div class="phase-name">Build the brand asset</div><div class="phase-desc">Expand to 2–3 product lines. Get reviewed by Stereophile or The Absolute Sound. Partner with AV integrators. Target: $250K–$500K/yr revenue.</div><div class="phase-bar"><div class="phase-fill" style="width:0%;background:#85B7EB;"></div></div></div></div>
-      <div class="phase-row"><div><div class="phase-t">Phase 4</div><div class="phase-t">Years 5–10</div></div><div><div class="phase-name">Exit</div><div class="phase-desc">Documented sales, press, strong margins, proprietary design language = acquirable. Likely buyers: McIntosh Group, Sound United, or private equity.</div><div class="phase-bar"><div class="phase-fill" style="width:0%;background:#AFA9EC;"></div></div></div></div>
-    </div>
+    <div class="card" id="roadmap-card"><div class="loading">Loading...</div></div>
   </div>
 
   <div class="view" id="v-log">
@@ -321,10 +306,29 @@ const DF=[
   {id:'will-brings',label:'Will brings',value:'CNC fabrication, 30yr design practice, parametric modeling, brand instinct, business experience, partnerships',section:'team'},
   {id:'brendan-brings',label:'Brendan brings',value:'Cabinetry shop, master woodworker, hi-fi enthusiast and critical listener, production knowledge, long shared history with Will',section:'team'},
   {id:'nishant-brings',label:'Nishant brings',value:'Masters in EE, active speaker design projects, Klipsch factory knowledge, horn speaker research, crossover design',section:'team'},
+  {id:'asset-will',label:'Will — CNC',value:'~$35K value',section:'assets'},
+  {id:'asset-brendan',label:'Brendan — shop',value:'~$40K+ value',section:'assets'},
+  {id:'asset-nishant',label:'Nishant — IP',value:'irreplaceable',section:'assets'},
+  {id:'asset-brand',label:'Brand credibility',value:'brand credibility',section:'assets'},
+  {id:'asset-cash',label:'Cash year 1',value:'~$6–9K',section:'assets'},
+  {id:'vesting-text',label:'Vesting terms',value:'3-year schedule, 6-month cliff. Nobody earns full equity until 3 years of contribution. Protects all three partners equally.',section:'assets'},
   {id:'build-name',label:'Speaker name',value:'TBD — decide together at the first build meeting',section:'build'},
   {id:'build-type',label:'Type',value:'Horn-loaded bookshelf — smaller, faster to iterate, proof of concept',section:'build'},
   {id:'build-price',label:'Target price',value:'$2,500–3,500 per pair, direct sale',section:'build'},
   {id:'build-deadline',label:'Prototype deadline',value:'~6 months — listenable, not for sale yet',section:'build'},
+  {id:'horn-1',label:'Horn reason 1',value:'98+ dB/W/m — sounds alive',section:'horn'},
+  {id:'horn-2',label:'Horn reason 2',value:'CNC precision = your moat',section:'horn'},
+  {id:'horn-3',label:'Horn reason 3',value:'most brands avoid it',section:'horn'},
+  {id:'horn-4',label:'Horn reason 4',value:'factory visit + active research',section:'horn'},
+  {id:'horn-5',label:'Horn reason 5',value:'$8,498/pair, sold out',section:'horn'},
+  {id:'phase-1-name',label:'Phase 1 name',value:'Build the proof',section:'roadmap'},
+  {id:'phase-1-desc',label:'Phase 1 description',value:'Design and build 2–3 reference pairs. Develop brand identity and founding story. Spend $3–5K on components. Target: 1 paying customer + press-ready photography.',section:'roadmap'},
+  {id:'phase-2-name',label:'Phase 2 name',value:'Go to market',section:'roadmap'},
+  {id:'phase-2-desc',label:'Phase 2 description',value:'Sell via AudiogoN, US Audio Mart, Instagram. Target interior designers and custom home builders in LA. Goal: 8–15 pairs at $2–5K = $16–75K revenue.',section:'roadmap'},
+  {id:'phase-3-name',label:'Phase 3 name',value:'Build the brand asset',section:'roadmap'},
+  {id:'phase-3-desc',label:'Phase 3 description',value:'Expand to 2–3 product lines. Get reviewed by Stereophile or The Absolute Sound. Partner with AV integrators. Target: $250K–$500K/yr revenue.',section:'roadmap'},
+  {id:'phase-4-name',label:'Phase 4 name',value:'Exit',section:'roadmap'},
+  {id:'phase-4-desc',label:'Phase 4 description',value:'Documented sales, press, strong margins, proprietary design language = acquirable. Likely buyers: McIntosh Group, Sound United, or private equity.',section:'roadmap'},
 ];
 const DCQ=[
   {id:'cq1',question:'Do we want formal titles at all — or does the work define the roles?',category:'team'},
@@ -436,6 +440,74 @@ async function loadFields(){
   data.forEach(f=>{fieldCache[f.id]=f;});
   renderTeam(data.filter(f=>f.section==='team'));
   renderBuild(data.filter(f=>f.section==='build'));
+  renderAssets(data.filter(f=>f.section==='assets'));
+  renderHorn(data.filter(f=>f.section==='horn'));
+  renderRoadmap(data.filter(f=>f.section==='roadmap'));
+}
+
+function renderAssets(fields){
+  const rows=[
+    {key:'asset-will',label:'Will — 4×8 CNC mill'},
+    {key:'asset-brendan',label:'Brendan — cabinetry shop + tools'},
+    {key:'asset-nishant',label:'Nishant — speaker design IP + EE'},
+    {key:'asset-brand',label:'Will + Brendan — 30yr design track record'},
+    {key:'asset-cash',label:'Cash needed year 1'},
+  ];
+  const vesting=fields.find(f=>f.id==='vesting-text')||{id:'vesting-text',value:'3-year schedule, 6-month cliff. Nobody earns full equity until 3 years of contribution.',updated_by:null,updated_at:null};
+  const card=document.getElementById('assets-card');
+  card.innerHTML=`<div class="eyebrow">Assets & vesting</div>`+
+    rows.map(r=>{
+      const f=fields.find(x=>x.id===r.key)||{id:r.key,value:'',updated_by:null,updated_at:null};
+      return `<div class="row" style="align-items:flex-start;">
+        <span class="row-label" style="flex-shrink:0;margin-right:16px;padding-top:2px;">${r.label}</span>
+        <div style="flex:1;text-align:right;">${makeEditableField(f,'font-weight:500;text-align:right;font-size:13px;')}</div>
+      </div>`;
+    }).join('')+
+    `<div class="divider"></div>
+    <div style="font-size:12px;color:var(--tx2);line-height:1.7;">Vesting: ${makeEditableField(vesting,'font-size:12px;color:var(--tx2);')}</div>`;
+}
+
+function renderHorn(fields){
+  const rows=[
+    {key:'horn-1',label:'High efficiency'},
+    {key:'horn-2',label:'Cabinet is the product'},
+    {key:'horn-3',label:'Complexity = barrier to copy'},
+    {key:'horn-4',label:"Nishant's expertise"},
+    {key:'horn-5',label:'Ojas proof of market'},
+  ];
+  const card=document.getElementById('horn-card');
+  if(!card)return;
+  card.innerHTML=`<div class="eyebrow">Why horn-loaded</div>`+
+    rows.map(r=>{
+      const f=fields.find(x=>x.id===r.key)||{id:r.key,value:'',updated_by:null,updated_at:null};
+      return `<div class="row" style="align-items:flex-start;">
+        <span class="row-label" style="flex-shrink:0;margin-right:16px;padding-top:2px;">${r.label}</span>
+        <div style="flex:1;text-align:right;">${makeEditableField(f,'font-weight:500;text-align:right;font-size:13px;')}</div>
+      </div>`;
+    }).join('');
+}
+
+function renderRoadmap(fields){
+  const phases=[
+    {n:'1',time:'Months 1–6',nkey:'phase-1-name',dkey:'phase-1-desc',color:'#9FE1CB',pct:'15%'},
+    {n:'2',time:'Months 6–18',nkey:'phase-2-name',dkey:'phase-2-desc',color:'#FAC775',pct:'0%'},
+    {n:'3',time:'Years 2–4',nkey:'phase-3-name',dkey:'phase-3-desc',color:'#85B7EB',pct:'0%'},
+    {n:'4',time:'Years 5–10',nkey:'phase-4-name',dkey:'phase-4-desc',color:'#AFA9EC',pct:'0%'},
+  ];
+  const card=document.getElementById('roadmap-card');
+  if(!card)return;
+  card.innerHTML=phases.map(p=>{
+    const fn=fields.find(x=>x.id===p.nkey)||{id:p.nkey,value:'',updated_by:null,updated_at:null};
+    const fd=fields.find(x=>x.id===p.dkey)||{id:p.dkey,value:'',updated_by:null,updated_at:null};
+    return `<div class="phase-row">
+      <div><div class="phase-t">Phase ${p.n}</div><div class="phase-t">${p.time}</div></div>
+      <div>
+        <div style="margin-bottom:4px;">${makeEditableField(fn,'font-size:13px;font-weight:500;')}</div>
+        ${makeEditableField(fd,'font-size:12px;color:var(--tx2);line-height:1.6;')}
+        <div class="phase-bar"><div class="phase-fill" style="width:${p.pct};background:${p.color};"></div></div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function makeEditableField(f,displayStyle){
