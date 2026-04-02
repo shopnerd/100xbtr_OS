@@ -359,26 +359,39 @@ async function signOut(){
   document.getElementById('auth-screen').style.display='flex';
 }
 
+async function initAuth(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(session?.user) await handleUser(session.user);
+}
+
+async function handleUser(user){
+  const email=user.email.toLowerCase();
+  if(!ALLOWED_EMAILS.includes(email)){
+    await sb.auth.signOut();
+    const err=document.getElementById('auth-err');
+    err.textContent='This Google account is not registered. Ask Will to add you.';
+    err.style.display='block';
+    return;
+  }
+  currentUser=user;
+  userShort=email.split('@')[0];
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('user-email-display').textContent=email;
+  await initDB();
+  loadAll();
+  setupRealtime();
+}
+
 sb.auth.onAuthStateChange(async(event,session)=>{
-  if(session?.user){
-    const email=session.user.email.toLowerCase();
-    if(!ALLOWED_EMAILS.includes(email)){
-      await sb.auth.signOut();
-      const err=document.getElementById('auth-err');
-      err.textContent='This Google account is not registered. Ask Will to add you.';
-      err.style.display='block';
-      return;
-    }
-    currentUser=session.user;
-    userShort=email.split('@')[0];
-    document.getElementById('auth-screen').style.display='none';
-    document.getElementById('app').style.display='block';
-    document.getElementById('user-email-display').textContent=email;
-    await initDB();
-    loadAll();
-    setupRealtime();
+  if(event==='SIGNED_IN'&&session?.user) await handleUser(session.user);
+  if(event==='SIGNED_OUT'){
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
   }
 });
+
+initAuth();
 
 async function initDB(){
   const checks=await Promise.all([
