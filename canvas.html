@@ -209,7 +209,7 @@ const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-auth',persis
 const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#b43cb4',anchor:'#888780'};
 const GROUP_COLORS=['#378ADD','#1D9E75','#BA7517','#D85A30','#7F77DD','#b43cb4','#888780','#2D7D46','#C0392B','#8E44AD'];
 const TYPES=Object.keys(TC);
-const DW=180,DH=60,MW=120,MH=44,PR=10,RH=20;
+const DW=180,DH=60,MW=120,MH=44,PR=6,RH=20;
 
 let user=null,who='';
 let nodes=[],links=[],groups=[];
@@ -274,11 +274,12 @@ function draw(){
   drawGroups();drawLinks();drawNodes();
   // link preview
   if(linkFrom){
-    const sp=portPos(linkFrom,linkFrom._sport||0);
+    const sport=linkFrom._sport||0;
+    const sp=portPos(linkFrom,sport);
+    const cp1=bezierCP(sp,sport);
     const mx=(lm.x-W/2-cam.x)/cam.z,my=(lm.y-H/2-cam.y)/cam.z;
-    const dx=Math.abs(mx-sp.x)*0.5;
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);
-    ctx.bezierCurveTo(sp.x+dx,sp.y,mx-dx,my,mx,my);
+    ctx.bezierCurveTo(cp1.x,cp1.y,mx,my,mx,my);
     ctx.strokeStyle='rgba(180,60,180,0.5)';ctx.lineWidth=1.5/cam.z;
     ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);
   }
@@ -324,14 +325,26 @@ function drawLinks(){
   links.forEach(l=>{
     const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
     if(!s||!t)return;
-    const sp=portPos(s,l.sport!==undefined?l.sport:0),tp=portPos(t,l.tport!==undefined?l.tport:1);
-    const dx=Math.abs(tp.x-sp.x)*0.45;
+    const sport=l.sport!==undefined?l.sport:0;
+    const tport=l.tport!==undefined?l.tport:1;
+    const sp=portPos(s,sport),tp=portPos(t,tport);
+    const cp1=bezierCP(sp,sport),cp2=bezierCP(tp,tport);
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);
-    ctx.bezierCurveTo(sp.x+dx,sp.y,tp.x-dx,tp.y,tp.x,tp.y);
+    ctx.bezierCurveTo(cp1.x,cp1.y,cp2.x,cp2.y,tp.x,tp.y);
     ctx.strokeStyle=l.claude?'rgba(180,60,180,0.45)':'rgba(130,130,122,0.7)';
     ctx.lineWidth=(l.claude?2:1.2)/cam.z;
     ctx.setLineDash(l.claude?[5,3]:[]);ctx.stroke();ctx.setLineDash([]);
   });
+}
+
+// control point offset based on which side the port is on
+function bezierCP(p,side){
+  const dist=80;
+  if(side===0)return{x:p.x+dist,y:p.y}; // right → push right
+  if(side===1)return{x:p.x-dist,y:p.y}; // left → push left
+  if(side===2)return{x:p.x,y:p.y-dist}; // top → push up
+  if(side===3)return{x:p.x,y:p.y+dist}; // bottom → push down
+  return{x:p.x+dist,y:p.y};
 }
 
 function drawNodes(){
@@ -381,12 +394,12 @@ function drawNodes(){
       ctx.font=`${9/cam.z}px -apple-system,sans-serif`;
       ctx.fillText('↗',n.x+w-6,n.y+8/cam.z);
     }
-    // ports — all 4 sides, equal size
+    // ports — all 4 sides, grey with black outline
     const pr=PR/cam.z;
-    drawPort(n.x,n.y+h/2,'#7a9ab8',pr);        // left (blue)
-    drawPort(n.x+w,n.y+h/2,'#8aaa88',pr);      // right (green)
-    drawPort(n.x+w/2,n.y,'#a89ab8',pr);        // top (purple)
-    drawPort(n.x+w/2,n.y+h,'#a89ab8',pr);      // bottom (purple)
+    drawPort(n.x,n.y+h/2,'#d8d8d4',pr);        // left
+    drawPort(n.x+w,n.y+h/2,'#d8d8d4',pr);      // right
+    drawPort(n.x+w/2,n.y,'#d8d8d4',pr);        // top
+    drawPort(n.x+w/2,n.y+h,'#d8d8d4',pr);      // bottom
     // resize handle — bigger
     const rhs=10/cam.z;
     ctx.fillStyle='#909090';
@@ -398,7 +411,8 @@ function drawNodes(){
 
 function drawPort(x,y,c,r){
   ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
-  ctx.fillStyle=c;ctx.fill();ctx.strokeStyle='#f4f4f0';ctx.lineWidth=1/cam.z;ctx.stroke();
+  ctx.fillStyle='#d8d8d4';ctx.fill();
+  ctx.strokeStyle='#555552';ctx.lineWidth=1.5/cam.z;ctx.stroke();
 }
 
 function wrapText(ctx,text,maxW){
@@ -437,8 +451,8 @@ function outP(n,side){return portPos(n,side===undefined?0:side);}
 function nearestPort(n,wx,wy){
   const w=n.w||DW,h=n.h||DH;
   const ports=[
-    {side:0,x:n.x+w,y:n.y+h/2},  // right
     {side:1,x:n.x,y:n.y+h/2},    // left
+    {side:0,x:n.x+w,y:n.y+h/2},  // right
     {side:2,x:n.x+w/2,y:n.y},    // top
     {side:3,x:n.x+w/2,y:n.y+h},  // bottom
   ];
@@ -458,14 +472,13 @@ function hitGroup(wx,wy){return[...groups].reverse().find(g=>wx>=g.x&&wx<=g.x+g.
 function hitNResize(n,wx,wy){const w=n.w||DW,h=n.h||DH;return wx>=n.x+w-RH&&wy>=n.y+h-RH;}
 function hitGResize(g,wx,wy){return wx>=g.x+g.w-RH&&wy>=g.y+g.h-RH;}
 function hitAnyPort(n,wx,wy){
-  // must click the actual port circle — PR+4 tolerance
   const w=n.w||DW,h=n.h||DH;
-  const pr=(PR+4)/cam.z;
+  const pr=(PR+6)/cam.z; // slightly larger than visual for easier clicking
   const ports=[
-    {x:n.x+w,y:n.y+h/2},   // right
-    {x:n.x,y:n.y+h/2},     // left
-    {x:n.x+w/2,y:n.y},     // top
-    {x:n.x+w/2,y:n.y+h},   // bottom
+    {x:n.x,y:n.y+h/2},      // left
+    {x:n.x+w,y:n.y+h/2},    // right
+    {x:n.x+w/2,y:n.y},      // top
+    {x:n.x+w/2,y:n.y+h},    // bottom
   ];
   return ports.some(p=>Math.hypot(wx-p.x,wy-p.y)<pr);
 }
