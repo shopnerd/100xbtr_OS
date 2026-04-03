@@ -697,8 +697,21 @@ async function onUp(e){
   const{wx,wy,cx,cy}=wp(e);
 
   if(drag.node){
-    await Promise.all(drag.multiNodes.map(({n})=>sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id)));
+    // update node positions
+    for(const {n} of drag.multiNodes){
+      // assign/update group membership based on final position
+      const gid=getGroupId(n);
+      if(gid!==n.group_id){
+        n.group_id=gid;
+        await sb.from('canvas_nodes').update({x:n.x,y:n.y,group_id:gid}).eq('id',n.id);
+      } else {
+        await sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
+      }
+    }
     if(drag.multiGroups?.length)await Promise.all(drag.multiGroups.map(({g})=>sb.from('canvas_groups').update({x:g.x,y:g.y}).eq('id',g.id)));
+    // auto-resize any group the nodes came from or landed in
+    const affectedGids=new Set([...drag.multiNodes.map(({n})=>n.group_id).filter(Boolean)]);
+    affectedGids.forEach(gid=>{const g=groups.find(x=>x.id===gid);if(g)autoResizeGroup(g);});
   }else if(drag.group){
     await sb.from('canvas_groups').update({x:drag.group.x,y:drag.group.y}).eq('id',drag.group.id);
     if(drag.members?.length)await Promise.all(drag.members.map(({n})=>sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id)));
@@ -830,9 +843,9 @@ function spreadSelected(){
   const cx=sns.reduce((s,n)=>s+n.x+(n.w||DW)/2,0)/sns.length;
   const cy=sns.reduce((s,n)=>s+n.y+(n.h||DH)/2,0)/sns.length;
   sns.forEach(n=>{
-    const dx=n.x+(n.w||DW)/2-cx,dy=n.y+(n.h||DH)/2-cy;
+    const dx=n.x+(n.w||DW)/2-cx||1,dy=n.y+(n.h||DH)/2-cy||1;
     const d=Math.max(1,Math.hypot(dx,dy));
-    n.x+=dx/d*80;n.y+=dy/d*80;
+    n.x+=dx/d*200;n.y+=dy/d*200;
     sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
   });toast('Spread');
 }
@@ -841,9 +854,9 @@ function spreadAll(){
   const cx=nodes.reduce((s,n)=>s+n.x+(n.w||DW)/2,0)/Math.max(1,nodes.length);
   const cy=nodes.reduce((s,n)=>s+n.y+(n.h||DH)/2,0)/Math.max(1,nodes.length);
   Promise.all(nodes.map(n=>{
-    const dx=n.x+(n.w||DW)/2-cx,dy=n.y+(n.h||DH)/2-cy;
+    const dx=(n.x+(n.w||DW)/2-cx)||((Math.random()-0.5)*10),dy=(n.y+(n.h||DH)/2-cy)||((Math.random()-0.5)*10);
     const d=Math.max(1,Math.hypot(dx,dy));
-    n.x+=dx/d*60;n.y+=dy/d*60;
+    n.x+=dx/d*180;n.y+=dy/d*180;
     return sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
   }));toast('Spread all');
 }
@@ -854,7 +867,7 @@ function compactAll(){
   Promise.all(nodes.map(n=>{
     const dx=n.x+(n.w||DW)/2-cx,dy=n.y+(n.h||DH)/2-cy;
     const d=Math.max(1,Math.hypot(dx,dy));
-    n.x-=dx/d*40;n.y-=dy/d*40;
+    n.x-=dx/d*120;n.y-=dy/d*120;
     return sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
   }));toast('Compact');
 }
@@ -948,7 +961,24 @@ async function addLink(srcId,tgtId,sport=0,tport=0){
   await sb.from('canvas_links').insert({id:'l-'+Date.now(),source:srcId,target:tgtId,claude:false,sport,tport});
   toast('Connected');
 }
-function nodesInGroup(g){return nodes.filter(n=>{const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;return cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h;});}
+function nodesInGroup(g){
+  // prefer stored group_id, fall back to position
+  const byId=nodes.filter(n=>n.group_id===g.id);
+  if(byId.length>0)return byId;
+  return nodes.filter(n=>{const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;return cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h;});
+}
+
+function autoResizeGroup(g){
+  const members=nodesInGroup(g);
+  if(!members.length)return;
+  const pad=28;
+  g.x=Math.min(...members.map(n=>n.x))-pad;
+  g.y=Math.min(...members.map(n=>n.y))-pad-22;
+  g.w=Math.max(...members.map(n=>n.x+(n.w||DW)))-g.x+pad;
+  g.h=Math.max(...members.map(n=>n.y+(n.h||DH)))-g.y+pad;
+  g.w=Math.max(g.w,180);g.h=Math.max(g.h,120);
+  sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
+}
 
 // NODE EDIT (double click)
 function openNE(node,cx,cy){
@@ -1307,7 +1337,7 @@ let _simNodes=[],_simLinks=[],_simTick=0;
 const SIM_TICKS=400;
 
 function getGroupId(n){
-  // match by position
+  // position-based check
   const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
   for(const g of groups){if(cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h)return g.id;}
   return null;
@@ -1328,6 +1358,8 @@ function runLayout(){
     else ungrouped.push(n);
   });
 
+  // assign group_id to all nodes before layout
+  nodes.forEach(n=>{n.group_id=getGroupId(n);});
   // STEP 1: arrange nodes within each group in a compact grid
   const PAD=20,INNER_COL_W=DW+PAD,INNER_ROW_H=(DH||60)+PAD;
   Object.entries(grouped).forEach(([gid,gnodes])=>{
@@ -1404,7 +1436,7 @@ function _tickSim(){
     const dx=b.x-a.x,dy=b.y-a.y;
     const dist=Math.max(1,Math.hypot(dx,dy));
     const target=280;
-    const f=alpha*(dist-target)*0.05/dist;
+    const f=alpha*(dist-target)*0.03/dist;
     a.vx+=dx*f;a.vy+=dy*f;b.vx-=dx*f;b.vy-=dy*f;
   });
 
