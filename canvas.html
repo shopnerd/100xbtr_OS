@@ -698,21 +698,19 @@ async function onUp(e){
   const{wx,wy,cx,cy}=wp(e);
 
   if(drag.node){
+    // capture old group IDs BEFORE we change them
+    const oldGids=new Set(drag.multiNodes.map(({n})=>n.group_id).filter(Boolean));
     // update node positions
     for(const {n} of drag.multiNodes){
-      // assign/update group membership based on final position
       const gid=getGroupId(n);
-      if(gid!==n.group_id){
-        n.group_id=gid;
-        await sb.from('canvas_nodes').update({x:n.x,y:n.y,group_id:gid}).eq('id',n.id);
-      } else {
-        await sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
-      }
+      n.group_id=gid;
+      await sb.from('canvas_nodes').update({x:n.x,y:n.y,group_id:gid||null}).eq('id',n.id);
     }
     if(drag.multiGroups?.length)await Promise.all(drag.multiGroups.map(({g})=>sb.from('canvas_groups').update({x:g.x,y:g.y}).eq('id',g.id)));
-    // auto-resize any group the nodes came from or landed in
-    const affectedGids=new Set([...drag.multiNodes.map(({n})=>n.group_id).filter(Boolean)]);
-    affectedGids.forEach(gid=>{const g=groups.find(x=>x.id===gid);if(g)autoResizeGroup(g);});
+    // resize ALL affected groups: old ones (node may have left) + new ones (node may have joined)
+    const newGids=new Set(drag.multiNodes.map(({n})=>n.group_id).filter(Boolean));
+    const allAffected=new Set([...oldGids,...newGids]);
+    allAffected.forEach(gid=>{const g=groups.find(x=>x.id===gid);if(g)autoResizeGroup(g);});
   }else if(drag.group){
     // suppress realtime during save to prevent loadAll() clobbering in-flight positions
     _pauseRT=true;
