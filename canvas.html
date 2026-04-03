@@ -642,7 +642,7 @@ function onDown(e){
       return;
     }
     if(!selected.groups.includes(g.id)){selected={nodes:[],groups:[g.id]};}
-    const members=nodesInGroup(g).map(n=>({n,ox:wx-n.x,oy:wy-n.y}));
+    const members=nodesInGroup(g).map(n=>({n,dx:n.x-g.x,dy:n.y-g.y}));
     drag={on:true,group:g,ox:wx-g.x,oy:wy-g.y,members,
       multiGroups:selected.groups.map(id=>({g:groups.find(gg=>gg.id===id),ox:wx-(groups.find(gg=>gg.id===id)?.x||0),oy:wy-(groups.find(gg=>gg.id===id)?.y||0)})).filter(x=>x.g),
     };
@@ -678,7 +678,8 @@ function onMove(e){
     });
   }else if(drag.group){
     drag.group.x=wx-drag.ox;drag.group.y=wy-drag.oy;
-    drag.members?.forEach(({n,ox,oy})=>{n.x=wx-ox;n.y=wy-oy;});
+    // members positioned relative to group origin — this is the reliable approach
+    drag.members?.forEach(({n,dx,dy})=>{n.x=drag.group.x+dx;n.y=drag.group.y+dy;});
     drag.multiGroups.forEach(({g,ox,oy})=>{g.x=wx-ox;g.y=wy-oy;});
   }else if(drag.resize){drag.resize.w=Math.max(MW,drag.sw+(wx-drag.ox));drag.resize.h=Math.max(MH,drag.sh+(wy-drag.oy));}
   else if(drag.rg){drag.rg.w=Math.max(100,drag.sw+(wx-drag.ox));drag.rg.h=Math.max(60,drag.sh+(wy-drag.oy));}
