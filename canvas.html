@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>100xbtr_sound — canvas</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-force@3"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -1184,61 +1183,10 @@ function setupRT(){
     .subscribe();
 }
 
-// FORCE LAYOUT ENGINE
+// VANILLA FORCE LAYOUT — no external dependencies
 let simRunning=false;
-let simNodes=[],simLinks=[];
-
-function runLayout(){
-  if(!nodes.length){toast('No nodes to arrange');return;}
-  toast('Running layout...');
-  simRunning=true;
-
-  // build sim data — only unpin nodes that aren't being dragged
-  simNodes=nodes.map(n=>({
-    id:n.id,
-    x:n.x+(n.w||DW)/2,
-    y:n.y+(n.h||DH)/2,
-    w:n.w||DW,h:n.h||DH,
-    gid:getGroupId(n), // which group this node belongs to
-    vx:0,vy:0,fx:null,fy:null
-  }));
-
-  const linkData=links.map(l=>({
-    source:l.source?.id||l.source,
-    target:l.target?.id||l.target
-  })).filter(l=>simNodes.find(n=>n.id===l.source)&&simNodes.find(n=>n.id===l.target));
-
-  // use d3-force if available
-  if(typeof d3!=='undefined'&&d3.forceSimulation){
-    const sim=d3.forceSimulation(simNodes)
-      .force('link',d3.forceLink(linkData).id(d=>d.id).distance(220).strength(0.3))
-      .force('charge',d3.forceManyBody().strength(-800).distanceMax(600))
-      .force('collision',d3.forceCollide().radius(d=>(d.w+d.h)/2+40))
-      .force('group',groupForce())
-      .alphaDecay(0.02)
-      .on('tick',()=>{
-        simNodes.forEach(sn=>{
-          const n=nById(sn.id);
-          if(n){n.x=sn.x-sn.w/2;n.y=sn.y-sn.h/2;}
-        });
-      })
-      .on('end',async()=>{
-        simRunning=false;
-        // save positions to DB
-        toast('Layout done — saving positions...');
-        await Promise.all(simNodes.map(sn=>{
-          const n=nById(sn.id);
-          if(n)return sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
-        }).filter(Boolean));
-        // also update group positions to wrap their members
-        await repositionGroups();
-        toast('Layout saved');
-      });
-  } else {
-    // fallback: simple repulsion without d3
-    simpleLayout();
-  }
-}
+let simTick=0,simMax=300;
+let simN=[],simL=[];
 
 function getGroupId(n){
   const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
@@ -1246,47 +1194,129 @@ function getGroupId(n){
   return g?g.id:null;
 }
 
-function groupForce(){
-  // pull nodes toward their group center
-  return function(alpha){
-    simNodes.forEach(n=>{
-      if(!n.gid)return;
-      const g=groups.find(g=>g.id===n.gid);
-      if(!g)return;
-      const gcx=g.x+g.w/2,gcy=g.y+g.h/2;
-      n.vx+=(gcx-n.x)*0.05*alpha;
-      n.vy+=(gcy-n.y)*0.05*alpha;
-    });
-  };
+function runLayout(){
+  if(!nodes.length){toast('No nodes to arrange');return;}
+  if(simRunning){toast('Layout already running');return;}
+  toast('Running layout...');
+  simRunning=true;simTick=0;
+
+  // build sim particles — center-based
+  simN=nodes.map(n=>({
+    id:n.id,ref:n,
+    x:n.x+(n.w||DW)/2,y:n.y+(n.h||DH)/2,
+    w:n.w||DW,h:n.h||DH,
+    vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,
+    gid:getGroupId(n)
+  }));
+
+  // build edge list with resolved indices
+  simL=[];
+  links.forEach(l=>{
+    const si=simN.findIndex(n=>n.id===(l.source?.id||l.source));
+    const ti=simN.findIndex(n=>n.id===(l.target?.id||l.target));
+    if(si>=0&&ti>=0)simL.push({s:si,t:ti});
+  });
+
+  stepSim();
 }
 
-async function repositionGroups(){
-  for(const g of groups){
-    const members=nodes.filter(n=>{
-      const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
-      return cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h;
-    });
-    if(!members.length)continue;
-    const pad=40;
-    const nx=Math.min(...members.map(n=>n.x))-pad;
-    const ny=Math.min(...members.map(n=>n.y))-pad-22;
-    const nw=Math.max(...members.map(n=>n.x+(n.w||DW)))-nx+pad;
-    const nh=Math.max(...members.map(n=>n.y+(n.h||DH)))-ny+pad;
-    g.x=nx;g.y=ny;g.w=Math.max(nw,200);g.h=Math.max(nh,150);
-    await sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
+function stepSim(){
+  if(!simRunning)return;
+  const alpha=Math.max(0.01,1-simTick/simMax);
+  const dt=0.8;
+
+  // forces
+  for(let i=0;i<simN.length;i++){
+    const a=simN[i];
+    // repulsion between all pairs
+    for(let j=i+1;j<simN.length;j++){
+      const b=simN[j];
+      let dx=b.x-a.x,dy=b.y-a.y;
+      const dist=Math.max(1,Math.hypot(dx,dy));
+      const minDist=(a.w+b.w)/2+60;
+      if(dist<minDist*2){
+        const force=alpha*800/(dist*dist);
+        const fx=dx/dist*force,fy=dy/dist*force;
+        a.vx-=fx;a.vy-=fy;
+        b.vx+=fx;b.vy+=fy;
+      }
+    }
+    // group attraction — pull toward group center
+    if(a.gid){
+      const g=groups.find(g=>g.id===a.gid);
+      if(g){
+        const gcx=g.x+g.w/2,gcy=g.y+g.h/2;
+        a.vx+=(gcx-a.x)*alpha*0.08;
+        a.vy+=(gcy-a.y)*alpha*0.08;
+      }
+    }
+  }
+  // link attraction
+  simL.forEach(({s,t})=>{
+    const a=simN[s],b=simN[t];
+    let dx=b.x-a.x,dy=b.y-a.y;
+    const dist=Math.max(1,Math.hypot(dx,dy));
+    const target=220;
+    const force=alpha*(dist-target)*0.15;
+    const fx=dx/dist*force,fy=dy/dist*force;
+    a.vx+=fx;a.vy+=fy;
+    b.vx-=fx;b.vy-=fy;
+  });
+  // group repulsion — push groups apart
+  for(let i=0;i<groups.length;i++){
+    for(let j=i+1;j<groups.length;j++){
+      const ga=groups[i],gb=groups[j];
+      const acx=ga.x+ga.w/2,acy=ga.y+ga.h/2;
+      const bcx=gb.x+gb.w/2,bcy=gb.y+gb.h/2;
+      const dx=bcx-acx,dy=bcy-acy;
+      const dist=Math.max(1,Math.hypot(dx,dy));
+      const minD=(ga.w+ga.h+gb.w+gb.h)/4+80;
+      if(dist<minD){
+        const push=(minD-dist)*alpha*0.3;
+        const fx=dx/dist*push,fy=dy/dist*push;
+        // push member nodes apart
+        simN.filter(n=>n.gid===ga.id).forEach(n=>{n.vx-=fx;n.vy-=fy;});
+        simN.filter(n=>n.gid===gb.id).forEach(n=>{n.vx+=fx;n.vy+=fy;});
+      }
+    }
+  }
+
+  // integrate + dampen
+  simN.forEach(n=>{
+    n.vx*=0.85;n.vy*=0.85;
+    n.x+=n.vx*dt;n.y+=n.vy*dt;
+    // apply back to node ref
+    n.ref.x=n.x-n.w/2;n.ref.y=n.y-n.h/2;
+  });
+
+  simTick++;
+  if(simTick<simMax){
+    requestAnimationFrame(stepSim);
+  } else {
+    simRunning=false;
+    finishLayout();
   }
 }
 
-function simpleLayout(){
-  // basic grid fallback
-  const cols=Math.ceil(Math.sqrt(nodes.length));
-  const cellW=250,cellH=120;
-  nodes.forEach((n,i)=>{
-    n.x=(i%cols)*cellW-cols*cellW/2;
-    n.y=Math.floor(i/cols)*cellH-Math.floor(nodes.length/cols)*cellH/2;
-  });
-  simRunning=false;
-  toast('Layout done (d3 not loaded)');
+async function finishLayout(){
+  toast('Saving layout...');
+  // batch save node positions
+  await Promise.all(simN.map(sn=>
+    sb.from('canvas_nodes').update({x:sn.ref.x,y:sn.ref.y}).eq('id',sn.id)
+  ));
+  // reposition groups to wrap members
+  for(const g of groups){
+    const members=simN.filter(n=>n.gid===g.id);
+    if(!members.length)continue;
+    const pad=36;
+    const nx=Math.min(...members.map(n=>n.ref.x))-pad;
+    const ny=Math.min(...members.map(n=>n.ref.y))-pad-22;
+    const nw=Math.max(...members.map(n=>n.ref.x+n.w))-nx+pad;
+    const nh=Math.max(...members.map(n=>n.ref.y+n.h))-ny+pad;
+    g.x=nx;g.y=ny;g.w=Math.max(nw,200);g.h=Math.max(nh,150);
+    await sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
+  }
+  toast('Layout complete');
 }
 let toastT=null;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.style.opacity='1';clearTimeout(toastT);toastT=setTimeout(()=>el.style.opacity='0',2200);}
