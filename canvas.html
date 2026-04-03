@@ -707,6 +707,7 @@ async function onUp(e){
   const{wx,wy,cx,cy}=wp(e);
 
   if(drag.node){
+    _pauseRT=true;
     // old group_ids before we reassign
     const oldGids=new Set(drag.multiNodes.map(({n})=>n.group_id).filter(Boolean));
     // reassign group_id by current position
@@ -719,7 +720,14 @@ async function onUp(e){
     // now group_ids are correct — resize all affected groups
     const newGids=new Set(drag.multiNodes.map(({n})=>n.group_id).filter(Boolean));
     const allAffected=new Set([...oldGids,...newGids]);
-    allAffected.forEach(gid=>{const g=groups.find(x=>x.id===gid);if(g)autoResizeGroup(g);});
+    // save group sizes synchronously while RT is paused
+    await Promise.all([...allAffected].map(gid=>{
+      const g=groups.find(x=>x.id===gid);
+      if(!g)return;
+      sizeGroupAroundMembers(g);
+      return sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
+    }).filter(Boolean));
+    setTimeout(()=>{_pauseRT=false;},200);
   }else if(drag.group){
     // suppress realtime during save to prevent loadAll() clobbering in-flight positions
     _pauseRT=true;
@@ -1037,7 +1045,10 @@ function sizeGroupAroundMembers(g){
 // On release: size by group_id membership and save to DB
 function autoResizeGroup(g){
   sizeGroupAroundMembers(g);
-  sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
+  // pause RT so the DB write doesn't trigger loadAll() and snap back
+  _pauseRT=true;
+  sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id)
+    .then(()=>{setTimeout(()=>{_pauseRT=false;},200);});
 }
 
 // NODE EDIT (double click)
