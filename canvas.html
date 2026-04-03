@@ -227,18 +227,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <button class="gedl" onclick="deleteGroup()">Delete</button>
       </div>
     </div>
-    <!-- CONTEXT MENU -->
-    <div id="ctx">
-      <div class="ctxi" onclick="ctxAdd('idea')"><div class="ctxd" style="background:#378ADD"></div>Idea / thought</div>
-      <div class="ctxi" onclick="ctxAdd('reference')"><div class="ctxd" style="background:#1D9E75"></div>Reference / URL</div>
-      <div class="ctxi" onclick="ctxAdd('material')"><div class="ctxd" style="background:#BA7517"></div>Material / spec</div>
-      <div class="ctxi" onclick="ctxAdd('decision')"><div class="ctxd" style="background:#D85A30"></div>Decision</div>
-      <div class="ctxi" onclick="ctxAdd('image')"><div class="ctxd" style="background:#7F77DD"></div>Image</div>
-      <div class="ctxs"></div>
-      <div class="ctxi" onclick="ctxAddGroup()"><div class="ctxd" style="background:#888780"></div>Add group</div>
-      <div class="ctxs"></div>
-      <div class="ctxi" onclick="closeCtx()" style="color:var(--tx3)">Cancel</div>
-    </div>
+    <!-- CONTEXT MENU — rebuilt dynamically -->
+    <div id="ctx"></div>
     <div id="toast"></div>
   </div>
 </div>
@@ -256,7 +246,7 @@ const DW=180,DH=60,MW=120,MH=44,PR=6,RH=20;
 
 let user=null,who='';
 let nodes=[],links=[],groups=[];
-let selNode=null,selGroup=null,linkFrom=null,claudeOn=false,hovLink=null;
+let selNode=null,selGroup=null,linkFrom=null,claudeOn=false,hovLink=null,selLink=null;
 let canvas,ctx;
 let cam={x:0,y:0,z:1};
 // drag states
@@ -409,12 +399,18 @@ function drawNodes(){
     const isSel=selected.nodes.includes(n.id);
     const isEdit=selNode?.id===n.id;
     const isLink=linkFrom?.id===n.id;
+    // connected node highlight
+    const isConnected=selected.nodes.length===1&&selected.nodes[0]!==n.id&&links.some(l=>{
+      const s=l.source?.id||l.source,t=l.target?.id||l.target;
+      return(s===selected.nodes[0]&&t===n.id)||(t===selected.nodes[0]&&s===n.id);
+    });
     const color=TC[n.type]||'#888';
     const w=n.w||DW,h=n.h||DH;
-    ctx.shadowColor='rgba(0,0,0,0.12)';ctx.shadowBlur=isEdit?8:3;ctx.shadowOffsetY=isEdit?2:1;
-    ctx.fillStyle=isEdit?'#fff':'#f4f4f0';
-    ctx.strokeStyle=isSel?'#378ADD':isEdit?color:isLink?'#E8820C':'#c0c0bc';
-    ctx.lineWidth=(isSel||isEdit?1.8:1)/cam.z;
+    ctx.shadowColor=isConnected?'rgba(232,130,12,0.3)':'rgba(0,0,0,0.12)';
+    ctx.shadowBlur=isEdit?8:isConnected?10:3;ctx.shadowOffsetY=isEdit?2:1;
+    ctx.fillStyle=isConnected?'#FFF5E8':isEdit?'#fff':'#f4f4f0';
+    ctx.strokeStyle=isConnected?'#E8820C':isSel?'#378ADD':isEdit?color:isLink?'#E8820C':'#c0c0bc';
+    ctx.lineWidth=(isConnected||isSel||isEdit?2:1)/cam.z;
     rr(ctx,n.x,n.y,w,h,4/cam.z);ctx.fill();ctx.stroke();
     if(isSel&&!isEdit){
       ctx.strokeStyle='rgba(55,138,221,0.4)';ctx.lineWidth=3/cam.z;
@@ -628,6 +624,7 @@ function onDown(e){
       return;
     }
     // plain click = select + drag
+    selLink=null;
     if(!selected.nodes.includes(n.id)){selected={nodes:[n.id],groups:[]};}
     drag={on:true,node:n,ox:wx-n.x,oy:wy-n.y,
       multiNodes:selected.nodes.map(id=>({n:nById(id),ox:wx-(nById(id)?.x||0),oy:wy-(nById(id)?.y||0)})).filter(x=>x.n),
@@ -652,6 +649,10 @@ function onDown(e){
     canvas.style.cursor='grabbing';
     return;
   }
+  // check wire click
+  const hitL=hitLink(wx,wy);
+  if(hitL){selLink=(selLink?.id===hitL.id)?null:hitL;selNode=null;selected={nodes:[],groups:[]};return;}
+  selLink=null;
   // empty canvas = pan
   linkFrom=null;closeNE();closeGE();selNode=null;selGroup=null;
   if(!e.shiftKey){selected={nodes:[],groups:[]};}
@@ -719,19 +720,64 @@ function onWheel(e){
 function onRC(e){
   e.preventDefault();
   const{wx,wy,cx,cy}=wp(e);ctxPos={x:wx,y:wy};
-  // check if right-clicking a wire
+  const m=document.getElementById('ctx');
+  let items=[];
+  // right-click on wire
   const l=hitLink(wx,wy);
   if(l){
     const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
-    const label=s&&t?`"${s.label}" → "${t.label}"`:'wire';
-    if(confirm(`Disconnect ${label}?`)){
-      sb.from('canvas_links').delete().eq('id',l.id).then(()=>loadAll());
-    }
-    return;
+    items=[
+      {label:`Disconnect "${s?.label||'?'}" → "${t?.label||'?'}"`,fn:`disconnectLink(window._ctxLink)`,danger:true},
+      {sep:true},
+      {label:'Cancel',fn:'closeCtx()',dim:true}
+    ];
+    window._ctxLink=l;
+    showCtx(items,cx,cy);return;
   }
+  // right-click with selection active
+  const hasSelNodes=selected.nodes.length>0;
+  if(hasSelNodes){
+    items=[
+      {label:`Group ${selected.nodes.length} selected nodes`,fn:'ctxGroupSelected()'},
+      {label:'Add selected to existing group...',fn:'ctxAddToGroup()'},
+      {sep:true},
+      {label:`Spread selected apart`,fn:'spreadSelected()'},
+      {sep:true},
+      {label:`Delete ${selected.nodes.length} node(s)`,fn:'deleteSelected()',danger:true},
+      {sep:true},
+      {label:'Cancel',fn:'closeCtx()',dim:true}
+    ];
+    showCtx(items,cx,cy);return;
+  }
+  // default: add node menu
+  items=[
+    {label:'Idea / thought',fn:"ctxAdd('idea')",dot:'#378ADD'},
+    {label:'Reference / URL',fn:"ctxAdd('reference')",dot:'#1D9E75'},
+    {label:'Material / spec',fn:"ctxAdd('material')",dot:'#BA7517'},
+    {label:'Decision',fn:"ctxAdd('decision')",dot:'#D85A30'},
+    {label:'Image',fn:"ctxAdd('image')",dot:'#7F77DD'},
+    {sep:true},
+    {label:'Add group',fn:'ctxAddGroup()',dot:'#888780'},
+    {sep:true},
+    {label:'Spread all apart',fn:'spreadAll()'},
+    {label:'Compact all',fn:'compactAll()'},
+    {sep:true},
+    {label:'Cancel',fn:'closeCtx()',dim:true}
+  ];
+  showCtx(items,cx,cy);
+}
+
+function showCtx(items,cx,cy){
   const m=document.getElementById('ctx');
+  m.innerHTML=items.map(it=>{
+    if(it.sep)return '<div class="ctxs"></div>';
+    const dot=it.dot?`<div class="ctxd" style="background:${it.dot}"></div>`:'';
+    const col=it.danger?'color:#c0392b;':it.dim?'color:var(--tx3);':''
+    return `<div class="ctxi" style="${col}" onclick="${it.fn};closeCtx()">${dot}${it.label}</div>`;
+  }).join('');
   m.style.display='block';
-  m.style.left=Math.min(cx,canvas.width-200)+'px';m.style.top=Math.min(cy,canvas.height-250)+'px';
+  m.style.left=Math.min(cx,canvas.width-220)+'px';
+  m.style.top=Math.min(cy,canvas.height-320)+'px';
 }
 
 function onDbl(e){
@@ -750,7 +796,7 @@ function onDbl(e){
 
 function onKey(e){
   if(e.code==='Space'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){spaceDown=true;canvas.style.cursor='grab';}
-  if(e.key==='Escape'){if(linkFrom){linkFrom=null;toast('Wire cancelled');}closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};canvas.style.cursor='default';}
+  if(e.key==='Escape'){if(linkFrom){linkFrom=null;toast('Wire cancelled');}closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};selLink=null;canvas.style.cursor='default';}
   if((e.key==='Delete'||e.key==='Backspace')&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){
     deleteSelected();
   }
@@ -777,6 +823,78 @@ async function onPaste(e){
   for(const item of items){if(item.type.startsWith('image/')){addImageFile({files:[item.getAsFile()]});}}
 }
 function closeCtx(){document.getElementById('ctx').style.display='none';}
+
+function spreadSelected(){
+  const sns=selected.nodes.map(id=>nById(id)).filter(Boolean);
+  if(!sns.length)return;
+  const cx=sns.reduce((s,n)=>s+n.x+(n.w||DW)/2,0)/sns.length;
+  const cy=sns.reduce((s,n)=>s+n.y+(n.h||DH)/2,0)/sns.length;
+  sns.forEach(n=>{
+    const dx=n.x+(n.w||DW)/2-cx,dy=n.y+(n.h||DH)/2-cy;
+    const d=Math.max(1,Math.hypot(dx,dy));
+    n.x+=dx/d*80;n.y+=dy/d*80;
+    sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
+  });toast('Spread');
+}
+
+function spreadAll(){
+  const cx=nodes.reduce((s,n)=>s+n.x+(n.w||DW)/2,0)/Math.max(1,nodes.length);
+  const cy=nodes.reduce((s,n)=>s+n.y+(n.h||DH)/2,0)/Math.max(1,nodes.length);
+  Promise.all(nodes.map(n=>{
+    const dx=n.x+(n.w||DW)/2-cx,dy=n.y+(n.h||DH)/2-cy;
+    const d=Math.max(1,Math.hypot(dx,dy));
+    n.x+=dx/d*60;n.y+=dy/d*60;
+    return sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
+  }));toast('Spread all');
+}
+
+function compactAll(){
+  const cx=nodes.reduce((s,n)=>s+n.x+(n.w||DW)/2,0)/Math.max(1,nodes.length);
+  const cy=nodes.reduce((s,n)=>s+n.y+(n.h||DH)/2,0)/Math.max(1,nodes.length);
+  Promise.all(nodes.map(n=>{
+    const dx=n.x+(n.w||DW)/2-cx,dy=n.y+(n.h||DH)/2-cy;
+    const d=Math.max(1,Math.hypot(dx,dy));
+    n.x-=dx/d*40;n.y-=dy/d*40;
+    return sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
+  }));toast('Compact');
+}
+
+async function ctxGroupSelected(){
+  const sns=selected.nodes.map(id=>nById(id)).filter(Boolean);
+  if(!sns.length)return;
+  const pad=32;
+  const x=Math.min(...sns.map(n=>n.x))-pad;
+  const y=Math.min(...sns.map(n=>n.y))-pad-22;
+  const w=Math.max(...sns.map(n=>n.x+(n.w||DW)))-x+pad;
+  const h=Math.max(...sns.map(n=>n.y+(n.h||DH)))-y+pad;
+  const id='g-'+Date.now();
+  await sb.from('canvas_groups').insert({id,label:'New group',type:'idea',color:GROUP_COLORS[Math.floor(Math.random()*GROUP_COLORS.length)],x,y,w:Math.max(w,180),h:Math.max(h,120)});
+  toast('Group created — double-click to rename');
+  selected={nodes:[],groups:[]};
+}
+
+async function ctxAddToGroup(){
+  const sns=selected.nodes.map(id=>nById(id)).filter(Boolean);
+  if(!sns.length||!groups.length){toast('No groups on canvas yet');return;}
+  // find nearest group center
+  const avgX=sns.reduce((s,n)=>s+n.x,0)/sns.length;
+  const avgY=sns.reduce((s,n)=>s+n.y,0)/sns.length;
+  const nearest=groups.reduce((best,g)=>{
+    const d=Math.hypot(avgX-g.x-g.w/2,avgY-g.y-g.h/2);
+    return d<best.d?{g,d}:best;
+  },{g:null,d:Infinity});
+  if(!nearest.g)return;
+  const g=nearest.g;
+  // expand group to include nodes
+  const allX=[g.x+32,...sns.map(n=>n.x)];const allY=[g.y+54,...sns.map(n=>n.y)];
+  const allX2=[g.x+g.w-32,...sns.map(n=>n.x+(n.w||DW))];const allY2=[g.y+g.h-32,...sns.map(n=>n.y+(n.h||DH))];
+  const pad=32;
+  g.x=Math.min(...allX)-pad;g.y=Math.min(...allY)-pad-22;
+  g.w=Math.max(...allX2)-g.x+pad;g.h=Math.max(...allY2)-g.y+pad;
+  await sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
+  toast(`Added to "${g.label}"`);
+  selected={nodes:[],groups:[]};
+}
 
 // ADD
 async function ctxAdd(type){
