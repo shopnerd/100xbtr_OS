@@ -49,6 +49,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ib-add{padding:4px 12px;border-radius:var(--r);border:none;background:var(--tx);color:var(--nb);font-size:11px;cursor:pointer;}
 .ib-img{padding:4px 10px;border-radius:var(--r);border:1px solid var(--bo);background:transparent;color:var(--tx2);font-size:11px;cursor:pointer;}
 #img-upload{display:none;}
+/* CANVAS SIDEBAR */
+#sidebar{position:absolute;top:44px;left:0;width:220px;height:calc(100vh - 44px);background:var(--nb);border-right:1px solid var(--bo);display:flex;flex-direction:column;z-index:80;transform:translateX(-220px);transition:transform 0.25s ease;}
+#sidebar.open{transform:translateX(0);}
+#sb-toggle{position:absolute;top:44px;left:0;width:24px;height:48px;background:var(--nb);border:1px solid var(--bo);border-left:none;border-radius:0 6px 6px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:81;transition:left 0.25s ease;font-size:11px;color:var(--tx3);}
+#sb-toggle.open{left:220px;}
+#sb-toggle:hover{background:var(--bg);}
+.sb-header{padding:10px 12px;border-bottom:1px solid var(--bo);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.sb-title{font-size:11px;font-weight:500;color:var(--tx);text-transform:uppercase;letter-spacing:0.05em;}
+.sb-new{padding:3px 8px;font-size:11px;border:1px solid var(--bo);border-radius:var(--r);background:transparent;color:var(--tx2);cursor:pointer;}
+.sb-new:hover{background:var(--bg);}
+.sb-list{flex:1;overflow-y:auto;padding:6px;}
+.sb-item{padding:8px 10px;border-radius:var(--r);cursor:pointer;margin-bottom:2px;border:1px solid transparent;}
+.sb-item:hover{background:var(--bg);border-color:var(--bo);}
+.sb-item.active{background:#EDF4FC;border-color:#378ADD;}
+.sb-name{font-size:12px;font-weight:500;color:var(--tx);margin-bottom:2px;}
+.sb-meta{font-size:10px;color:var(--tx3);}
+.sb-item-actions{display:none;gap:4px;margin-top:4px;}
+.sb-item:hover .sb-item-actions{display:flex;}
+.sb-del{font-size:10px;padding:1px 6px;border:1px solid var(--bo);border-radius:var(--r);background:transparent;color:var(--tx3);cursor:pointer;}
+.sb-del:hover{color:#c0392b;border-color:#c0392b;}
+.sb-save-new{padding:10px 12px;border-top:1px solid var(--bo);flex-shrink:0;}
+.sb-save-input{width:100%;font-size:12px;padding:5px 8px;border:1px solid var(--bo);border-radius:var(--r);background:#fff;color:var(--tx);font-family:inherit;outline:none;margin-bottom:6px;}
+.sb-save-input:focus{border-color:#378ADD;}
+.sb-save-btn{width:100%;padding:5px;border-radius:var(--r);border:none;background:var(--tx);color:var(--nb);font-size:11px;cursor:pointer;}
+.sb-empty{font-size:12px;color:var(--tx3);text-align:center;padding:24px 12px;line-height:1.6;}
+
 /* CLAUDE PANEL */
 #cp{position:absolute;top:44px;right:0;width:290px;height:calc(100vh - 44px);background:#f8f8f4;border-left:1px solid var(--bo);display:none;flex-direction:column;z-index:80;}
 #cp.open{display:flex;}
@@ -148,6 +174,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <input type="file" id="img-upload" accept="image/*" onchange="addImageFile(this)">
       <button class="ib-add" onclick="quickAdd()">Add</button>
     </div>
+
+    <!-- CANVAS SIDEBAR -->
+    <div id="sb-toggle" onclick="toggleSidebar()">◀</div>
+    <div id="sidebar">
+      <div class="sb-header">
+        <div class="sb-title">Canvases</div>
+      </div>
+      <div class="sb-list" id="sb-list">
+        <div class="sb-empty">No saved canvases yet.<br>Save the current canvas below.</div>
+      </div>
+      <div class="sb-save-new">
+        <input class="sb-save-input" id="sb-name-input" placeholder="Canvas name..." onkeydown="if(event.key==='Enter')saveCanvas()">
+        <button class="sb-save-btn" onclick="saveCanvas()">Save current canvas</button>
+      </div>
+    </div>
     <!-- CLAUDE PANEL -->
     <div id="cp">
       <div class="cph"><div class="cpd"></div><div class="cpt">Claude — canvas</div><button class="cpa" onclick="analyzeCanvas()">Analyze</button></div>
@@ -242,7 +283,7 @@ async function startApp(u){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('ued').textContent=u.email;
-  initCanvas();await initDB();await loadAll();setupRT();
+  initCanvas();await initDB();await loadAll();setupRT();await loadCanvasList();
 }
 
 // CANVAS INIT
@@ -375,14 +416,15 @@ function drawNodes(){
       } else if(!img){const i=new Image();i.crossOrigin='anonymous';i.src=n.img_url;imgCache[n.img_url]=i;}
       tx=n.x+sz+14;tw=w-sz-22;
     }
-    // label
+    // label — centered horizontally and vertically
     const fs=11/cam.z;
     ctx.font=`${n.type==='anchor'?'500 ':''}${fs}px -apple-system,sans-serif`;
-    ctx.fillStyle='#2a2a28';ctx.textBaseline='top';ctx.textAlign='left';
+    ctx.fillStyle='#2a2a28';ctx.textBaseline='top';ctx.textAlign='center';
     const lines=wrapText(ctx,n.label||'',tw);
     const lh=fs*1.35,th2=lines.length*lh;
     const sy=n.y+(h-th2)/2-fs*0.1;
-    lines.forEach((l,i)=>ctx.fillText(l,tx,sy+i*lh));
+    const cx2=n.img_url?(tx+tw/2):(n.x+w/2);
+    lines.forEach((l,i)=>ctx.fillText(l,cx2,sy+i*lh));
     // type + author
     ctx.font=`${9/cam.z}px -apple-system,sans-serif`;
     ctx.fillStyle=color+'bb';ctx.fillText(n.type,n.x+10,n.y+h-13/cam.z);
@@ -853,6 +895,93 @@ async function askClaude(){
     }else{body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${text.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</div></div>`;}
     document.getElementById('cpp').value='';
   }catch(e){body.innerHTML=prev+'<div class="cplo">Request failed.</div>';}
+}
+
+
+// SIDEBAR — SAVED CANVASES
+let sidebarOpen=false;
+let activeCanvasId=null;
+let allCanvases=[];
+
+function toggleSidebar(){
+  sidebarOpen=!sidebarOpen;
+  document.getElementById('sidebar').classList.toggle('open',sidebarOpen);
+  const btn=document.getElementById('sb-toggle');
+  btn.classList.toggle('open',sidebarOpen);
+  btn.textContent=sidebarOpen?'◀':'▶';
+  if(sidebarOpen)loadCanvasList();
+}
+
+async function loadCanvasList(){
+  const{data}=await sb.from('saved_canvases').select('*').order('updated_at',{ascending:false});
+  allCanvases=data||[];
+  renderCanvasList();
+}
+
+function renderCanvasList(){
+  const list=document.getElementById('sb-list');
+  if(!allCanvases.length){
+    list.innerHTML='<div class="sb-empty">No saved canvases yet.<br>Save the current canvas below.</div>';
+    return;
+  }
+  list.innerHTML=allCanvases.map(c=>`
+    <div class="sb-item${activeCanvasId===c.id?' active':''}" onclick="loadSavedCanvas('${c.id}')">
+      <div class="sb-name">${c.name}</div>
+      <div class="sb-meta">${new Date(c.updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})} · ${c.node_count||0} nodes</div>
+      <div class="sb-item-actions">
+        <button class="sb-del" onclick="event.stopPropagation();deleteSavedCanvas('${c.id}')">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+async function saveCanvas(){
+  const nameInput=document.getElementById('sb-name-input');
+  const name=nameInput.value.trim();
+  if(!name){nameInput.focus();return;}
+  const snapshot={
+    nodes:nodes.map(n=>({...n})),
+    links:links.map(l=>({...l,source:l.source?.id||l.source,target:l.target?.id||l.target})),
+    groups:groups.map(g=>({...g}))
+  };
+  const now=new Date().toISOString();
+  const{data,error}=await sb.from('saved_canvases').insert({
+    name,
+    snapshot:JSON.stringify(snapshot),
+    node_count:nodes.length,
+    author:who,
+    created_at:now,
+    updated_at:now
+  }).select().single();
+  if(error){toast('Save failed: '+error.message);return;}
+  activeCanvasId=data.id;
+  nameInput.value='';
+  await loadCanvasList();
+  toast('Canvas saved: "'+name+'"');
+}
+
+async function loadSavedCanvas(id){
+  const c=allCanvases.find(x=>x.id===id);
+  if(!c)return;
+  if(!confirm('Load "'+c.name+'"? This will replace the current canvas view (live canvas stays unchanged).'))return;
+  activeCanvasId=id;
+  try{
+    const snap=JSON.parse(c.snapshot);
+    // load into local state for viewing — does NOT overwrite the live DB canvas
+    nodes=snap.nodes||[];
+    links=snap.links||[];
+    groups=snap.groups||[];
+    renderCanvasList();
+    toast('Loaded: "'+c.name+'"');
+  }catch(e){toast('Load failed');}
+}
+
+async function deleteSavedCanvas(id){
+  const c=allCanvases.find(x=>x.id===id);
+  if(!c||!confirm('Delete "'+c.name+'"?'))return;
+  await sb.from('saved_canvases').delete().eq('id',id);
+  if(activeCanvasId===id)activeCanvasId=null;
+  await loadCanvasList();
+  toast('Deleted');
 }
 
 // DB
