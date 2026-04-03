@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>100xbtr_sound — canvas</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-force@3"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -161,6 +162,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <span>Claude</span>
         <div class="tt" id="clt" onclick="toggleClaude()"><div class="tth"></div></div>
       </div>
+      <button class="tb-link" onclick="runLayout()" style="background:#E8820C;color:#fff;border-color:#E8820C;" title="Auto-arrange nodes using force simulation">⟳ Layout</button>
       <div class="tb-sep"></div>
       <div class="tb-user"><span class="live-dot"></span><span id="ued">...</span></div>
       <button class="tb-so" onclick="signOut()">sign out</button>
@@ -395,12 +397,11 @@ function bezierMid(sp,tp,cp1,cp2){
   };
 }
 // control point offset based on which side the port is on
-function bezierCP(p,side){
-  const dist=80;
-  if(side===0)return{x:p.x+dist,y:p.y}; // right → push right
-  if(side===1)return{x:p.x-dist,y:p.y}; // left → push left
-  if(side===2)return{x:p.x,y:p.y-dist}; // top → push up
-  if(side===3)return{x:p.x,y:p.y+dist}; // bottom → push down
+function bezierCP(p,side,dist=120){
+  if(side===0)return{x:p.x+dist,y:p.y};
+  if(side===1)return{x:p.x-dist,y:p.y};
+  if(side===2)return{x:p.x,y:p.y-dist};
+  if(side===3)return{x:p.x,y:p.y+dist};
   return{x:p.x+dist,y:p.y};
 }
 
@@ -1181,6 +1182,111 @@ function setupRT(){
     .on('postgres_changes',{event:'*',schema:'public',table:'canvas_links'},()=>loadAll())
     .on('postgres_changes',{event:'*',schema:'public',table:'canvas_groups'},()=>loadAll())
     .subscribe();
+}
+
+// FORCE LAYOUT ENGINE
+let simRunning=false;
+let simNodes=[],simLinks=[];
+
+function runLayout(){
+  if(!nodes.length){toast('No nodes to arrange');return;}
+  toast('Running layout...');
+  simRunning=true;
+
+  // build sim data — only unpin nodes that aren't being dragged
+  simNodes=nodes.map(n=>({
+    id:n.id,
+    x:n.x+(n.w||DW)/2,
+    y:n.y+(n.h||DH)/2,
+    w:n.w||DW,h:n.h||DH,
+    gid:getGroupId(n), // which group this node belongs to
+    vx:0,vy:0,fx:null,fy:null
+  }));
+
+  const linkData=links.map(l=>({
+    source:l.source?.id||l.source,
+    target:l.target?.id||l.target
+  })).filter(l=>simNodes.find(n=>n.id===l.source)&&simNodes.find(n=>n.id===l.target));
+
+  // use d3-force if available
+  if(typeof d3!=='undefined'&&d3.forceSimulation){
+    const sim=d3.forceSimulation(simNodes)
+      .force('link',d3.forceLink(linkData).id(d=>d.id).distance(220).strength(0.3))
+      .force('charge',d3.forceManyBody().strength(-800).distanceMax(600))
+      .force('collision',d3.forceCollide().radius(d=>(d.w+d.h)/2+40))
+      .force('group',groupForce())
+      .alphaDecay(0.02)
+      .on('tick',()=>{
+        simNodes.forEach(sn=>{
+          const n=nById(sn.id);
+          if(n){n.x=sn.x-sn.w/2;n.y=sn.y-sn.h/2;}
+        });
+      })
+      .on('end',async()=>{
+        simRunning=false;
+        // save positions to DB
+        toast('Layout done — saving positions...');
+        await Promise.all(simNodes.map(sn=>{
+          const n=nById(sn.id);
+          if(n)return sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
+        }).filter(Boolean));
+        // also update group positions to wrap their members
+        await repositionGroups();
+        toast('Layout saved');
+      });
+  } else {
+    // fallback: simple repulsion without d3
+    simpleLayout();
+  }
+}
+
+function getGroupId(n){
+  const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
+  const g=groups.find(g=>cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h);
+  return g?g.id:null;
+}
+
+function groupForce(){
+  // pull nodes toward their group center
+  return function(alpha){
+    simNodes.forEach(n=>{
+      if(!n.gid)return;
+      const g=groups.find(g=>g.id===n.gid);
+      if(!g)return;
+      const gcx=g.x+g.w/2,gcy=g.y+g.h/2;
+      n.vx+=(gcx-n.x)*0.05*alpha;
+      n.vy+=(gcy-n.y)*0.05*alpha;
+    });
+  };
+}
+
+async function repositionGroups(){
+  for(const g of groups){
+    const members=nodes.filter(n=>{
+      const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
+      return cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h;
+    });
+    if(!members.length)continue;
+    const pad=40;
+    const nx=Math.min(...members.map(n=>n.x))-pad;
+    const ny=Math.min(...members.map(n=>n.y))-pad-22;
+    const nw=Math.max(...members.map(n=>n.x+(n.w||DW)))-nx+pad;
+    const nh=Math.max(...members.map(n=>n.y+(n.h||DH)))-ny+pad;
+    g.x=nx;g.y=ny;g.w=Math.max(nw,200);g.h=Math.max(nh,150);
+    await sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
+  }
+}
+
+function simpleLayout(){
+  // basic grid fallback
+  const cols=Math.ceil(Math.sqrt(nodes.length));
+  const cellW=250,cellH=120;
+  nodes.forEach((n,i)=>{
+    n.x=(i%cols)*cellW-cols*cellW/2;
+    n.y=Math.floor(i/cols)*cellH-Math.floor(nodes.length/cols)*cellH/2;
+  });
+  simRunning=false;
+  toast('Layout done (d3 not loaded)');
 }
 let toastT=null;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.style.opacity='1';clearTimeout(toastT);toastT=setTimeout(()=>el.style.opacity='0',2200);}
