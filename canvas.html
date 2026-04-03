@@ -1504,10 +1504,8 @@ function setupRT(){
     .subscribe();
 }
 
-// FORCE LAYOUT ENGINE
+// LAYOUT ENGINE
 let simRunning=false;
-let _simNodes=[],_simLinks=[],_simTick=0;
-const SIM_TICKS=400;
 
 function getGroupId(n){
   // position-based check
@@ -1603,52 +1601,7 @@ async function runLayout(){
   toast('Layout done ✓');
 }
 
-// stub — no longer used
-function _tickSim(){
-  simRunning=false;
-}
-function _finishLayout(){}
-// old physics vars kept to avoid errors
-let _simNodes=[],_simLinks=[],_simTick=0;
-const SIM_TICKS=1;
 
-function _DEAD_tickSim_old(){
-  const alpha=0;
-  const dx=0,dy=0;
-  const dist=1;
-  const target=280;
-  const f=alpha*(dist-target)*0.03/dist;
-    a.vx+=dx*f;a.vy+=dy*f;b.vx-=dx*f;b.vy-=dy*f;
-  });
-
-  _simNodes.forEach(n=>{
-    n.vx*=0.7;n.vy*=0.7;
-    n.x+=n.vx;n.y+=n.vy;
-    n.ref.x=n.x-n.w/2;n.ref.y=n.y-n.h/2;
-  });
-
-  _simTick++;
-  requestAnimationFrame(_tickSim);
-}
-
-async function _finishLayout(){
-  toast('Saving positions...');
-  await Promise.all(_simNodes.map(sn=>
-    sb.from('canvas_nodes').update({x:Math.round(sn.ref.x),y:Math.round(sn.ref.y)}).eq('id',sn.id)
-  ));
-  for(const g of groups){
-    const members=_simNodes.filter(n=>n.gid===g.id);
-    if(!members.length)continue;
-    const pad=28;
-    const nx=Math.min(...members.map(n=>n.ref.x))-pad;
-    const ny=Math.min(...members.map(n=>n.ref.y))-pad-22;
-    const nw=Math.max(...members.map(n=>n.ref.x+n.w))-nx+pad;
-    const nh=Math.max(...members.map(n=>n.ref.y+n.h))-ny+pad;
-    g.x=nx;g.y=ny;g.w=Math.max(nw,180);g.h=Math.max(nh,120);
-    _trackWrite('canvas_groups',g.id);await sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
-  }
-  toast('Layout done ✓');
-}
 let toastT=null;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.style.opacity='1';clearTimeout(toastT);toastT=setTimeout(()=>el.style.opacity='0',2200);}
 </script>
