@@ -714,7 +714,13 @@ async function onUp(e){
     affectedGids.forEach(gid=>{const g=groups.find(x=>x.id===gid);if(g)autoResizeGroup(g);});
   }else if(drag.group){
     await sb.from('canvas_groups').update({x:drag.group.x,y:drag.group.y}).eq('id',drag.group.id);
-    if(drag.members?.length)await Promise.all(drag.members.map(({n})=>sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id)));
+    if(drag.members?.length){
+      // save positions AND group_id so membership persists across reloads
+      await Promise.all(drag.members.map(({n})=>{
+        n.group_id=drag.group.id;
+        return sb.from('canvas_nodes').update({x:n.x,y:n.y,group_id:drag.group.id}).eq('id',n.id);
+      }));
+    }
   }else if(drag.resize){const n=drag.resize;await sb.from('canvas_nodes').update({w:n.w,h:n.h}).eq('id',n.id);}
   else if(drag.rg){const g=drag.rg;await sb.from('canvas_groups').update({w:g.w,h:g.h}).eq('id',g.id);}
   drag={on:false};
@@ -774,6 +780,7 @@ function onRC(e){
     {sep:true},
     {label:'Spread all apart',fn:'spreadAll()'},
     {label:'Compact all',fn:'compactAll()'},
+    {label:'Repair group membership',fn:'repairGroups()'},
     {sep:true},
     {label:'Cancel',fn:'closeCtx()',dim:true}
   ];
@@ -836,6 +843,26 @@ async function onPaste(e){
   for(const item of items){if(item.type.startsWith('image/')){addImageFile({files:[item.getAsFile()]});}}
 }
 function closeCtx(){document.getElementById('ctx').style.display='none';}
+
+async function repairGroups(){
+  // assign group_id to every node based on current position, save to DB
+  let count=0;
+  const updates=[];
+  nodes.forEach(n=>{
+    let found=null;
+    const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
+    for(const g of groups){
+      if(cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h){found=g.id;break;}
+    }
+    if(found!==n.group_id){
+      n.group_id=found;
+      updates.push(sb.from('canvas_nodes').update({group_id:found}).eq('id',n.id));
+      count++;
+    }
+  });
+  if(updates.length)await Promise.all(updates);
+  toast(count>0?`Repaired ${count} node${count!==1?'s':''}`:'All nodes already assigned');
+}
 
 function spreadSelected(){
   const sns=selected.nodes.map(id=>nById(id)).filter(Boolean);
@@ -1386,6 +1413,15 @@ async function initDB(){
 async function loadAll(){
   const[{data:n},{data:l},{data:g}]=await Promise.all([sb.from('canvas_nodes').select('*'),sb.from('canvas_links').select('*'),sb.from('canvas_groups').select('*')]);
   nodes=n||[];links=l||[];groups=g||[];
+  // assign group_id in memory for any node missing it (positional fallback)
+  nodes.forEach(n=>{
+    if(!n.group_id){
+      const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
+      for(const g of groups){
+        if(cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h){n.group_id=g.id;break;}
+      }
+    }
+  });
 }
 function setupRT(){
   sb.channel('canvas-rt5')
