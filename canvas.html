@@ -2,138 +2,147 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>100xbtr_sound — canvas</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#e8e8e4;--nb:#f4f4f0;--bo:#c0c0bc;
-  --tx:#2a2a28;--tx2:#6a6a66;--tx3:#a0a09c;
-  --idea:#378ADD;--reference:#1D9E75;--material:#BA7517;
-  --decision:#D85A30;--image:#7F77DD;--question:#E8820C;--anchor:#888780;
-  --r:4px;
-}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);overflow:hidden;height:100vh;display:flex;flex-direction:column;color:var(--tx);}
+:root{--r:3px;}
+body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;overflow:hidden;height:100vh;display:flex;flex-direction:column;color:#1a1a18;}
 #auth-screen{display:flex;align-items:center;justify-content:center;height:100vh;}
-.auth-box{background:var(--nb);border:1px solid var(--bo);border-radius:6px;padding:2.5rem;max-width:360px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.12);}
-.auth-logo{font-size:20px;font-weight:500;letter-spacing:-0.02em;margin-bottom:4px;}
-.auth-logo span{color:var(--tx3);font-weight:400;}
-.auth-sub{font-size:12px;color:var(--tx2);margin-bottom:1.5rem;line-height:1.6;}
-.auth-btn{width:100%;padding:9px 14px;border-radius:var(--r);border:1px solid var(--bo);background:var(--nb);color:var(--tx);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
-.auth-btn:hover{background:#eee;}
-.auth-err{font-size:12px;color:#c0392b;margin-top:8px;display:none;}
+.auth-box{background:#eeeee8;border:1px solid #b8b8b2;border-radius:4px;padding:2.5rem;max-width:360px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
+.auth-logo{font-size:18px;font-weight:700;letter-spacing:-0.03em;margin-bottom:4px;}
+.auth-logo span{color:#9a9a94;font-weight:400;}
+.auth-sub{font-size:11px;color:#5a5a56;margin-bottom:1.5rem;line-height:1.6;}
+.auth-btn{width:100%;padding:9px 14px;border-radius:var(--r);border:1px solid #b8b8b2;background:#eeeee8;color:#1a1a18;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;}
+.auth-btn:hover{background:#e2e2dc;}
+.auth-err{font-size:11px;color:#c0392b;margin-top:8px;display:none;}
 #app{display:none;flex-direction:column;height:100vh;}
-#topbar{height:36px;background:var(--nb);border-bottom:1px solid var(--bo);display:flex;align-items:center;padding:0 12px;gap:10px;flex-shrink:0;z-index:100;}
-.tb-logo{font-size:13px;font-weight:500;letter-spacing:-0.01em;}
-.tb-logo span{color:var(--tx3);font-weight:400;}
-.tb-sep{width:1px;height:16px;background:var(--bo);}
-.tb-link{font-size:11px;color:var(--tx2);text-decoration:none;padding:3px 8px;border:1px solid var(--bo);border-radius:var(--r);}
-.tb-link:hover{background:var(--bg);}
-.tb-hint{font-size:11px;color:var(--tx3);}
+#topbar{height:34px;background:#1e1e1c;border-bottom:1px solid #111110;display:flex;align-items:center;padding:0 10px;gap:8px;flex-shrink:0;z-index:100;}
+.tb-logo{font-size:11px;font-weight:700;letter-spacing:0.02em;color:#b8b8b0;}
+.tb-logo span{color:#555550;font-weight:400;}
+.tb-sep{width:1px;height:14px;background:#333330;}
+.tb-link{font-size:10px;color:#888880;text-decoration:none;padding:2px 7px;border:1px solid #333330;border-radius:var(--r);font-family:inherit;}
+.tb-link:hover{background:#2a2a28;color:#b8b8b0;}
+.tb-hint{font-size:10px;color:#555550;}
 .tb-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.tb-user{font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:4px;}
-.live-dot{width:6px;height:6px;border-radius:50%;background:#1D9E75;animation:pulse 2s ease-in-out infinite;}
+.tb-user{font-size:10px;color:#555550;display:flex;align-items:center;gap:4px;}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#1D9E75;animation:pulse 2s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
-.tb-so{font-size:11px;color:var(--tx3);background:none;border:none;cursor:pointer;}
-.ctw{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx2);}
-.tt{position:relative;width:28px;height:16px;background:var(--bo);border-radius:8px;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
-.tt.on{background:var(--question);}
-.tth{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform 0.2s;}
+.tb-so{font-size:10px;color:#555550;background:none;border:none;cursor:pointer;font-family:inherit;}
+.tb-so:hover{color:#b8b8b0;}
+.ctw{display:flex;align-items:center;gap:5px;font-size:10px;color:#888880;}
+.tt{position:relative;width:26px;height:14px;background:#333330;border-radius:7px;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
+.tt.on{background:#E8820C;}
+.tth{position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#fff;transition:transform 0.2s;}
 .tt.on .tth{transform:translateX(12px);}
+.tb-btn{font-size:10px;padding:2px 8px;border:1px solid #333330;border-radius:var(--r);background:transparent;color:#888880;cursor:pointer;font-family:inherit;}
+.tb-btn:hover{background:#2a2a28;color:#b8b8b0;}
+.tb-btn.accent{background:#E8820C;color:#fff;border-color:#E8820C;}
+.tb-btn.accent:hover{background:#cc7010;}
 #canvas-wrap{flex:1;position:relative;overflow:hidden;}
 #gh-canvas{position:absolute;top:0;left:0;cursor:default;}
-#input-bar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);width:min(560px,88vw);background:var(--nb);border:1px solid var(--bo);border-radius:var(--r);padding:8px 12px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 16px rgba(0,0,0,0.1);z-index:50;}
-#node-input{flex:1;border:none;outline:none;font-size:13px;background:transparent;color:var(--tx);font-family:inherit;}
-#node-input::placeholder{color:var(--tx3);}
-.ib-add{padding:4px 12px;border-radius:var(--r);border:none;background:var(--tx);color:var(--nb);font-size:11px;cursor:pointer;}
-.ib-img{padding:4px 10px;border-radius:var(--r);border:1px solid var(--bo);background:transparent;color:var(--tx2);font-size:11px;cursor:pointer;}
-#img-upload{display:none;}
-/* CANVAS SIDEBAR */
-#sidebar{position:absolute;top:44px;left:0;width:220px;height:calc(100vh - 44px);background:var(--nb);border-right:1px solid var(--bo);display:flex;flex-direction:column;z-index:80;transform:translateX(-220px);transition:transform 0.25s ease;}
+/* SIDEBAR */
+#sidebar{position:absolute;top:0;left:0;width:196px;height:100%;background:#1e1e1c;border-right:1px solid #111110;display:flex;flex-direction:column;z-index:80;transform:translateX(-196px);transition:transform 0.2s;}
 #sidebar.open{transform:translateX(0);}
-#sb-toggle{position:absolute;top:44px;left:0;width:24px;height:48px;background:var(--nb);border:1px solid var(--bo);border-left:none;border-radius:0 6px 6px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:81;transition:left 0.25s ease;font-size:11px;color:var(--tx3);}
-#sb-toggle.open{left:220px;}
-#sb-toggle:hover{background:var(--bg);}
-.sb-header{padding:10px 12px;border-bottom:1px solid var(--bo);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.sb-title{font-size:11px;font-weight:500;color:var(--tx);text-transform:uppercase;letter-spacing:0.05em;}
-.sb-new{padding:3px 8px;font-size:11px;border:1px solid var(--bo);border-radius:var(--r);background:transparent;color:var(--tx2);cursor:pointer;}
-.sb-new:hover{background:var(--bg);}
-.sb-list{flex:1;overflow-y:auto;padding:6px;}
-.sb-item{padding:8px 10px;border-radius:var(--r);cursor:pointer;margin-bottom:2px;border:1px solid transparent;}
-.sb-item:hover{background:var(--bg);border-color:var(--bo);}
-.sb-item.active{background:#EDF4FC;border-color:#378ADD;}
-.sb-name{font-size:12px;font-weight:500;color:var(--tx);margin-bottom:2px;}
-.sb-meta{font-size:10px;color:var(--tx3);}
+#sb-toggle{position:absolute;top:8px;left:0;width:18px;height:40px;background:#1e1e1c;border:1px solid #111110;border-left:none;border-radius:0 3px 3px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:81;transition:left 0.2s;font-size:9px;color:#555550;}
+#sb-toggle.open{left:196px;}
+#sb-toggle:hover{background:#2a2a28;color:#888880;}
+.sb-tabs{display:flex;border-bottom:1px solid #111110;flex-shrink:0;}
+.sb-tab{flex:1;padding:6px 3px;font-size:9px;text-align:center;color:#555550;cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;text-transform:uppercase;letter-spacing:0.05em;}
+.sb-tab.on{color:#b8b8b0;border-bottom-color:#E8820C;}
+.sb-tab:hover{color:#888880;}
+.sb-panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.sb-panel.on{display:flex;}
+.sb-list{flex:1;overflow-y:auto;padding:4px;}
+.sb-item{padding:6px 8px;border-radius:var(--r);cursor:pointer;margin-bottom:2px;border:1px solid transparent;}
+.sb-item:hover{background:#2a2a28;border-color:#333330;}
+.sb-item.active{background:#0f2840;border-color:#378ADD;}
+.sb-name{font-size:11px;font-weight:500;color:#b8b8b0;margin-bottom:2px;}
+.sb-meta{font-size:9px;color:#555550;}
 .sb-item-actions{display:none;gap:4px;margin-top:4px;}
 .sb-item:hover .sb-item-actions{display:flex;}
-.sb-del{font-size:10px;padding:1px 6px;border:1px solid var(--bo);border-radius:var(--r);background:transparent;color:var(--tx3);cursor:pointer;}
-.sb-del:hover{color:#c0392b;border-color:#c0392b;}
-.sb-save-new{padding:10px 12px;border-top:1px solid var(--bo);flex-shrink:0;}
-.sb-save-input{width:100%;font-size:12px;padding:5px 8px;border:1px solid var(--bo);border-radius:var(--r);background:#fff;color:var(--tx);font-family:inherit;outline:none;margin-bottom:6px;}
-.sb-save-input:focus{border-color:#378ADD;}
-.sb-save-btn{width:100%;padding:5px;border-radius:var(--r);border:none;background:var(--tx);color:var(--nb);font-size:11px;cursor:pointer;}
-.sb-empty{font-size:12px;color:var(--tx3);text-align:center;padding:24px 12px;line-height:1.6;}
-
+.sb-del{font-size:9px;padding:1px 5px;border:1px solid #333330;border-radius:var(--r);background:transparent;color:#555550;cursor:pointer;font-family:inherit;}
+.sb-del:hover{color:#e05050;border-color:#e05050;}
+.sb-save-new{padding:6px;border-top:1px solid #111110;flex-shrink:0;}
+.sb-save-input{width:100%;font-size:10px;padding:4px 6px;border:1px solid #333330;border-radius:var(--r);background:#111110;color:#b8b8b0;font-family:inherit;outline:none;margin-bottom:4px;}
+.sb-save-input:focus{border-color:#E8820C;}
+.sb-save-btn{width:100%;padding:4px;border-radius:var(--r);border:none;background:#E8820C;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
+.sb-empty{font-size:10px;color:#555550;text-align:center;padding:20px 8px;line-height:1.6;}
+.sb-layout-panel{padding:8px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;}
+.sb-label{font-size:9px;color:#888880;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;}
+.sb-slider{width:100%;accent-color:#E8820C;cursor:pointer;}
+.sb-slider-val{font-size:9px;color:#555550;margin-top:2px;}
+.sb-action-btn{width:100%;padding:4px 8px;border-radius:var(--r);border:1px solid #333330;background:transparent;color:#888880;font-size:9px;cursor:pointer;font-family:inherit;text-align:left;}
+.sb-action-btn:hover{background:#2a2a28;color:#b8b8b0;border-color:#555550;}
 /* CLAUDE PANEL */
-#cp{position:absolute;top:44px;right:0;width:290px;height:calc(100vh - 44px);background:#f8f8f4;border-left:1px solid var(--bo);display:none;flex-direction:column;z-index:80;}
+#cp{position:absolute;top:0;right:0;width:272px;height:100%;background:#1e1e1c;border-left:1px solid #111110;display:none;flex-direction:column;z-index:80;}
 #cp.open{display:flex;}
-.cph{padding:10px 12px;border-bottom:1px solid var(--bo);display:flex;align-items:center;gap:6px;flex-shrink:0;}
-.cpd{width:8px;height:8px;border-radius:50%;background:var(--question);}
-.cpt{font-size:12px;font-weight:500;flex:1;}
-.cpa{padding:3px 10px;font-size:11px;border:1px solid var(--bo);border-radius:var(--r);background:transparent;color:var(--tx2);cursor:pointer;}
-.cpa:hover{background:var(--bg);}
-.cpb{flex:1;overflow-y:auto;padding:10px 12px;}
-.cps{margin-bottom:14px;}
-.cpst{font-size:10px;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;}
-.cpr{font-size:12px;color:var(--tx);line-height:1.7;background:var(--nb);border:1px solid var(--bo);border-radius:var(--r);padding:8px 10px;}
-.cpg{background:var(--nb);border:1px solid var(--bo);border-radius:var(--r);padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
-.cpgq{font-size:12px;color:var(--tx);line-height:1.5;flex:1;}
-.cpga{font-size:10px;padding:2px 8px;border:1px solid var(--question);color:var(--question);border-radius:var(--r);background:transparent;cursor:pointer;white-space:nowrap;flex-shrink:0;}
-.cpga:hover{background:var(--question);color:#fff;}
-.cpco{background:var(--nb);border:1px solid var(--bo);border-radius:var(--r);padding:7px 10px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;color:var(--tx2);}
-.cpcl{font-size:10px;padding:2px 8px;border:1px solid var(--bo);border-radius:var(--r);background:transparent;cursor:pointer;color:var(--tx2);white-space:nowrap;}
-.cpac{background:var(--nb);border:1px solid var(--question);border-radius:var(--r);padding:8px 10px;margin-bottom:6px;}
-.cpact{font-size:11px;font-weight:500;color:var(--question);margin-bottom:4px;}
-.cpacb{font-size:11px;color:var(--tx2);line-height:1.5;margin-bottom:6px;}
-.cpado{padding:3px 10px;font-size:11px;border:none;border-radius:var(--r);background:var(--question);color:#fff;cursor:pointer;margin-right:4px;}
-.cpadx{padding:3px 10px;font-size:11px;border:1px solid var(--bo);border-radius:var(--r);background:transparent;color:var(--tx3);cursor:pointer;}
-.cpf{padding:10px 12px;border-top:1px solid var(--bo);flex-shrink:0;}
-.cpp{width:100%;font-size:12px;padding:7px 9px;border:1px solid var(--bo);border-radius:var(--r);background:var(--nb);color:var(--tx);font-family:inherit;resize:none;height:52px;outline:none;}
-.cpp:focus{border-color:var(--question);}
-.cpsend{width:100%;margin-top:6px;padding:5px;border-radius:var(--r);border:none;background:var(--question);color:#fff;font-size:12px;cursor:pointer;}
-.cplo{font-size:12px;color:var(--tx3);font-style:italic;padding:8px 0;}
+.cph{padding:7px 10px;border-bottom:1px solid #111110;display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.cpd{width:6px;height:6px;border-radius:50%;background:#E8820C;}
+.cpt{font-size:10px;font-weight:500;flex:1;color:#b8b8b0;}
+.cpa{padding:2px 7px;font-size:9px;border:1px solid #333330;border-radius:var(--r);background:transparent;color:#888880;cursor:pointer;font-family:inherit;}
+.cpa:hover{background:#2a2a28;}
+.cpb{flex:1;overflow-y:auto;padding:8px;}
+.cps{margin-bottom:10px;}
+.cpst{font-size:9px;font-weight:500;color:#555550;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;}
+.cpr{font-size:10px;color:#b8b8b0;line-height:1.7;background:#111110;border:1px solid #333330;border-radius:var(--r);padding:6px 8px;}
+.cpg{background:#111110;border:1px solid #333330;border-radius:var(--r);padding:6px 8px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:flex-start;gap:7px;}
+.cpgq{font-size:10px;color:#b8b8b0;line-height:1.5;flex:1;}
+.cpga{font-size:9px;padding:2px 6px;border:1px solid #E8820C;color:#E8820C;border-radius:var(--r);background:transparent;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:inherit;}
+.cpga:hover{background:#E8820C;color:#fff;}
+.cpco{background:#111110;border:1px solid #333330;border-radius:var(--r);padding:5px 8px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;gap:7px;font-size:10px;color:#888880;}
+.cpcl{font-size:9px;padding:2px 6px;border:1px solid #333330;border-radius:var(--r);background:transparent;cursor:pointer;color:#888880;font-family:inherit;}
+.cpac{background:#111110;border:1px solid #E8820C33;border-radius:var(--r);padding:6px 8px;margin-bottom:4px;}
+.cpact{font-size:10px;font-weight:500;color:#E8820C;margin-bottom:3px;}
+.cpacb{font-size:9px;color:#888880;line-height:1.5;margin-bottom:4px;}
+.cpado{padding:2px 7px;font-size:9px;border:none;border-radius:var(--r);background:#E8820C;color:#fff;cursor:pointer;margin-right:3px;font-family:inherit;}
+.cpadx{padding:2px 7px;font-size:9px;border:1px solid #333330;border-radius:var(--r);background:transparent;color:#555550;cursor:pointer;font-family:inherit;}
+.cplo{font-size:10px;color:#555550;font-style:italic;padding:6px 0;}
+.cpf{padding:8px;border-top:1px solid #111110;flex-shrink:0;}
+.cpp{width:100%;font-size:10px;padding:5px 7px;border:1px solid #333330;border-radius:var(--r);background:#111110;color:#b8b8b0;font-family:inherit;resize:none;height:50px;outline:none;}
+.cpp:focus{border-color:#E8820C;}
+.cpsend{width:100%;margin-top:4px;padding:4px;border-radius:var(--r);border:none;background:#E8820C;color:#fff;font-size:10px;cursor:pointer;font-family:inherit;}
 /* NODE EDIT */
-#ne{position:absolute;background:var(--nb);border:1px solid var(--bo);border-radius:var(--r);padding:12px;width:230px;z-index:90;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.14);}
-.nel{font-size:10px;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;}
-.nei{width:100%;font-size:12px;padding:5px 7px;border:1px solid var(--bo);border-radius:var(--r);background:#fff;color:var(--tx);font-family:inherit;outline:none;margin-bottom:6px;}
-.nei:focus{border-color:#378ADD;}
-.nerow{display:flex;gap:6px;margin-bottom:6px;align-items:center;}
-.nety{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;}
-.nety button{font-size:10px;padding:2px 7px;border-radius:var(--r);border:1px solid var(--bo);background:transparent;color:var(--tx2);cursor:pointer;}
+#ne{position:absolute;background:#1e1e1c;border:1px solid #333330;border-radius:var(--r);padding:10px;width:210px;z-index:90;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.5);}
+.nel{font-size:9px;font-weight:500;color:#555550;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.nei{width:100%;font-size:10px;padding:4px 6px;border:1px solid #333330;border-radius:var(--r);background:#111110;color:#b8b8b0;font-family:inherit;outline:none;margin-bottom:4px;}
+.nei:focus{border-color:#E8820C;}
+.nerow{display:flex;gap:4px;margin-bottom:4px;align-items:center;}
+.nety{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:5px;}
+.nety button{font-size:9px;padding:2px 5px;border-radius:var(--r);border:1px solid #333330;background:transparent;color:#888880;cursor:pointer;font-family:inherit;}
 .nety button.on{color:#fff;}
-.nea{display:flex;gap:5px;}
-.nesv{flex:1;padding:4px;border-radius:var(--r);border:none;background:var(--tx);color:var(--nb);font-size:11px;cursor:pointer;}
-.nedl{padding:4px 8px;border-radius:var(--r);border:1px solid var(--bo);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;}
-.ne-img-btn{font-size:11px;padding:3px 8px;border:1px solid var(--bo);border-radius:var(--r);background:transparent;color:var(--tx2);cursor:pointer;white-space:nowrap;}
+.nea{display:flex;gap:3px;}
+.nesv{flex:1;padding:4px;border-radius:var(--r);border:none;background:#E8820C;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
+.nedl{padding:4px 7px;border-radius:var(--r);border:1px solid #333330;background:transparent;color:#555550;font-size:9px;cursor:pointer;font-family:inherit;}
+.ne-img-btn{font-size:9px;padding:2px 6px;border:1px solid #333330;border-radius:var(--r);background:transparent;color:#888880;cursor:pointer;font-family:inherit;}
 /* GROUP EDIT */
-#ge{position:absolute;background:var(--nb);border:1px solid var(--bo);border-radius:var(--r);padding:12px;width:220px;z-index:90;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.14);}
-.gel-title{font-size:10px;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;}
-.gei{width:100%;font-size:13px;padding:5px 7px;border:1px solid var(--bo);border-radius:var(--r);background:#fff;color:var(--tx);font-family:inherit;outline:none;margin-bottom:8px;}
-.ge-colors{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;}
-.ge-color{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform 0.1s;}
-.ge-color.sel{border-color:#333;transform:scale(1.15);}
-.gea{display:flex;gap:5px;}
-.gesv{flex:1;padding:4px;border-radius:var(--r);border:none;background:var(--tx);color:var(--nb);font-size:11px;cursor:pointer;}
-.gedl{padding:4px 8px;border-radius:var(--r);border:1px solid var(--bo);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;}
-/* CONTEXT MENU */
-#ctx{position:absolute;background:var(--nb);border:1px solid var(--bo);border-radius:var(--r);padding:4px 0;z-index:150;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.14);min-width:190px;}
-.ctxi{padding:6px 14px;font-size:12px;color:var(--tx);cursor:pointer;display:flex;align-items:center;gap:8px;}
-.ctxi:hover{background:var(--bg);}
-.ctxd{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.ctxs{height:1px;background:var(--bo);margin:3px 0;}
-#toast{position:absolute;bottom:72px;left:50%;transform:translateX(-50%);background:var(--tx);color:var(--nb);font-size:11px;padding:5px 14px;border-radius:20px;opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:200;}
-#ne-img-upload{display:none;}
+#ge{position:absolute;background:#1e1e1c;border:1px solid #333330;border-radius:var(--r);padding:10px;width:200px;z-index:90;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.5);}
+.gel-title{font-size:9px;font-weight:500;color:#555550;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.gei{width:100%;font-size:11px;padding:4px 6px;border:1px solid #333330;border-radius:var(--r);background:#111110;color:#b8b8b0;font-family:inherit;outline:none;margin-bottom:6px;}
+.ge-colors{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap;}
+.ge-color{width:18px;height:18px;border-radius:3px;cursor:pointer;border:2px solid transparent;}
+.ge-color.sel{border-color:#fff;}
+.gea{display:flex;gap:4px;}
+.gesv{flex:1;padding:3px;border-radius:var(--r);border:none;background:#E8820C;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
+.gedl{padding:3px 7px;border-radius:var(--r);border:1px solid #333330;background:transparent;color:#555550;font-size:9px;cursor:pointer;font-family:inherit;}
+/* CTX MENU */
+#ctx{position:absolute;background:#1e1e1c;border:1px solid #333330;border-radius:var(--r);padding:3px 0;z-index:150;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:170px;}
+.ctxi{padding:5px 11px;font-size:10px;color:#b8b8b0;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;}
+.ctxi:hover{background:#2a2a28;}
+.ctxi.danger{color:#e05050;}
+.ctxi.head{color:#555550;font-size:9px;text-transform:uppercase;letter-spacing:0.05em;cursor:default;padding:5px 11px 2px;}
+.ctxi.head:hover{background:transparent;}
+.ctxd{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
+.ctxs{height:1px;background:#111110;margin:3px 0;}
+#win-sel{position:absolute;pointer-events:none;border:1px dashed #378ADD44;background:rgba(55,138,221,0.04);display:none;}
+#toast{position:absolute;bottom:65px;left:50%;transform:translateX(-50%);background:#111110;color:#b8b8b0;font-size:10px;padding:4px 12px;border-radius:20px;opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:200;border:1px solid #333330;font-family:inherit;}
+#input-bar{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);width:min(500px,82vw);background:#1e1e1c;border:1px solid #333330;border-radius:var(--r);padding:5px 9px;display:flex;gap:6px;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:50;}
+#node-input{flex:1;border:none;outline:none;font-size:10px;background:transparent;color:#b8b8b0;font-family:inherit;}
+#node-input::placeholder{color:#444440;}
+.ib-add{padding:3px 9px;border-radius:var(--r);border:none;background:#E8820C;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
+.ib-img{padding:3px 7px;border-radius:var(--r);border:1px solid #333330;background:transparent;color:#888880;font-size:9px;cursor:pointer;font-family:inherit;}
+#img-upload,#ne-img-upload{display:none;}
 </style>
 </head>
 <body>
@@ -155,13 +164,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="tb-sep"></div>
     <a href="https://sound.100xbtr.com" class="tb-link">← OS</a>
     <div class="tb-sep"></div>
-    <span class="tb-hint">right-click canvas to add · drag to pan · click port dot to wire nodes · shift+click to multi-select · double-click to edit</span>
+    <span class="tb-hint">right-click to add · alt+drag to select · ctrl+a all · click port to wire · dbl-click to edit · space+drag to pan</span>
     <div class="tb-right">
-      <div class="ctw">
-        <span>Claude</span>
-        <div class="tt" id="clt" onclick="toggleClaude()"><div class="tth"></div></div>
-      </div>
-      <button class="tb-link" onclick="runLayout()" style="background:#E8820C;color:#fff;border-color:#E8820C;" title="Auto-arrange nodes using force simulation">⟳ Layout</button>
+      <div class="ctw"><span>Claude</span><div class="tt" id="clt" onclick="toggleClaude()"><div class="tth"></div></div></div>
+      <button class="tb-btn accent" onclick="runLayout()">⟳ Layout</button>
       <div class="tb-sep"></div>
       <div class="tb-user"><span class="live-dot"></span><span id="ued">...</span></div>
       <button class="tb-so" onclick="signOut()">sign out</button>
@@ -169,35 +175,60 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
   <div id="canvas-wrap">
     <canvas id="gh-canvas"></canvas>
+    <div id="win-sel"></div>
     <div id="input-bar">
-      <input id="node-input" placeholder="Drop a thought, URL, or paste image..." onkeydown="if(event.key==='Enter')quickAdd()">
-      <button class="ib-img" onclick="document.getElementById('img-upload').click()">+ img</button>
+      <input id="node-input" placeholder="Type a thought and press Enter..." onkeydown="if(event.key==='Enter')quickAdd()">
+      <button class="ib-img" onclick="document.getElementById('img-upload').click()">img</button>
       <input type="file" id="img-upload" accept="image/*" onchange="addImageFile(this)">
       <button class="ib-add" onclick="quickAdd()">Add</button>
     </div>
-
-    <!-- CANVAS SIDEBAR -->
-    <div id="sb-toggle" onclick="toggleSidebar()">◀</div>
+    <!-- SIDEBAR -->
+    <div id="sb-toggle" onclick="toggleSidebar()">▶</div>
     <div id="sidebar">
-      <div class="sb-header">
-        <div class="sb-title">Canvases</div>
-        <button class="sb-new" onclick="newCanvas()">+ New</button>
+      <div class="sb-tabs">
+        <div class="sb-tab on" onclick="showSbTab('canvases',this)">Saved</div>
+        <div class="sb-tab" onclick="showSbTab('layout',this)">Layout</div>
       </div>
-      <div class="sb-list" id="sb-list">
-        <div class="sb-empty">No saved canvases yet.<br>Save the current canvas below.</div>
+      <div class="sb-panel on" id="sbp-canvases">
+        <div class="sb-list" id="sb-list"><div class="sb-empty">No saved canvases.</div></div>
+        <div class="sb-save-new">
+          <input class="sb-save-input" id="sb-name-input" placeholder="Canvas name..." onkeydown="if(event.key==='Enter')saveCanvas()">
+          <button class="sb-save-btn" onclick="saveCanvas()">Save current canvas</button>
+        </div>
+        <div style="padding:4px 6px;border-top:1px solid #111110;">
+          <button class="sb-save-btn" onclick="newCanvas()" style="background:#2a2a28;color:#888880;border:1px solid #333330;">+ New blank canvas</button>
+        </div>
       </div>
-      <div class="sb-save-new">
-        <input class="sb-save-input" id="sb-name-input" placeholder="Canvas name..." onkeydown="if(event.key==='Enter')saveCanvas()">
-        <button class="sb-save-btn" onclick="saveCanvas()">Save current canvas</button>
+      <div class="sb-panel" id="sbp-layout">
+        <div class="sb-layout-panel">
+          <div>
+            <div class="sb-label">Group spacing</div>
+            <input type="range" class="sb-slider" id="spread-slider" min="40" max="300" value="80" oninput="onSpreadSlider(this.value)">
+            <div class="sb-slider-val" id="spread-val">80 px</div>
+          </div>
+          <div>
+            <div class="sb-label">Node width</div>
+            <input type="range" class="sb-slider" id="nw-slider" min="120" max="280" value="180" oninput="onNWSlider(this.value)">
+            <div class="sb-slider-val" id="nw-val">180 px</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <button class="sb-action-btn" onclick="runLayout()">⟳  Auto layout</button>
+            <button class="sb-action-btn" onclick="repairGroups()">⊞  Repair groups</button>
+            <button class="sb-action-btn" onclick="repelGroupsOnly()">⤢  Spread groups</button>
+            <button class="sb-action-btn" onclick="alignNodesInGroups('left')">⬡  Align left</button>
+            <button class="sb-action-btn" onclick="alignNodesInGroups('center')">⬡  Align center</button>
+            <button class="sb-action-btn" onclick="alignNodesInGroups('right')">⬡  Align right</button>
+          </div>
+        </div>
       </div>
     </div>
     <!-- CLAUDE PANEL -->
     <div id="cp">
       <div class="cph"><div class="cpd"></div><div class="cpt">Claude — canvas</div><button class="cpa" onclick="analyzeCanvas()">Analyze</button></div>
-      <div class="cpb" id="cpb"><div style="font-size:12px;color:var(--tx3);line-height:1.7;padding:4px 0;">Click Analyze — I'll read the canvas, surface gaps, suggest connections, and can reshape the map directly.</div></div>
+      <div class="cpb" id="cpb"><div class="cplo">Click Analyze to read the canvas and surface gaps, patterns, and suggested connections.</div></div>
       <div class="cpf">
-        <textarea class="cpp" id="cpp" placeholder="Tell me what to do — 'create a group called Horn Design with speaker nodes', 'connect Ojas to Baltic birch'..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askClaude();}"></textarea>
-        <button class="cpsend" onclick="askClaude()">Ask ↵</button>
+        <textarea class="cpp" id="cpp" placeholder="Tell me what to do — 'create a group called Horn Design with speaker nodes'..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askClaude();}"></textarea>
+        <button class="cpsend" onclick="askClaude()">Send ↵</button>
       </div>
     </div>
     <!-- NODE EDIT -->
@@ -208,26 +239,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="nerow">
         <button class="ne-img-btn" onclick="document.getElementById('ne-img-upload').click()">+ image</button>
         <input type="file" id="ne-img-upload" accept="image/*" onchange="neAddImage(this)">
-        <span id="ne-img-status" style="font-size:10px;color:var(--tx3);flex:1;"></span>
+        <span id="ne-img-status" style="font-size:9px;color:#555550;flex:1;"></span>
       </div>
       <div class="nety" id="nety"></div>
-      <div class="nea">
-        <button class="nesv" onclick="saveNE()">Save</button>
-        <button class="nedl" onclick="deleteNode()">Delete</button>
-      </div>
+      <div class="nea"><button class="nesv" onclick="saveNE()">Save</button><button class="nedl" onclick="deleteNode()">Delete</button></div>
     </div>
     <!-- GROUP EDIT -->
     <div id="ge">
       <div class="gel-title">Edit group</div>
       <input class="gei" id="gel" placeholder="Group name..." onkeydown="if(event.key==='Enter')saveGE()">
-      <div style="font-size:10px;color:var(--tx3);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em;font-weight:500;">Color</div>
+      <div style="font-size:9px;color:#555550;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;">Color</div>
       <div class="ge-colors" id="ge-colors"></div>
-      <div class="gea">
-        <button class="gesv" onclick="saveGE()">Save</button>
-        <button class="gedl" onclick="deleteGroup()">Delete</button>
-      </div>
+      <div class="gea"><button class="gesv" onclick="saveGE()">Save</button><button class="gedl" onclick="deleteGroup()">Delete</button></div>
     </div>
-    <!-- CONTEXT MENU — rebuilt dynamically -->
     <div id="ctx"></div>
     <div id="toast"></div>
   </div>
@@ -239,25 +263,31 @@ const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 const ALLOWED=['zolaray25@gmail.com','fraektaard@gmail.com','nishbphoto@gmail.com'];
 const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-auth',persistSession:true,detectSessionInUrl:true}});
 
-const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#E8820C',anchor:'#888780'};
-const GROUP_COLORS=['#378ADD','#1D9E75','#BA7517','#D85A30','#7F77DD','#E8820C','#888780','#2D7D46','#C0392B','#8E44AD'];
+const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#E8820C',anchor:'#666660'};
+const GC=['#378ADD','#1D9E75','#BA7517','#D85A30','#7F77DD','#E8820C','#666660','#2D7D46','#8E44AD','#C0392B'];
 const TYPES=Object.keys(TC);
-const DW=180,DH=60,MW=120,MH=44,PR=6,RH=20;
+let DW=180,DH=54;
+const PR=5.5;
 
 let user=null,who='';
 let nodes=[],links=[],groups=[];
-let selNode=null,selGroup=null,linkFrom=null,claudeOn=false,hovLink=null,selLink=null;
+let selNode=null,selGE=null,selGColor=null;
+let linkFrom=null,claudeOn=false;
 let canvas,ctx;
 let cam={x:0,y:0,z:1};
-// drag states
 let drag={on:false};
-// window selection
-
 let selected={nodes:[],groups:[]};
 let lm={x:0,y:0};
 let ctxPos={x:0,y:0};
 let imgCache={};
 let neImgData=null;
+let altDown=false,spaceDown=false;
+let winSelStart=null;
+let spreadGap=80;
+let simRunning=false;
+
+const _mw={canvas_nodes:new Set(),canvas_groups:new Set(),canvas_links:new Set()};
+function _tw(table,id){_mw[table]?.add(id);setTimeout(()=>_mw[table]?.delete(id),3000);}
 
 // AUTH
 async function signInGoogle(){
@@ -289,8 +319,11 @@ function initCanvas(){
   canvas.addEventListener('contextmenu',onRC);
   canvas.addEventListener('dblclick',onDbl);
   document.addEventListener('keydown',onKey);
-  document.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;canvas.style.cursor='default';}});
+  document.addEventListener('keyup',onKU);
   document.addEventListener('paste',onPaste);
+  canvas.addEventListener('touchstart',onTS,{passive:false});
+  canvas.addEventListener('touchmove',onTM,{passive:false});
+  canvas.addEventListener('touchend',onTE);
   requestAnimationFrame(loop);
 }
 function resize(){const w=document.getElementById('canvas-wrap');canvas.width=w.clientWidth;canvas.height=w.clientHeight;}
@@ -300,57 +333,60 @@ function loop(){draw();requestAnimationFrame(loop);}
 function draw(){
   const W=canvas.width,H=canvas.height;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#e8e8e4';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#c8c8c4';ctx.fillRect(0,0,W,H);
   drawGrid(W,H);
   ctx.save();
   ctx.translate(W/2+cam.x,H/2+cam.y);ctx.scale(cam.z,cam.z);
   drawGroups();drawLinks();drawNodes();
-  // link preview
   if(linkFrom){
-    const sport=linkFrom._sport||0;
-    const sp=portPos(linkFrom,sport);
-    const cp1=bezierCP(sp,sport);
+    const sp=pPos(linkFrom,'out');
     const mx=(lm.x-W/2-cam.x)/cam.z,my=(lm.y-H/2-cam.y)/cam.z;
-    ctx.beginPath();ctx.moveTo(sp.x,sp.y);
-    ctx.bezierCurveTo(cp1.x,cp1.y,mx,my,mx,my);
-    ctx.strokeStyle='rgba(232,130,12,0.6)';ctx.lineWidth=1.5/cam.z;
-    ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);
+    const cpx=sp.x+(mx-sp.x)*0.5;
+    ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.bezierCurveTo(cpx,sp.y,cpx,my,mx,my);
+    ctx.strokeStyle='rgba(232,130,12,0.7)';ctx.lineWidth=1.5/cam.z;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
   }
   ctx.restore();
-
 }
 
 function drawGrid(W,H){
-  const step=32*cam.z;
-  const ox=(W/2+cam.x)%step,oy=(H/2+cam.y)%step;
-  ctx.strokeStyle='rgba(150,150,144,0.5)';ctx.lineWidth=0.5;
-  ctx.beginPath();
+  const step=32*cam.z;const ox=(W/2+cam.x)%step,oy=(H/2+cam.y)%step;
+  ctx.strokeStyle='rgba(148,148,144,0.6)';ctx.lineWidth=0.5;ctx.beginPath();
   for(let x=ox;x<W;x+=step){ctx.moveTo(x,0);ctx.lineTo(x,H);}
   for(let y=oy;y<H;y+=step){ctx.moveTo(0,y);ctx.lineTo(W,y);}
   ctx.stroke();
 }
 
-function groupColor(g){return g.color||TC[g.type]||'#888780';}
+// GH blob group
+function drawBlobGroup(g){
+  const PAD=20/cam.z;
+  const x=g.x-PAD,y=g.y-PAD,w=g.w+PAD*2,h=g.h+PAD*2;
+  const r=Math.min(20,w/4,h/4);
+  // small per-group wobble for organic feel
+  const s=g.id.charCodeAt?g.id.charCodeAt(0)+g.id.charCodeAt(g.id.length-1):0;
+  const wb=(i)=>((s*(i+7)*13)%9-4)/cam.z;
+  ctx.beginPath();
+  ctx.moveTo(x+r,y+wb(0));
+  ctx.lineTo(x+w-r,y+wb(1));ctx.quadraticCurveTo(x+w+wb(2),y+wb(3),x+w+wb(4),y+r);
+  ctx.lineTo(x+w+wb(5),y+h-r);ctx.quadraticCurveTo(x+w+wb(6),y+h+wb(7),x+w-r,y+h+wb(8));
+  ctx.lineTo(x+r,y+h+wb(9));ctx.quadraticCurveTo(x+wb(10),y+h+wb(11),x+wb(12),y+h-r);
+  ctx.lineTo(x+wb(13),y+r);ctx.quadraticCurveTo(x+wb(14),y+wb(15),x+r,y+wb(16));
+  ctx.closePath();
+}
 
 function drawGroups(){
   groups.forEach(g=>{
-    const color=groupColor(g);
+    const color=g.color||TC[g.type]||'#666660';
     const isSel=selected.groups.includes(g.id);
-    ctx.fillStyle=color+'18';
-    ctx.strokeStyle=isSel?color+'ee':color+'55';
-    ctx.lineWidth=(isSel?2:1.5)/cam.z;
-    rr(ctx,g.x,g.y,g.w,g.h,6/cam.z);ctx.fill();ctx.stroke();
-    // label bar
-    ctx.fillStyle=color+'28';ctx.fillRect(g.x,g.y,g.w,22/cam.z);
-    ctx.font=`500 ${11/cam.z}px -apple-system,sans-serif`;
-    ctx.fillStyle=color+'ee';ctx.textBaseline='middle';ctx.textAlign='left';
-    ctx.fillText(g.label||'Group',g.x+8,g.y+11/cam.z);
-    // resize handle — bigger, visible
-    const hs=12/cam.z;
-    ctx.fillStyle=color+'99';
-    ctx.beginPath();
-    ctx.moveTo(g.x+g.w,g.y+g.h-hs);ctx.lineTo(g.x+g.w,g.y+g.h);ctx.lineTo(g.x+g.w-hs,g.y+g.h);
-    ctx.closePath();ctx.fill();
+    ctx.save();
+    drawBlobGroup(g);
+    ctx.fillStyle=color+'1e';ctx.fill();
+    ctx.strokeStyle=isSel?color+'cc':color+'55';
+    ctx.lineWidth=(isSel?2:1.5)/cam.z;ctx.stroke();
+    // label above top-left
+    ctx.font=`500 ${11/cam.z}px 'SF Mono',monospace`;
+    ctx.fillStyle=color+'cc';ctx.textBaseline='bottom';ctx.textAlign='left';
+    ctx.fillText(g.label||'Group',g.x,g.y-4/cam.z);
+    ctx.restore();
   });
 }
 
@@ -358,1252 +394,660 @@ function drawLinks(){
   links.forEach(l=>{
     const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
     if(!s||!t)return;
-    const sport=l.sport!==undefined?l.sport:0;
-    const tport=l.tport!==undefined?l.tport:1;
-    const sp=portPos(s,sport),tp=portPos(t,tport);
-    const cp1=bezierCP(sp,sport),cp2=bezierCP(tp,tport);
-    ctx.beginPath();ctx.moveTo(sp.x,sp.y);
-    ctx.bezierCurveTo(cp1.x,cp1.y,cp2.x,cp2.y,tp.x,tp.y);
-    const isHov=hovLink&&hovLink.id===l.id;
-    ctx.strokeStyle=l.claude?'rgba(232,130,12,0.6)':isHov?'rgba(200,50,50,0.7)':'rgba(130,130,122,0.7)';
-    ctx.lineWidth=(isHov?2.5:l.claude?2:1.2)/cam.z;
-    ctx.setLineDash(l.claude?[5,3]:[]);ctx.stroke();ctx.setLineDash([]);
-    // show X on hovered wire
-    if(isHov){
-      const mid=bezierMid(sp,portPos(t,tport),bezierCP(sp,sport),bezierCP(portPos(t,tport),tport));
-      ctx.font=`bold ${11/cam.z}px sans-serif`;ctx.fillStyle='rgba(200,50,50,0.9)';
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText('×',mid.x,mid.y);
-    }
+    const sp=pPos(s,'out'),tp=pPos(t,'in');
+    const cpx=sp.x+(tp.x-sp.x)*0.5;
+    ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.bezierCurveTo(cpx,sp.y,cpx,tp.y,tp.x,tp.y);
+    const cl=l.claude;
+    ctx.strokeStyle=cl?'rgba(232,130,12,0.55)':'rgba(168,168,158,0.8)';
+    ctx.lineWidth=(cl?1.8:1.2)/cam.z;ctx.setLineDash(cl?[5,3]:[]);ctx.stroke();ctx.setLineDash([]);
+    // arrow
+    const ang=Math.atan2(tp.y-sp.y,tp.x-sp.x),as=7/cam.z;
+    ctx.beginPath();ctx.moveTo(tp.x,tp.y);
+    ctx.lineTo(tp.x-as*Math.cos(ang-0.38),tp.y-as*Math.sin(ang-0.38));
+    ctx.lineTo(tp.x-as*Math.cos(ang+0.38),tp.y-as*Math.sin(ang+0.38));
+    ctx.closePath();ctx.fillStyle=cl?'rgba(232,130,12,0.65)':'rgba(168,168,158,0.85)';ctx.fill();
   });
-}
-
-function bezierMid(sp,tp,cp1,cp2){
-  const t=0.5;
-  return{
-    x:Math.pow(1-t,3)*sp.x+3*Math.pow(1-t,2)*t*cp1.x+3*(1-t)*t*t*cp2.x+t*t*t*tp.x,
-    y:Math.pow(1-t,3)*sp.y+3*Math.pow(1-t,2)*t*cp1.y+3*(1-t)*t*t*cp2.y+t*t*t*tp.y
-  };
-}
-// control point offset based on which side the port is on
-function bezierCP(p,side,dist=120){
-  if(side===0)return{x:p.x+dist,y:p.y};
-  if(side===1)return{x:p.x-dist,y:p.y};
-  if(side===2)return{x:p.x,y:p.y-dist};
-  if(side===3)return{x:p.x,y:p.y+dist};
-  return{x:p.x+dist,y:p.y};
 }
 
 function drawNodes(){
   nodes.forEach(n=>{
     const isSel=selected.nodes.includes(n.id);
-    const isEdit=selNode?.id===n.id;
-    const isLink=linkFrom?.id===n.id;
-    // connected node highlight
-    const isConnected=selected.nodes.length===1&&selected.nodes[0]!==n.id&&links.some(l=>{
-      const s=l.source?.id||l.source,t=l.target?.id||l.target;
-      return(s===selected.nodes[0]&&t===n.id)||(t===selected.nodes[0]&&s===n.id);
-    });
-    const color=TC[n.type]||'#888';
+    const isLk=linkFrom?.id===n.id;
+    const color=TC[n.type]||'#666660';
     const w=n.w||DW,h=n.h||DH;
-    ctx.shadowColor=isConnected?'rgba(232,130,12,0.3)':'rgba(0,0,0,0.12)';
-    ctx.shadowBlur=isEdit?8:isConnected?10:3;ctx.shadowOffsetY=isEdit?2:1;
-    ctx.fillStyle=isConnected?'#FFF5E8':isEdit?'#fff':'#f4f4f0';
-    ctx.strokeStyle=isConnected?'#E8820C':isSel?'#378ADD':isEdit?color:isLink?'#E8820C':'#c0c0bc';
-    ctx.lineWidth=(isConnected||isSel||isEdit?2:1)/cam.z;
-    rr(ctx,n.x,n.y,w,h,4/cam.z);ctx.fill();ctx.stroke();
-    if(isSel&&!isEdit){
-      ctx.strokeStyle='rgba(55,138,221,0.4)';ctx.lineWidth=3/cam.z;
-      rr(ctx,n.x-2,n.y-2,w+4,h+4,5/cam.z);ctx.stroke();
-    }
+    const r=3.5/cam.z;
+    // shadow
+    ctx.shadowColor='rgba(0,0,0,0.4)';ctx.shadowBlur=isSel?10:4;ctx.shadowOffsetY=isSel?3:1.5;
+    // body — GH dark style
+    ctx.fillStyle=isSel?'#383834':'#262622';
+    ctx.strokeStyle=isSel?color:isLk?'#E8820C':'#3a3a36';
+    ctx.lineWidth=(isSel?1.5:0.8)/cam.z;
+    rrect(ctx,n.x,n.y,w,h,r);ctx.fill();ctx.stroke();
     ctx.shadowColor='transparent';ctx.shadowBlur=0;
-    ctx.fillStyle=color;rrL(ctx,n.x,n.y,4,h,4/cam.z);ctx.fill();
-    // image thumb
-    let tx=n.x+10,tw=w-20;
+    // left color stripe
+    ctx.fillStyle=color;rrectL(ctx,n.x,n.y,5/cam.z,h,r);ctx.fill();
+    // image
+    let tx=n.x+9/cam.z,tw=w-14/cam.z;
     if(n.img_url){
-      const sz=h-8,img=imgCache[n.img_url];
+      const sz=h-8/cam.z;const img=imgCache[n.img_url];
       if(img&&img.complete&&img.naturalWidth>0){
-        ctx.save();ctx.beginPath();rr(ctx,n.x+8,n.y+4,sz,sz,2/cam.z);ctx.clip();
-        ctx.drawImage(img,n.x+8,n.y+4,sz,sz);ctx.restore();
+        ctx.save();ctx.beginPath();rrect(ctx,n.x+6/cam.z,n.y+4/cam.z,sz,sz,2/cam.z);ctx.clip();
+        ctx.drawImage(img,n.x+6/cam.z,n.y+4/cam.z,sz,sz);ctx.restore();
+        tx=n.x+sz+10/cam.z;tw=w-sz-14/cam.z;
       } else if(!img){const i=new Image();i.crossOrigin='anonymous';i.src=n.img_url;imgCache[n.img_url]=i;}
-      tx=n.x+sz+14;tw=w-sz-22;
     }
-    // label — centered horizontally and vertically
-    const fs=11/cam.z;
-    ctx.font=`${n.type==='anchor'?'500 ':''}${fs}px -apple-system,sans-serif`;
-    ctx.fillStyle='#2a2a28';ctx.textBaseline='top';ctx.textAlign='center';
-    const lines=wrapText(ctx,n.label||'',tw);
-    const lh=fs*1.35,th2=lines.length*lh;
-    const sy=n.y+(h-th2)/2-fs*0.1;
-    const cx2=n.img_url?(tx+tw/2):(n.x+w/2);
-    lines.forEach((l,i)=>ctx.fillText(l,cx2,sy+i*lh));
-    // type + author
-    ctx.font=`${9/cam.z}px -apple-system,sans-serif`;
-    ctx.fillStyle=color+'bb';ctx.fillText(n.type,n.x+10,n.y+h-13/cam.z);
-    ctx.textAlign='right';ctx.fillStyle='#a0a09c';
-    ctx.fillText(n.author||'',n.x+w-6,n.y+h-13/cam.z);
+    // label
+    const fs=10/cam.z;
+    ctx.font=`${fs}px 'SF Mono',monospace`;
+    ctx.fillStyle='#ccccC4';ctx.textBaseline='middle';ctx.textAlign='left';
+    const lines=wrapTxt(ctx,n.label||'',tw-6/cam.z);
+    const lh=fs*1.38,th=lines.length*lh;
+    const sy=n.y+h/2-th/2;
+    lines.forEach((l,i)=>ctx.fillText(l,tx+4/cam.z,sy+i*lh+lh/2));
+    // type bottom-left
+    ctx.font=`${7.5/cam.z}px 'SF Mono',monospace`;ctx.fillStyle=color+'88';
+    ctx.textBaseline='bottom';ctx.fillText(n.type,n.x+7/cam.z,n.y+h-2/cam.z);
+    // author bottom-right
+    ctx.textAlign='right';ctx.fillStyle='#44443e';
+    ctx.fillText(n.author||'',n.x+w-5/cam.z,n.y+h-2/cam.z);
     // URL indicator
-    if(n.url){
-      ctx.fillStyle='#378ADD';ctx.textAlign='right';
-      ctx.font=`${9/cam.z}px -apple-system,sans-serif`;
-      ctx.fillText('↗',n.x+w-6,n.y+8/cam.z);
-    }
-    // ports — all 4 sides, grey with black outline
+    if(n.url){ctx.fillStyle='#378ADD88';ctx.font=`${8/cam.z}px monospace`;ctx.textAlign='right';ctx.textBaseline='top';ctx.fillText('↗',n.x+w-4/cam.z,n.y+2/cam.z);}
+    // ports — left (in) and right (out) only, scale with zoom
     const pr=PR/cam.z;
-    drawPort(n.x,n.y+h/2,'#d8d8d4',pr);        // left
-    drawPort(n.x+w,n.y+h/2,'#d8d8d4',pr);      // right
-    drawPort(n.x+w/2,n.y,'#d8d8d4',pr);        // top
-    drawPort(n.x+w/2,n.y+h,'#d8d8d4',pr);      // bottom
-    // resize handle — bigger
-    const rhs=10/cam.z;
-    ctx.fillStyle='#909090';
-    ctx.beginPath();
-    ctx.moveTo(n.x+w,n.y+h-rhs);ctx.lineTo(n.x+w,n.y+h);ctx.lineTo(n.x+w-rhs,n.y+h);
-    ctx.closePath();ctx.fill();
+    drawPort(pPos(n,'in'),pr,'#4a7898');
+    drawPort(pPos(n,'out'),pr,'#4a7858');
+    // selection ring
+    if(isSel){ctx.strokeStyle='rgba(55,138,221,0.35)';ctx.lineWidth=3/cam.z;rrect(ctx,n.x-2,n.y-2,w+4,h+4,r+1);ctx.stroke();}
   });
 }
 
-function drawPort(x,y,c,r){
-  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
-  ctx.fillStyle='#d8d8d4';ctx.fill();
-  ctx.strokeStyle='#555552';ctx.lineWidth=1.5/cam.z;ctx.stroke();
+function drawPort(p,r,c){
+  ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);
+  ctx.fillStyle=c;ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=0.7/cam.z;ctx.stroke();
 }
-
-function wrapText(ctx,text,maxW){
-  if(!text)return[''];
-  const words=text.split(' ');const lines=[];let line='';
-  words.forEach(w=>{
-    const test=line?line+' '+w:w;
-    if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w;}else line=test;
-  });
+function pPos(n,side){const w=n.w||DW,h=n.h||DH;return side==='in'?{x:n.x,y:n.y+h/2}:{x:n.x+w,y:n.y+h/2};}
+function wrapTxt(ctx,text,maxW){
+  if(!text)return[''];const words=text.split(' ');const lines=[];let line='';
+  words.forEach(w=>{const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=w;}else line=t;});
   if(line)lines.push(line);return lines.length?lines:[''];
 }
-
-function rr(ctx,x,y,w,h,r){
+function rrect(ctx,x,y,w,h,r){
   ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
   ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
   ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
   ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
 }
-function rrL(ctx,x,y,w,h,r){
+function rrectL(ctx,x,y,w,h,r){
   ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w,y);ctx.lineTo(x+w,y+h);
   ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
 }
 
-// PORT POSITIONS — 4 sides
-function portPos(n,side){
-  const w=n.w||DW,h=n.h||DH;
-  if(side===0)return{x:n.x+w,y:n.y+h/2};  // right
-  if(side===1)return{x:n.x,y:n.y+h/2};    // left
-  if(side===2)return{x:n.x+w/2,y:n.y};    // top
-  if(side===3)return{x:n.x+w/2,y:n.y+h};  // bottom
-  return{x:n.x+w,y:n.y+h/2};
-}
-function inP(n,side){return portPos(n,side===undefined?1:side);}
-function outP(n,side){return portPos(n,side===undefined?0:side);}
-// find nearest port side
-function nearestPort(n,wx,wy){
-  const w=n.w||DW,h=n.h||DH;
-  const ports=[
-    {side:1,x:n.x,y:n.y+h/2},    // left
-    {side:0,x:n.x+w,y:n.y+h/2},  // right
-    {side:2,x:n.x+w/2,y:n.y},    // top
-    {side:3,x:n.x+w/2,y:n.y+h},  // bottom
-  ];
-  let best=ports[0],bestD=Infinity;
-  ports.forEach(p=>{const d=Math.hypot(wx-p.x,wy-p.y);if(d<bestD){bestD=d;best=p;}});
-  return best.side;
-}
-
 function nById(id){return nodes.find(n=>n.id===id);}
 function wp(e){
-  const r=canvas.getBoundingClientRect();
-  const cx=e.clientX-r.left,cy=e.clientY-r.top;
+  const r=canvas.getBoundingClientRect();const cx=e.clientX-r.left,cy=e.clientY-r.top;
   return{wx:(cx-canvas.width/2-cam.x)/cam.z,wy:(cy-canvas.height/2-cam.y)/cam.z,cx,cy};
 }
-function hitNode(wx,wy){return[...nodes].reverse().find(n=>{const w=n.w||DW,h=n.h||DH;return wx>=n.x&&wx<=n.x+w&&wy>=n.y&&wy<=n.y+h;});}
-function hitLink(wx,wy){
-  // check if click is near any wire (screen space, ~8px tolerance)
-  const W=canvas.width,H=canvas.height;
-  const sx=(wx*cam.z)+W/2+cam.x;
-  const sy=(wy*cam.z)+H/2+cam.y;
-  for(let i=links.length-1;i>=0;i--){
-    const l=links[i];
-    const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
-    if(!s||!t)continue;
-    const sport=l.sport!==undefined?l.sport:0;
-    const tport=l.tport!==undefined?l.tport:1;
-    const sp=portPos(s,sport),tp=portPos(t,tport);
-    // sample points along the bezier
-    const cp1=bezierCP(sp,sport),cp2=bezierCP(tp,tport);
-    for(let tt=0;tt<=1;tt+=0.05){
-      const bx=Math.pow(1-tt,3)*sp.x+3*Math.pow(1-tt,2)*tt*cp1.x+3*(1-tt)*tt*tt*cp2.x+tt*tt*tt*tp.x;
-      const by=Math.pow(1-tt,3)*sp.y+3*Math.pow(1-tt,2)*tt*cp1.y+3*(1-tt)*tt*tt*cp2.y+tt*tt*tt*tp.y;
-      const bsx=(bx*cam.z)+W/2+cam.x;
-      const bsy=(by*cam.z)+H/2+cam.y;
-      if(Math.hypot(sx-bsx,sy-bsy)<8)return l;
-    }
+function hNode(wx,wy){return[...nodes].reverse().find(n=>{const w=n.w||DW,h=n.h||DH;return wx>=n.x&&wx<=n.x+w&&wy>=n.y&&wy<=n.y+h;});}
+function hGroup(wx,wy){return[...groups].reverse().find(g=>wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+g.h);}
+function hNR(n,wx,wy){const w=n.w||DW,h=n.h||DH;return wx>=n.x+w-14&&wy>=n.y+h-14;}
+function hGR(g,wx,wy){return wx>=g.x+g.w-16&&wy>=g.y+g.h-16;}
+function hPort(n,wx,wy,side){const p=pPos(n,side);return Math.hypot(wx-p.x,wy-p.y)<(PR+8)/cam.z;}
+
+// TOUCH
+let _pt={},_pd0=0,_pi=false;
+function onTS(e){
+  e.preventDefault();
+  if(e.touches.length===2){
+    _pi=true;_pd0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+  } else if(e.touches.length===1){
+    _pi=false;const t=e.touches[0];const r=canvas.getBoundingClientRect();
+    const cx=t.clientX-r.left,cy=t.clientY-r.top;lm={x:cx,y:cy};
+    drag={on:true,pan:true,ox:cx,oy:cy,camX:cam.x,camY:cam.y};
   }
-  return null;
 }
-function hitGroup(wx,wy){return[...groups].reverse().find(g=>wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+g.h);}
-function hitNResize(n,wx,wy){const w=n.w||DW,h=n.h||DH;return wx>=n.x+w-RH&&wy>=n.y+h-RH;}
-function hitGResize(g,wx,wy){return wx>=g.x+g.w-RH&&wy>=g.y+g.h-RH;}
-function hitAnyPort(n,wx,wy){
-  // use screen-space pixels so hit zone stays constant at any zoom
-  const w=n.w||DW,h=n.h||DH;
-  const HIT_PX=20; // 20 pixel radius in screen space
-  const ports=[
-    {x:n.x,y:n.y+h/2},      // left
-    {x:n.x+w,y:n.y+h/2},    // right
-    {x:n.x+w/2,y:n.y},      // top
-    {x:n.x+w/2,y:n.y+h},    // bottom
-  ];
-  // convert port world positions to screen space for comparison
-  const W=canvas.width,H=canvas.height;
-  return ports.some(p=>{
-    const sx=(p.x*cam.z)+W/2+cam.x;
-    const sy=(p.y*cam.z)+H/2+cam.y;
-    const mx=(wx*cam.z)+W/2+cam.x;
-    const my=(wy*cam.z)+H/2+cam.y;
-    return Math.hypot(mx-sx,my-sy)<HIT_PX;
-  });
+function onTM(e){
+  e.preventDefault();
+  if(_pi&&e.touches.length===2){
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    const f=d/_pd0;_pd0=d;
+    const r=canvas.getBoundingClientRect();
+    const cx=(e.touches[0].clientX+e.touches[1].clientX)/2-r.left;
+    const cy=(e.touches[0].clientY+e.touches[1].clientY)/2-r.top;
+    const wx=(cx-canvas.width/2-cam.x)/cam.z,wy=(cy-canvas.height/2-cam.y)/cam.z;
+    cam.z=Math.max(0.08,Math.min(5,cam.z*f));
+    cam.x=cx-canvas.width/2-wx*cam.z;cam.y=cy-canvas.height/2-wy*cam.z;
+  } else if(!_pi&&drag.on&&e.touches.length===1){
+    const t=e.touches[0];const r=canvas.getBoundingClientRect();
+    const cx=t.clientX-r.left,cy=t.clientY-r.top;
+    cam.x=drag.camX+(cx-drag.ox);cam.y=drag.camY+(cy-drag.oy);
+  }
 }
+function onTE(){_pi=false;drag={on:false};}
 
-function whichPort(n,wx,wy){
-  // returns the side of the nearest port, in screen space
-  const w=n.w||DW,h=n.h||DH;
-  const W=canvas.width,H=canvas.height;
-  const ports=[
-    {side:1,x:n.x,y:n.y+h/2},      // left
-    {side:0,x:n.x+w,y:n.y+h/2},    // right
-    {side:2,x:n.x+w/2,y:n.y},      // top
-    {side:3,x:n.x+w/2,y:n.y+h},    // bottom
-  ];
-  const mx=(wx*cam.z)+W/2+cam.x;
-  const my=(wy*cam.z)+H/2+cam.y;
-  let best=ports[0],bestD=Infinity;
-  ports.forEach(p=>{
-    const sx=(p.x*cam.z)+W/2+cam.x;
-    const sy=(p.y*cam.z)+H/2+cam.y;
-    const d=Math.hypot(mx-sx,my-sy);
-    if(d<bestD){bestD=d;best=p;}
-  });
-  return best.side;
-}
-
-// MOUSE
-let mouseDownPos={x:0,y:0};
-let mouseMoved=false;
-const CLICK_THRESH=5;
-let spaceDown=false;
-
+let mdPos={x:0,y:0};let mMoved=false;
 function onDown(e){
-  // middle mouse = pan
-  if(e.button===1){e.preventDefault();drag={on:true,pan:true,ox:e.clientX-canvas.getBoundingClientRect().left,oy:e.clientY-canvas.getBoundingClientRect().top,camX:cam.x,camY:cam.y};return;}
-  if(e.button!==0)return;closeCtx();
-  // space+drag = pan
-  if(spaceDown){const r=canvas.getBoundingClientRect();const cx=e.clientX-r.left,cy=e.clientY-r.top;drag={on:true,pan:true,ox:cx,oy:cy,camX:cam.x,camY:cam.y};return;}
-  const{wx,wy,cx,cy}=wp(e);
-  mouseDownPos={x:cx,y:cy};mouseMoved=false;
-  lm={x:cx,y:cy};
-  const n=hitNode(wx,wy);
+  if(e.button===1){e.preventDefault();const r=canvas.getBoundingClientRect();drag={on:true,pan:true,ox:e.clientX-r.left,oy:e.clientY-r.top,camX:cam.x,camY:cam.y};return;}
+  if(e.button!==0)return;
+  closeCtx();
+  const{wx,wy,cx,cy}=wp(e);mdPos={x:cx,y:cy};mMoved=false;lm={x:cx,y:cy};
+  if(spaceDown){drag={on:true,pan:true,ox:cx,oy:cy,camX:cam.x,camY:cam.y};return;}
+  if(altDown){
+    winSelStart={cx,cy};
+    const ws=document.getElementById('win-sel');ws.style.display='block';ws.style.left=cx+'px';ws.style.top=cy+'px';ws.style.width='0';ws.style.height='0';
+    drag={on:true,winSel:true,ox:cx,oy:cy};return;
+  }
+  const n=hNode(wx,wy);
   if(n){
-    if(hitNResize(n,wx,wy)){drag={on:true,resize:n,ox:wx,oy:wy,sw:n.w||DW,sh:n.h||DH};canvas.style.cursor='se-resize';return;}
-    // port click ONLY triggers wire — shift not involved
-    if(hitAnyPort(n,wx,wy)){
-      if(!linkFrom){linkFrom=n;linkFrom._sport=whichPort(n,wx,wy);toast('Now click a port on another node');}
-      else if(linkFrom.id!==n.id){addLink(linkFrom.id,n.id,linkFrom._sport,whichPort(n,wx,wy));linkFrom=null;}
-      else{linkFrom=null;}
+    if(hPort(n,wx,wy,'out')||hPort(n,wx,wy,'in')||e.shiftKey){
+      if(!linkFrom){linkFrom=n;toast('Click another node to connect');}
+      else{if(linkFrom.id!==n.id)addLink(linkFrom.id,n.id);linkFrom=null;}
       return;
     }
-    // shift+click node body = multi-select ONLY, never wire
-    if(e.shiftKey){
-      if(selected.nodes.includes(n.id)){selected={nodes:selected.nodes.filter(id=>id!==n.id),groups:selected.groups};}
-      else{selected={nodes:[...selected.nodes,n.id],groups:selected.groups};}
-      return;
-    }
-    // plain click = select + drag
-    selLink=null;
+    if(hNR(n,wx,wy)){drag={on:true,resize:n,ox:wx,oy:wy,sw:n.w||DW,sh:n.h||DH};canvas.style.cursor='se-resize';return;}
     if(!selected.nodes.includes(n.id)){selected={nodes:[n.id],groups:[]};}
-    drag={on:true,node:n,ox:wx-n.x,oy:wy-n.y,
-      multiNodes:selected.nodes.map(id=>({n:nById(id),ox:wx-(nById(id)?.x||0),oy:wy-(nById(id)?.y||0)})).filter(x=>x.n),
-      multiGroups:selected.groups.map(id=>({g:groups.find(g=>g.id===id),ox:wx-(groups.find(g=>g.id===id)?.x||0),oy:wy-(groups.find(g=>g.id===id)?.y||0)})).filter(x=>x.g),
-    };
-    canvas.style.cursor='grabbing';
-    return;
+    const prevGids=[...new Set(selected.nodes.map(id=>nById(id)?.group_id).filter(Boolean))];
+    drag={on:true,node:n,ox:wx-n.x,oy:wy-n.y,prevGids,
+      mn:selected.nodes.map(id=>({n:nById(id),ox:wx-(nById(id)?.x||0),oy:wy-(nById(id)?.y||0)})).filter(x=>x.n)};
+    canvas.style.cursor='grabbing';return;
   }
-  const g=hitGroup(wx,wy);
+  const g=hGroup(wx,wy);
   if(g){
-    if(hitGResize(g,wx,wy)){drag={on:true,rg:g,ox:wx,oy:wy,sw:g.w,sh:g.h};canvas.style.cursor='se-resize';return;}
-    if(e.shiftKey){
-      if(selected.groups.includes(g.id)){selected.groups=selected.groups.filter(id=>id!==g.id);}
-      else{selected.groups=[...selected.groups,g.id];}
-      return;
-    }
+    if(hGR(g,wx,wy)){drag={on:true,rg:g,ox:wx,oy:wy,sw:g.w,sh:g.h};canvas.style.cursor='se-resize';return;}
+    if(e.shiftKey){selected.groups=selected.groups.includes(g.id)?selected.groups.filter(id=>id!==g.id):[...selected.groups,g.id];return;}
     if(!selected.groups.includes(g.id)){selected={nodes:[],groups:[g.id]};}
-    const members=nodesInGroup(g).map(n=>({n,dx:n.x-g.x,dy:n.y-g.y}));
-    drag={on:true,group:g,ox:wx-g.x,oy:wy-g.y,members,
-      multiGroups:selected.groups.map(id=>({g:groups.find(gg=>gg.id===id),ox:wx-(groups.find(gg=>gg.id===id)?.x||0),oy:wy-(groups.find(gg=>gg.id===id)?.y||0)})).filter(x=>x.g),
-    };
-    canvas.style.cursor='grabbing';
-    return;
+    const members=nigByGid(g.id).map(n=>({n,dx:n.x-g.x,dy:n.y-g.y}));
+    drag={on:true,group:g,ox:wx-g.x,oy:wy-g.y,members};
+    canvas.style.cursor='grabbing';return;
   }
-  // check wire click
-  const hitL=hitLink(wx,wy);
-  if(hitL){selLink=(selLink?.id===hitL.id)?null:hitL;selNode=null;selected={nodes:[],groups:[]};return;}
-  selLink=null;
-  // empty canvas = pan
-  linkFrom=null;closeNE();closeGE();selNode=null;selGroup=null;
-  if(!e.shiftKey){selected={nodes:[],groups:[]};}
+  linkFrom=null;closeNE();closeGE();selected={nodes:[],groups:[]};
   drag={on:true,pan:true,ox:cx,oy:cy,camX:cam.x,camY:cam.y};
 }
 
 function onMove(e){
-  const r=canvas.getBoundingClientRect();
-  const cx=e.clientX-r.left,cy=e.clientY-r.top;
-  lm={x:cx,y:cy};
-  const dx=cx-mouseDownPos.x,dy=cy-mouseDownPos.y;
-  if(Math.hypot(dx,dy)>CLICK_THRESH)mouseMoved=true;
+  const r=canvas.getBoundingClientRect();const cx=e.clientX-r.left,cy=e.clientY-r.top;
+  lm={x:cx,y:cy};if(Math.hypot(cx-mdPos.x,cy-mdPos.y)>4)mMoved=true;
   const wx=(cx-canvas.width/2-cam.x)/cam.z,wy=(cy-canvas.height/2-cam.y)/cam.z;
   if(!drag.on)return;
-  if(drag.pan){
-    cam.x=drag.camX+(cx-drag.ox);cam.y=drag.camY+(cy-drag.oy);
-    if(spaceDown)canvas.style.cursor='grabbing';
-  }else if(drag.node){
-    // multi-node drag
-    drag.multiNodes.forEach(({n,ox,oy})=>{n.x=wx-ox;n.y=wy-oy;});
-    drag.multiGroups.forEach(({g,ox,oy})=>{
-      g.x=wx-ox;g.y=wy-oy;
-    });
-    // live-resize: for every group that any dragged node belongs to,
-    // size it around ALL nodes with that group_id (current live positions)
-    const liveGids=new Set([...drag.multiNodes.map(({n})=>n.group_id).filter(Boolean),...(drag._prevGids||[])]);
-    liveGids.forEach(gid=>{
-      const g=groups.find(x=>x.id===gid);if(!g)return;
-      // all nodes belonging to this group, at their current positions
-      const members=nodes.filter(n=>n.group_id===gid);
-      sizeGroupAroundNodes(g,members);
-    });
-  }else if(drag.group){
-    drag.group.x=wx-drag.ox;drag.group.y=wy-drag.oy;
-    // members positioned relative to group origin — this is the reliable approach
-    drag.members?.forEach(({n,dx,dy})=>{n.x=drag.group.x+dx;n.y=drag.group.y+dy;});
-    drag.multiGroups.forEach(({g,ox,oy})=>{g.x=wx-ox;g.y=wy-oy;});
-  }else if(drag.resize){drag.resize.w=Math.max(MW,drag.sw+(wx-drag.ox));drag.resize.h=Math.max(MH,drag.sh+(wy-drag.oy));}
-  else if(drag.rg){drag.rg.w=Math.max(100,drag.sw+(wx-drag.ox));drag.rg.h=Math.max(60,drag.sh+(wy-drag.oy));}
-  // update cursor based on what we're hovering
-  if(!drag.on){
-    const hN=hitNode(wx,wy);const hG=hitGroup(wx,wy);
-    if(hN&&hitNResize(hN,wx,wy))canvas.style.cursor='se-resize';
-    else if(hG&&hitGResize(hG,wx,wy))canvas.style.cursor='se-resize';
-    else if(hN||hG)canvas.style.cursor='default';
-    else canvas.style.cursor='default';
+  if(drag.pan){cam.x=drag.camX+(cx-drag.ox);cam.y=drag.camY+(cy-drag.oy);}
+  else if(drag.winSel){
+    const ws=document.getElementById('win-sel');
+    ws.style.left=Math.min(cx,drag.ox)+'px';ws.style.top=Math.min(cy,drag.oy)+'px';
+    ws.style.width=Math.abs(cx-drag.ox)+'px';ws.style.height=Math.abs(cy-drag.oy)+'px';
   }
+  else if(drag.node){
+    drag.mn.forEach(({n,ox,oy})=>{n.x=wx-ox;n.y=wy-oy;});
+    // live resize groups
+    const liveGids=new Set([...drag.mn.map(({n})=>n.group_id).filter(Boolean),...(drag.prevGids||[])]);
+    liveGids.forEach(gid=>{const g=groups.find(x=>x.id===gid);if(g)sizeGAN(g,nigByGid(gid));});
+  }
+  else if(drag.group){
+    drag.group.x=wx-drag.ox;drag.group.y=wy-drag.oy;
+    drag.members?.forEach(({n,dx,dy})=>{n.x=drag.group.x+dx;n.y=drag.group.y+dy;});
+  }
+  else if(drag.resize){drag.resize.w=Math.max(100,drag.sw+(wx-drag.ox));drag.resize.h=Math.max(40,drag.sh+(wy-drag.oy));}
+  else if(drag.rg){drag.rg.w=Math.max(120,drag.sw+(wx-drag.ox));drag.rg.h=Math.max(80,drag.sh+(wy-drag.oy));}
 }
 
 async function onUp(e){
-  canvas.style.cursor='default';
-  const{wx,wy,cx,cy}=wp(e);
-
-  if(drag.node){
-        // old group_ids before we reassign
-    const oldGids=new Set(drag.multiNodes.map(({n})=>n.group_id).filter(Boolean));
-    // reassign group_id by current position
-    for(const {n} of drag.multiNodes){
-      const gid=getGroupId(n);
-      n.group_id=gid;
-      await sb.from('canvas_nodes').update({x:n.x,y:n.y,group_id:gid||null}).eq('id',n.id);
+  canvas.style.cursor='default';const{wx,wy,cx,cy}=wp(e);
+  if(drag.winSel){
+    document.getElementById('win-sel').style.display='none';
+    if(mMoved){
+      const x0=Math.min(cx,drag.ox),x1=Math.max(cx,drag.ox),y0=Math.min(cy,drag.oy),y1=Math.max(cy,drag.oy);
+      const wMinX=(x0-canvas.width/2-cam.x)/cam.z,wMaxX=(x1-canvas.width/2-cam.x)/cam.z;
+      const wMinY=(y0-canvas.height/2-cam.y)/cam.z,wMaxY=(y1-canvas.height/2-cam.y)/cam.z;
+      selected.nodes=nodes.filter(n=>n.x>=wMinX&&n.x+(n.w||DW)<=wMaxX&&n.y>=wMinY&&n.y+(n.h||DH)<=wMaxY).map(n=>n.id);
+      selected.groups=groups.filter(g=>g.x>=wMinX&&g.x+g.w<=wMaxX&&g.y>=wMinY&&g.y+g.h<=wMaxY).map(g=>g.id);
+      if(selected.nodes.length+selected.groups.length)toast(`Selected ${selected.nodes.length} nodes, ${selected.groups.length} groups`);
     }
-    if(drag.multiGroups?.length)await Promise.all(drag.multiGroups.map(({g})=>sb.from('canvas_groups').update({x:g.x,y:g.y}).eq('id',g.id)));
-    // now group_ids are correct — resize all affected groups
-    const newGids=new Set(drag.multiNodes.map(({n})=>n.group_id).filter(Boolean));
-    const allAffected=new Set([...oldGids,...newGids]);
-    // save group sizes synchronously while RT is paused
-    await Promise.all([...allAffected].map(gid=>{
-      const g=groups.find(x=>x.id===gid);
-      if(!g)return;
-      sizeGroupAroundMembers(g);
-      _trackWrite('canvas_groups',g.id);return sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
+  } else if(drag.node){
+    _tw('canvas_nodes','*');
+    const oldGids=new Set(drag.mn.map(({n})=>n.group_id).filter(Boolean));
+    for(const{n}of drag.mn){const gid=getGid(n);n.group_id=gid;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y),group_id:gid||null}).eq('id',n.id);}
+    const newGids=new Set(drag.mn.map(({n})=>n.group_id).filter(Boolean));
+    const allAff=new Set([...oldGids,...newGids]);
+    await Promise.all([...allAff].map(gid=>{
+      const g=groups.find(x=>x.id===gid);if(!g)return;
+      const m=nigByGid(gid);sizeGAN(g,m);_tw('canvas_groups',g.id);
+      return sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
     }).filter(Boolean));
-      }else if(drag.group){
-    // suppress realtime during save to prevent loadAll() clobbering in-flight positions
-        // 1. save all member node positions first
+  } else if(drag.group){
+    _tw('canvas_groups',drag.group.id);
+    await sb.from('canvas_groups').update({x:Math.round(drag.group.x),y:Math.round(drag.group.y)}).eq('id',drag.group.id);
     if(drag.members?.length){
       await Promise.all(drag.members.map(({n})=>{
-        n.group_id=drag.group.id;
-        _trackWrite('canvas_nodes',n.id);return sb.from('canvas_nodes').update({x:n.x,y:n.y,group_id:drag.group.id}).eq('id',n.id);
+        n.group_id=drag.group.id;_tw('canvas_nodes',n.id);
+        return sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y),group_id:drag.group.id}).eq('id',n.id);
       }));
     }
-    // 2. save group position
-    _trackWrite('canvas_groups',drag.group.id);await sb.from('canvas_groups').update({x:drag.group.x,y:drag.group.y}).eq('id',drag.group.id);
-    // 3. update group size to wrap nodes
-    autoResizeGroup(drag.group);
-    // 4. resume realtime
-      }else if(drag.resize){const n=drag.resize;await sb.from('canvas_nodes').update({w:n.w,h:n.h}).eq('id',n.id);}
-  else if(drag.rg){const g=drag.rg;await sb.from('canvas_groups').update({w:g.w,h:g.h}).eq('id',g.id);}
+  } else if(drag.resize){const n=drag.resize;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({w:Math.round(n.w),h:Math.round(n.h)}).eq('id',n.id);}
+  else if(drag.rg){const g=drag.rg;_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
   drag={on:false};
 }
 
 function onWheel(e){
-  e.preventDefault();
-  const r=canvas.getBoundingClientRect();
-  const cx=e.clientX-r.left,cy=e.clientY-r.top;
-  const f=e.deltaY>0?0.9:1.1;
+  e.preventDefault();const r=canvas.getBoundingClientRect();
+  const cx=e.clientX-r.left,cy=e.clientY-r.top;const f=e.deltaY>0?0.92:1.09;
   const wx=(cx-canvas.width/2-cam.x)/cam.z,wy=(cy-canvas.height/2-cam.y)/cam.z;
-  cam.z=Math.max(0.04,Math.min(4,cam.z*f));
-  cam.x=cx-canvas.width/2-wx*cam.z;cam.y=cy-canvas.height/2-wy*cam.z;
+  cam.z=Math.max(0.08,Math.min(5,cam.z*f));cam.x=cx-canvas.width/2-wx*cam.z;cam.y=cy-canvas.height/2-wy*cam.z;
 }
 
 function onRC(e){
-  e.preventDefault();
-  const{wx,wy,cx,cy}=wp(e);ctxPos={x:wx,y:wy};
-  const m=document.getElementById('ctx');
-  let items=[];
-  // right-click on wire
-  const l=hitLink(wx,wy);
-  if(l){
-    const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
-    items=[
-      {label:`Disconnect "${s?.label||'?'}" → "${t?.label||'?'}"`,fn:`disconnectLink(window._ctxLink)`,danger:true},
-      {sep:true},
-      {label:'Cancel',fn:'closeCtx()',dim:true}
-    ];
-    window._ctxLink=l;
-    showCtx(items,cx,cy);return;
+  e.preventDefault();const{wx,wy,cx,cy}=wp(e);ctxPos={x:wx,y:wy};
+  const n=hNode(wx,wy);const g=hGroup(wx,wy);const menu=document.getElementById('ctx');
+  menu.innerHTML='';
+  if(n){
+    ci(menu,'Edit node','',()=>openNE(n,cx,cy));
+    ci(menu,'Delete','danger',async()=>{if(!confirm('Delete?'))return;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').delete().eq('id',n.id);await sb.from('canvas_links').delete().or(`source.eq.${n.id},target.eq.${n.id}`);nodes=nodes.filter(x=>x.id!==n.id);links=links.filter(l=>(l.source?.id||l.source)!==n.id&&(l.target?.id||l.target)!==n.id);});
+  } else if(g){
+    ci(menu,'Edit group','',()=>openGE(g,cx,cy));cs(menu);
+    ci(menu,'Align left','',()=>alignG(g,'left'));ci(menu,'Align center','',()=>alignG(g,'center'));ci(menu,'Align right','',()=>alignG(g,'right'));cs(menu);
+    ci(menu,'Delete group','danger',async()=>{if(!confirm('Delete group?'))return;_tw('canvas_groups',g.id);await sb.from('canvas_groups').delete().eq('id',g.id);groups=groups.filter(x=>x.id!==g.id);nodes.filter(n=>n.group_id===g.id).forEach(n=>n.group_id=null);});
+  } else {
+    ch(menu,'Add node');TYPES.forEach(t=>ci(menu,t,'',()=>addNA(t,wx,wy)));cs(menu);
+    ci(menu,'Add group','',()=>addGA(wx,wy));cs(menu);
+    ci(menu,'Repair groups','',()=>repairGroups());ci(menu,'Select all','',()=>selAll());
   }
-  // right-click with selection active
-  const hasSelNodes=selected.nodes.length>0;
-  if(hasSelNodes){
-    items=[
-      {label:`Group ${selected.nodes.length} selected nodes`,fn:'ctxGroupSelected()'},
-      {label:'Add selected to existing group...',fn:'ctxAddToGroup()'},
-      {sep:true},
-      {label:`Spread selected apart`,fn:'spreadSelected()'},
-      {sep:true},
-      {label:`Delete ${selected.nodes.length} node(s)`,fn:'deleteSelected()',danger:true},
-      {sep:true},
-      {label:'Cancel',fn:'closeCtx()',dim:true}
-    ];
-    showCtx(items,cx,cy);return;
-  }
-  // default: add node menu
-  items=[
-    {label:'Idea / thought',fn:"ctxAdd('idea')",dot:'#378ADD'},
-    {label:'Reference / URL',fn:"ctxAdd('reference')",dot:'#1D9E75'},
-    {label:'Material / spec',fn:"ctxAdd('material')",dot:'#BA7517'},
-    {label:'Decision',fn:"ctxAdd('decision')",dot:'#D85A30'},
-    {label:'Image',fn:"ctxAdd('image')",dot:'#7F77DD'},
-    {sep:true},
-    {label:'Add group',fn:'ctxAddGroup()',dot:'#888780'},
-    {sep:true},
-    {label:'Spread all apart',fn:'spreadAll()'},
-    {label:'Compact all',fn:'compactAll()'},
-    {label:'Repair group membership',fn:'repairGroups()'},
-    {sep:true},
-    {label:'Cancel',fn:'closeCtx()',dim:true}
-  ];
-  showCtx(items,cx,cy);
+  menu.style.display='block';menu.style.left=Math.min(cx,canvas.width-180)+'px';menu.style.top=Math.min(cy,canvas.height-260)+'px';
 }
-
-function showCtx(items,cx,cy){
-  const m=document.getElementById('ctx');
-  m.innerHTML=items.map(it=>{
-    if(it.sep)return '<div class="ctxs"></div>';
-    const dot=it.dot?`<div class="ctxd" style="background:${it.dot}"></div>`:'';
-    const col=it.danger?'color:#c0392b;':it.dim?'color:var(--tx3);':''
-    return `<div class="ctxi" style="${col}" onclick="${it.fn};closeCtx()">${dot}${it.label}</div>`;
-  }).join('');
-  m.style.display='block';
-  m.style.left=Math.min(cx,canvas.width-220)+'px';
-  m.style.top=Math.min(cy,canvas.height-320)+'px';
+function ci(m,l,c,f){const d=document.createElement('div');d.className='ctxi'+(c?' '+c:'');d.textContent=l;d.onclick=()=>{closeCtx();f();};m.appendChild(d);}
+function cs(m,l){
+  if(l){const d=document.createElement('div');d.className='ctxi head';d.textContent=l;m.appendChild(d);}
+  else{const d=document.createElement('div');d.className='ctxs';m.appendChild(d);}
 }
+function ch(m,l){const d=document.createElement('div');d.className='ctxi head';d.textContent=l;m.appendChild(d);}
+function closeCtx(){document.getElementById('ctx').style.display='none';}
 
 function onDbl(e){
   const{wx,wy,cx,cy}=wp(e);
-  const n=hitNode(wx,wy);
-  if(n){openNE(n,cx,cy);return;}
-  const g=hitGroup(wx,wy);
-  if(g){openGE(g,cx,cy);return;}
-  // double-click wire = disconnect
-  const l=hitLink(wx,wy);
-  if(l){disconnectLink(l);return;}
-  // double-click empty canvas = add idea node
-  const id='n-'+Date.now();
-  sb.from('canvas_nodes').insert({id,label:'idea',type:'idea',url:'',img_url:'',author:who,x:wx-DW/2,y:wy-DH/2,w:DW,h:DH});
+  const n=hNode(wx,wy);if(n){openNE(n,cx,cy);return;}
+  const g=hGroup(wx,wy);if(g){openGE(g,cx,cy);return;}
+  addNA('idea',wx,wy);
 }
-
 function onKey(e){
-  if(e.code==='Space'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){spaceDown=true;canvas.style.cursor='grab';}
-  if(e.key==='Escape'){if(linkFrom){linkFrom=null;toast('Wire cancelled');}closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};selLink=null;canvas.style.cursor='default';}
-  if((e.key==='Delete'||e.key==='Backspace')&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){
-    deleteSelected();
-  }
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){if(e.key==='Escape')document.activeElement.blur();return;}
+  if(e.key==='Alt')altDown=true;
+  if(e.key===' '){spaceDown=true;canvas.style.cursor='grab';e.preventDefault();}
+  if(e.key==='Escape'){linkFrom=null;closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};}
+  if((e.key==='Delete'||e.key==='Backspace')&&!drag.on)delSel();
+  if((e.ctrlKey||e.metaKey)&&e.key==='a'){e.preventDefault();selAll();}
 }
-
-async function deleteSelected(){
-  if(selected.nodes.length){
-    if(!confirm(`Delete ${selected.nodes.length} node(s)?`))return;
-    for(const id of selected.nodes){
-      await sb.from('canvas_nodes').delete().eq('id',id);
-      await sb.from('canvas_links').delete().or(`source.eq.${id},target.eq.${id}`);
-    }
-    selected.nodes=[];
-  }
-  if(selected.groups.length){
-    if(!confirm(`Delete ${selected.groups.length} group(s)?`))return;
-    for(const id of selected.groups)await sb.from('canvas_groups').delete().eq('id',id);
-    selected.groups=[];
-  }
-}
-
-async function onPaste(e){
-  const items=e.clipboardData?.items;if(!items)return;
-  for(const item of items){if(item.type.startsWith('image/')){addImageFile({files:[item.getAsFile()]});}}
-}
-function closeCtx(){document.getElementById('ctx').style.display='none';}
-
-async function repairGroups(){
-  // assign group_id to every node based on current position, save to DB
-  let count=0;
-  const updates=[];
-  nodes.forEach(n=>{
-    let found=null;
-    const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
-    for(const g of groups){
-      if(cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h){found=g.id;break;}
-    }
-    if(found!==n.group_id){
-      n.group_id=found;
-      updates.push(sb.from('canvas_nodes').update({group_id:found}).eq('id',n.id));
-      count++;
-    }
-  });
-  if(updates.length)await Promise.all(updates);
-  toast(count>0?`Repaired ${count} node${count!==1?'s':''}`:'All nodes already assigned');
-}
-
-function spreadSelected(){
-  const sns=selected.nodes.map(id=>nById(id)).filter(Boolean);
-  if(!sns.length)return;
-  const cx=sns.reduce((s,n)=>s+n.x+(n.w||DW)/2,0)/sns.length;
-  const cy=sns.reduce((s,n)=>s+n.y+(n.h||DH)/2,0)/sns.length;
-  sns.forEach(n=>{
-    const dx=n.x+(n.w||DW)/2-cx||1,dy=n.y+(n.h||DH)/2-cy||1;
-    const d=Math.max(1,Math.hypot(dx,dy));
-    n.x+=dx/d*200;n.y+=dy/d*200;
-    sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
-  });toast('Spread');
-}
-
-function spreadAll(){
-  const cx=nodes.reduce((s,n)=>s+n.x+(n.w||DW)/2,0)/Math.max(1,nodes.length);
-  const cy=nodes.reduce((s,n)=>s+n.y+(n.h||DH)/2,0)/Math.max(1,nodes.length);
-  Promise.all(nodes.map(n=>{
-    const dx=(n.x+(n.w||DW)/2-cx)||((Math.random()-0.5)*10),dy=(n.y+(n.h||DH)/2-cy)||((Math.random()-0.5)*10);
-    const d=Math.max(1,Math.hypot(dx,dy));
-    n.x+=dx/d*180;n.y+=dy/d*180;
-    return sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
-  }));toast('Spread all');
-}
-
-function compactAll(){
-  const cx=nodes.reduce((s,n)=>s+n.x+(n.w||DW)/2,0)/Math.max(1,nodes.length);
-  const cy=nodes.reduce((s,n)=>s+n.y+(n.h||DH)/2,0)/Math.max(1,nodes.length);
-  Promise.all(nodes.map(n=>{
-    const dx=n.x+(n.w||DW)/2-cx,dy=n.y+(n.h||DH)/2-cy;
-    const d=Math.max(1,Math.hypot(dx,dy));
-    n.x-=dx/d*120;n.y-=dy/d*120;
-    return sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
-  }));toast('Compact');
-}
-
-async function ctxGroupSelected(){
-  const sns=selected.nodes.map(id=>nById(id)).filter(Boolean);
-  if(!sns.length)return;
-  const pad=32;
-  const x=Math.min(...sns.map(n=>n.x))-pad;
-  const y=Math.min(...sns.map(n=>n.y))-pad-22;
-  const w=Math.max(...sns.map(n=>n.x+(n.w||DW)))-x+pad;
-  const h=Math.max(...sns.map(n=>n.y+(n.h||DH)))-y+pad;
-  const id='g-'+Date.now();
-  await sb.from('canvas_groups').insert({id,label:'New group',type:'idea',color:GROUP_COLORS[Math.floor(Math.random()*GROUP_COLORS.length)],x,y,w:Math.max(w,180),h:Math.max(h,120)});
-  toast('Group created — double-click to rename');
+function onKU(e){if(e.key==='Alt')altDown=false;if(e.key===' '){spaceDown=false;canvas.style.cursor='default';}}
+function selAll(){selected={nodes:nodes.map(n=>n.id),groups:groups.map(g=>g.id)};toast(`Selected all: ${nodes.length} nodes, ${groups.length} groups`);}
+async function delSel(){
+  if(!selected.nodes.length&&!selected.groups.length)return;
+  if(!confirm(`Delete ${selected.nodes.length} nodes + ${selected.groups.length} groups?`))return;
+  for(const id of selected.nodes){_tw('canvas_nodes',id);await sb.from('canvas_nodes').delete().eq('id',id);await sb.from('canvas_links').delete().or(`source.eq.${id},target.eq.${id}`);nodes=nodes.filter(n=>n.id!==id);}
+  for(const id of selected.groups){_tw('canvas_groups',id);await sb.from('canvas_groups').delete().eq('id',id);groups=groups.filter(g=>g.id!==id);nodes.filter(n=>n.group_id===id).forEach(n=>n.group_id=null);}
   selected={nodes:[],groups:[]};
 }
-
-async function ctxAddToGroup(){
-  const sns=selected.nodes.map(id=>nById(id)).filter(Boolean);
-  if(!sns.length||!groups.length){toast('No groups on canvas yet');return;}
-  // find nearest group center
-  const avgX=sns.reduce((s,n)=>s+n.x,0)/sns.length;
-  const avgY=sns.reduce((s,n)=>s+n.y,0)/sns.length;
-  const nearest=groups.reduce((best,g)=>{
-    const d=Math.hypot(avgX-g.x-g.w/2,avgY-g.y-g.h/2);
-    return d<best.d?{g,d}:best;
-  },{g:null,d:Infinity});
-  if(!nearest.g)return;
-  const g=nearest.g;
-  // expand group to include nodes
-  const allX=[g.x+32,...sns.map(n=>n.x)];const allY=[g.y+54,...sns.map(n=>n.y)];
-  const allX2=[g.x+g.w-32,...sns.map(n=>n.x+(n.w||DW))];const allY2=[g.y+g.h-32,...sns.map(n=>n.y+(n.h||DH))];
-  const pad=32;
-  g.x=Math.min(...allX)-pad;g.y=Math.min(...allY)-pad-22;
-  g.w=Math.max(...allX2)-g.x+pad;g.h=Math.max(...allY2)-g.y+pad;
-  _trackWrite('canvas_groups',g.id);await sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
-  toast(`Added to "${g.label}"`);
-  selected={nodes:[],groups:[]};
-}
+async function onPaste(e){const items=e.clipboardData?.items;if(!items)return;for(const item of items){if(item.type.startsWith('image/')){addImageFile({files:[item.getAsFile()]});}}}
 
 // ADD
-async function ctxAdd(type){
-  closeCtx();const id='n-'+Date.now();
-  await sb.from('canvas_nodes').insert({id,label:type,type,url:'',img_url:'',author:who,x:ctxPos.x,y:ctxPos.y,w:DW,h:DH});
-  toast('Added — double-click to edit');
+async function addNA(type,wx,wy){
+  const id='n-'+Date.now();_tw('canvas_nodes',id);
+  const node={id,label:type,type,url:'',img_url:'',author:who,x:Math.round(wx),y:Math.round(wy),w:DW,h:DH,group_id:null};
+  await sb.from('canvas_nodes').insert(node);nodes.push({...node,x:wx,y:wy});toast('Added — dbl-click to edit');
 }
-async function ctxAddGroup(){
-  closeCtx();const id='g-'+Date.now();
-  await sb.from('canvas_groups').insert({id,label:'New group',type:'idea',color:GROUP_COLORS[0],x:ctxPos.x,y:ctxPos.y,w:260,h:180});
-  toast('Group added — double-click to edit');
+async function addGA(wx,wy){
+  const id='g-'+Date.now();_tw('canvas_groups',id);
+  const gp={id,label:'New group',color:GC[groups.length%GC.length],x:Math.round(wx),y:Math.round(wy),w:260,h:180};
+  await sb.from('canvas_groups').insert(gp);groups.push({...gp,x:wx,y:wy});toast('Group added — dbl-click to edit');
 }
 async function quickAdd(){
   const inp=document.getElementById('node-input');const text=inp.value.trim();if(!text)return;
   const isURL=/^https?:\/\//i.test(text);const type=isURL?'reference':'idea';
-  const id='n-'+Date.now();
-  const x=(Math.random()-0.5)*300,y=(Math.random()-0.5)*200;
+  const id='n-'+Date.now();const x=(Math.random()-0.5)*300,y=(Math.random()-0.5)*200;
   let label=text;if(isURL){try{label=new URL(text).hostname.replace('www.','');}catch(e){}}
-  await sb.from('canvas_nodes').insert({id,label:label.substring(0,50),type,url:isURL?text:'',img_url:'',author:who,x,y,w:DW,h:DH});
-  if(isURL)fetchTitle(id,text);
-  inp.value='';toast('Added');
+  label=label.substring(0,60);_tw('canvas_nodes',id);
+  await sb.from('canvas_nodes').insert({id,label,type,url:isURL?text:'',img_url:'',author:who,x:Math.round(x),y:Math.round(y),w:DW,h:DH,group_id:null});
+  nodes.push({id,label,type,url:isURL?text:'',img_url:'',author:who,x,y,w:DW,h:DH,group_id:null});
+  if(isURL)fetchTitle(id,text);inp.value='';toast('Added');
 }
 async function fetchTitle(id,url){
-  try{
-    const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-    const d=await r.json();
-    const m=d.contents?.match(/<title[^>]*>([^<]+)<\/title>/i);
-    if(m?.[1])await sb.from('canvas_nodes').update({label:m[1].trim().replace(/\s+/g,' ').substring(0,50)}).eq('id',id);
-  }catch(e){}
+  try{const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);const d=await r.json();const m=d.contents?.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if(m?.[1]){const t=m[1].trim().replace(/\s+/g,' ').substring(0,60);_tw('canvas_nodes',id);await sb.from('canvas_nodes').update({label:t}).eq('id',id);const n=nById(id);if(n)n.label=t;}}catch(e){}
 }
 async function addImageFile(input){
   const file=input.files?.[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=async(e)=>{
-    const id='n-'+Date.now();
-    await sb.from('canvas_nodes').insert({id,label:'image',type:'image',url:'',img_url:e.target.result,author:who,x:(Math.random()-0.5)*200,y:(Math.random()-0.5)*150,w:DW,h:DW});
-    toast('Image added');
-  };
-  reader.readAsDataURL(file);try{input.value='';}catch(e){}
+    const id='n-'+Date.now();const x=(Math.random()-0.5)*200,y=(Math.random()-0.5)*150;_tw('canvas_nodes',id);
+    await sb.from('canvas_nodes').insert({id,label:'image',type:'image',url:'',img_url:e.target.result,author:who,x:Math.round(x),y:Math.round(y),w:DW,h:DH,group_id:null});
+    nodes.push({id,label:'image',type:'image',url:'',img_url:e.target.result,author:who,x,y,w:DW,h:DH,group_id:null});toast('Image added');
+  };reader.readAsDataURL(file);try{input.value='';}catch(e){}
 }
-async function disconnectLink(l){
-  const id=l.id;
-  if(!id)return;
-  await sb.from('canvas_links').delete().eq('id',id);
-  toast('Wire disconnected');
-}
-
-async function addLink(srcId,tgtId,sport=0,tport=0){
-  const exists=links.find(l=>{const s=l.source?.id||l.source,t=l.target?.id||l.target;return(s===srcId&&t===tgtId)||(s===tgtId&&t===srcId);});
-  if(exists)return;
-  await sb.from('canvas_links').insert({id:'l-'+Date.now(),source:srcId,target:tgtId,claude:false,sport,tport});
-  toast('Connected');
-}
-function nodesInGroup(g){
-  // group_id is authoritative for membership
-  const byId=nodes.filter(n=>n.group_id===g.id);
-  if(byId.length>0)return byId;
-  // fall back to position for legacy nodes without group_id
-  return nodes.filter(n=>{const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;return cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h;});
+async function addLink(srcId,tgtId){
+  const ex=links.find(l=>{const s=l.source?.id||l.source,t=l.target?.id||l.target;return(s===srcId&&t===tgtId)||(s===tgtId&&t===srcId);});if(ex)return;
+  const id='l-'+Date.now();_tw('canvas_links',id);
+  await sb.from('canvas_links').insert({id,source:srcId,target:tgtId,claude:false,sport:0,tport:0});
+  links.push({id,source:srcId,target:tgtId,claude:false});toast('Connected');
 }
 
-// sizeGroupAroundMembers: use group_id membership + current node positions
-// Does NOT rely on group bounds to find members — uses stored membership
-// Size a group to wrap a specific set of node objects
-function sizeGroupAroundNodes(g, members){
-  if(!members||!members.length)return;
-  const PAD=24,LABEL_H=32;
-  const minX=Math.min(...members.map(n=>n.x));
-  const minY=Math.min(...members.map(n=>n.y));
-  const maxX=Math.max(...members.map(n=>n.x+(n.w||DW)));
-  const maxY=Math.max(...members.map(n=>n.y+(n.h||DH)));
-  g.x=minX-PAD;
-  g.y=minY-LABEL_H-PAD;
-  g.w=maxX-g.x+PAD;
-  g.h=maxY-g.y+PAD;
-  g.w=Math.max(g.w,200);g.h=Math.max(g.h,120);
-}
-
-// During drag: size by which nodes currently have this group_id
-function sizeGroupAroundMembers(g){
-  const members=nodes.filter(n=>n.group_id===g.id);
-  sizeGroupAroundNodes(g,members);
-}
-
-// On release: size by group_id membership and save to DB
-function autoResizeGroup(g){
-  sizeGroupAroundMembers(g);
-  // pause RT so the DB write doesn't trigger loadAll() and snap back
-  _trackWrite('canvas_groups',g.id);
-  sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
-}
-
-// NODE EDIT (double click)
+// NODE EDIT
 function openNE(node,cx,cy){
   selNode=node;neImgData=null;
-  document.getElementById('nel-i').value=node.label||'';
-  document.getElementById('neu').value=node.url||'';
-  document.getElementById('ne-img-status').textContent=node.img_url?'Image set':'No image';
+  document.getElementById('nel-i').value=node.label||'';document.getElementById('neu').value=node.url||'';
+  document.getElementById('ne-img-status').textContent=node.img_url?'Image set':'';
   document.getElementById('nety').innerHTML=TYPES.map(t=>`<button class="${node.type===t?'on':''}" style="${node.type===t?'background:'+TC[t]+';border-color:'+TC[t]+';color:#fff':''}" onclick="setNT('${t}')">${t}</button>`).join('');
-  const p=document.getElementById('ne');
-  const W=canvas.width,H=canvas.height;
-  let px=cx+14,py=cy;if(px+240>W)px=cx-254;if(py+220>H)py=H-230;
+  const p=document.getElementById('ne');const W=canvas.width,H=canvas.height;
+  let px=cx+14,py=cy;if(px+220>W)px=cx-234;if(py+210>H)py=H-220;
   p.style.left=px+'px';p.style.top=py+'px';p.style.display='block';
 }
 function closeNE(){document.getElementById('ne').style.display='none';}
-function setNT(t){
-  if(!selNode)return;selNode.type=t;
-  document.querySelectorAll('#nety button').forEach(b=>{
-    const on=b.textContent===t;b.classList.toggle('on',on);
-    b.style.background=on?TC[t]:'';b.style.borderColor=on?TC[t]:'';b.style.color=on?'#fff':'';
-  });
-}
-function neAddImage(input){
-  const file=input.files?.[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{neImgData=e.target.result;document.getElementById('ne-img-status').textContent='Image ready — save to apply';};
-  reader.readAsDataURL(file);
-}
+function setNT(t){if(!selNode)return;selNode.type=t;document.querySelectorAll('#nety button').forEach(b=>{const on=b.textContent===t;b.classList.toggle('on',on);b.style.background=on?TC[t]:'';b.style.borderColor=on?TC[t]:'';b.style.color=on?'#fff':'';});}
+function neAddImage(input){const file=input.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{neImgData=e.target.result;document.getElementById('ne-img-status').textContent='Ready';};reader.readAsDataURL(file);}
 async function saveNE(){
-  if(!selNode)return;
-  const update={label:document.getElementById('nel-i').value.trim(),url:document.getElementById('neu').value.trim(),type:selNode.type};
-  if(neImgData)update.img_url=neImgData;
-  // if URL node, open as hyperlink available
-  await sb.from('canvas_nodes').update(update).eq('id',selNode.id);
-  closeNE();selNode=null;neImgData=null;toast('Saved');
+  if(!selNode)return;const update={label:document.getElementById('nel-i').value.trim(),url:document.getElementById('neu').value.trim(),type:selNode.type};
+  if(neImgData)update.img_url=neImgData;_tw('canvas_nodes',selNode.id);
+  await sb.from('canvas_nodes').update(update).eq('id',selNode.id);Object.assign(selNode,update);closeNE();selNode=null;neImgData=null;toast('Saved');
 }
 async function deleteNode(){
-  if(!selNode||!confirm('Delete this node?'))return;
-  await sb.from('canvas_nodes').delete().eq('id',selNode.id);
-  await sb.from('canvas_links').delete().or(`source.eq.${selNode.id},target.eq.${selNode.id}`);
+  if(!selNode||!confirm('Delete?'))return;const id=selNode.id;_tw('canvas_nodes',id);
+  await sb.from('canvas_nodes').delete().eq('id',id);await sb.from('canvas_links').delete().or(`source.eq.${id},target.eq.${id}`);
+  nodes=nodes.filter(n=>n.id!==id);links=links.filter(l=>(l.source?.id||l.source)!==id&&(l.target?.id||l.target)!==id);
   closeNE();selNode=null;
 }
 
-// GROUP EDIT (double click)
-let selGroupForEdit=null;
-let selGroupColor=null;
+// GROUP EDIT
 function openGE(g,cx,cy){
-  selGroupForEdit=g;selGroupColor=groupColor(g);
-  document.getElementById('gel').value=g.label||'';
-  // color swatches
-  const cc=document.getElementById('ge-colors');
-  cc.innerHTML=GROUP_COLORS.map(c=>`<div class="ge-color${selGroupColor===c?' sel':''}" style="background:${c}" onclick="pickGroupColor('${c}')"></div>`).join('');
-  const p=document.getElementById('ge');
-  p.style.left=Math.min(cx,canvas.width-230)+'px';p.style.top=Math.min(cy,canvas.height-200)+'px';p.style.display='block';
+  selGE=g;selGColor=g.color||GC[0];document.getElementById('gel').value=g.label||'';
+  document.getElementById('ge-colors').innerHTML=GC.map(c=>`<div class="ge-color${selGColor===c?' sel':''}" style="background:${c}" onclick="pickGC('${c}')"></div>`).join('');
+  const p=document.getElementById('ge');p.style.left=Math.min(cx,canvas.width-210)+'px';p.style.top=Math.min(cy,canvas.height-180)+'px';p.style.display='block';
   setTimeout(()=>document.getElementById('gel').focus(),50);
 }
 function closeGE(){document.getElementById('ge').style.display='none';}
-function pickGroupColor(c){
-  selGroupColor=c;
-  document.querySelectorAll('.ge-color').forEach(el=>{el.classList.toggle('sel',el.style.background===c||(el.style.backgroundColor&&el.style.backgroundColor===c));});
-  if(selGroupForEdit)selGroupForEdit.color=c;// preview
-}
+function pickGC(c){selGColor=c;if(selGE)selGE.color=c;document.querySelectorAll('.ge-color').forEach(el=>el.classList.toggle('sel',el.style.background===c));}
 async function saveGE(){
-  if(!selGroupForEdit)return;
-  await sb.from('canvas_groups').update({label:document.getElementById('gel').value.trim(),color:selGroupColor}).eq('id',selGroupForEdit.id);
-  closeGE();selGroupForEdit=null;toast('Group updated');
+  if(!selGE)return;const label=document.getElementById('gel').value.trim();_tw('canvas_groups',selGE.id);
+  await sb.from('canvas_groups').update({label,color:selGColor}).eq('id',selGE.id);selGE.label=label;selGE.color=selGColor;closeGE();selGE=null;toast('Saved');
 }
 async function deleteGroup(){
-  if(!selGroupForEdit||!confirm('Delete this group?'))return;
-  await sb.from('canvas_groups').delete().eq('id',selGroupForEdit.id);
-  closeGE();selGroupForEdit=null;
+  if(!selGE||!confirm('Delete group?'))return;const id=selGE.id;_tw('canvas_groups',id);
+  await sb.from('canvas_groups').delete().eq('id',id);groups=groups.filter(g=>g.id!==id);nodes.filter(n=>n.group_id===id).forEach(n=>n.group_id=null);closeGE();selGE=null;
 }
 
-// CLAUDE
-function toggleClaude(){
-  claudeOn=!claudeOn;
-  document.getElementById('clt').classList.toggle('on',claudeOn);
-  document.getElementById('cp').classList.toggle('open',claudeOn);
-  if(claudeOn)analyzeCanvas();
+// GROUP UTILS
+function nigByGid(gid){return nodes.filter(n=>n.group_id===gid);}
+function nigByPos(g){return nodes.filter(n=>{const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;return cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h;});}
+function sizeGAN(g,members){
+  if(!members||!members.length)return;
+  const PAD=28,LABEL_H=32;
+  const minX=Math.min(...members.map(n=>n.x)),minY=Math.min(...members.map(n=>n.y));
+  const maxX=Math.max(...members.map(n=>n.x+(n.w||DW))),maxY=Math.max(...members.map(n=>n.y+(n.h||DH)));
+  g.x=minX-PAD;g.y=minY-LABEL_H;g.w=maxX-g.x+PAD;g.h=maxY-g.y+PAD;
+  g.w=Math.max(g.w,200);g.h=Math.max(g.h,120);
 }
-async function callClaude(messages,maxTokens=1200){
+function getGid(n){
+  const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
+  for(const g of groups){if(cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h)return g.id;}return null;
+}
+async function repairGroups(){
+  for(const n of nodes){const gid=getGid(n);if(gid!==n.group_id){n.group_id=gid;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({group_id:gid||null}).eq('id',n.id);}}
+  for(const g of groups){const m=nigByGid(g.id);if(m.length){sizeGAN(g,m);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}}
+  toast('Groups repaired');
+}
+function repelNodes(gn){
+  let moved=true;let it=0;
+  while(moved&&it<25){moved=false;it++;
+    for(let i=0;i<gn.length;i++){for(let j=i+1;j<gn.length;j++){
+      const a=gn[i],b=gn[j];const aw=a.w||DW,ah=a.h||DH,bw=b.w||DW,bh=b.h||DH;
+      const ox=((aw+bw)/2+12)-(Math.abs(a.x+aw/2-(b.x+bw/2)));
+      const oy=((ah+bh)/2+10)-(Math.abs(a.y+ah/2-(b.y+bh/2)));
+      if(ox>0&&oy>0){moved=true;
+        if(ox<oy){const d=ox/2+1;if(a.x<b.x){a.x-=d;b.x+=d;}else{a.x+=d;b.x-=d;}}
+        else{const d=oy/2+1;if(a.y<b.y){a.y-=d;b.y+=d;}else{a.y+=d;b.y-=d;}}
+      }
+    }}
+  }
+}
+function repelGroupList(glist,gap){
+  let moved=true;let it=0;
+  while(moved&&it<50){moved=false;it++;
+    for(let i=0;i<glist.length;i++){for(let j=i+1;j<glist.length;j++){
+      const a=glist[i],b=glist[j];
+      const ow=(a.w+b.w)/2+gap-(Math.abs(a.x+a.w/2-(b.x+b.w/2)));
+      const oh=(a.h+b.h)/2+gap-(Math.abs(a.y+a.h/2-(b.y+b.h/2)));
+      if(ow>0&&oh>0){moved=true;
+        if(ow<oh){const d=ow/2+2;if(a.x<b.x){a.x-=d;b.x+=d;}else{a.x+=d;b.x-=d;}}
+        else{const d=oh/2+2;if(a.y<b.y){a.y-=d;b.y+=d;}else{a.y+=d;b.y-=d;}}
+      }
+    }}
+  }
+}
+async function repelGroupsOnly(){
+  repelGroupList(groups,spreadGap);
+  // move nodes with groups
+  groups.forEach(g=>{const m=nigByGid(g.id);m.forEach(n=>{const dx=n.x-g.x,dy=n.y-g.y;n.x=g.x+dx;n.y=g.y+dy;});});
+  await Promise.all(groups.map(g=>{_tw('canvas_groups',g.id);return sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y)}).eq('id',g.id);}));
+  await Promise.all(nodes.map(n=>{_tw('canvas_nodes',n.id);return sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}));
+  toast('Groups spread');
+}
+
+async function alignG(g,dir){await alignNodesInGroups(dir,[g]);}
+async function alignNodesInGroups(dir,gs){
+  const tgt=gs||groups;
+  for(const g of tgt){
+    const gn=nigByGid(g.id);if(gn.length<2)continue;
+    const PAD=28,NPAD=22,NH=DH;const cols=Math.max(1,Math.ceil(Math.sqrt(gn.length)));
+    const totalW=cols*(DW+NPAD)-NPAD;
+    let sx;if(dir==='left')sx=g.x+PAD;else if(dir==='right')sx=g.x+g.w-PAD-totalW;else sx=g.x+g.w/2-totalW/2;
+    gn.forEach((n,i)=>{n.x=sx+(i%cols)*(DW+NPAD);n.y=g.y+32+Math.floor(i/cols)*(NH+NPAD);});
+    sizeGAN(g,nigByGid(g.id));_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
+    for(const n of gn){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}
+  }
+  toast('Aligned');
+}
+
+// LAYOUT
+async function runLayout(){
+  if(!nodes.length){toast('No nodes');return;}if(simRunning)return;simRunning=true;toast('Arranging...');
+  const NPAD=28,LH=32,GPAD=spreadGap,NH=DH;
+  // membership
+  const mem={};const ug=[];
+  nodes.forEach(n=>{const gid=n.group_id||getGid(n);n.group_id=gid;if(gid&&groups.find(g=>g.id===gid)){if(!mem[gid])mem[gid]=[];mem[gid].push(n);}else ug.push(n);});
+  // repel nodes inside each group
+  Object.values(mem).forEach(gn=>repelNodes(gn));
+  // size groups
+  groups.forEach(g=>{
+    const gn=mem[g.id]||[];if(!gn.length)return;
+    const cols=Math.max(1,Math.ceil(Math.sqrt(gn.length)));const rows=Math.ceil(gn.length/cols);
+    g.w=NPAD+cols*(DW+NPAD);g.h=LH+NPAD+rows*(NH+NPAD);g.w=Math.max(g.w,220);g.h=Math.max(g.h,140);
+    gn.forEach((n,i)=>{n.x=g.x+NPAD+(i%cols)*(DW+NPAD);n.y=g.y+LH+NPAD+Math.floor(i/cols)*(NH+NPAD);});
+  });
+  // arrange groups in grid
+  const ag=groups.filter(g=>(mem[g.id]||[]).length>0);
+  const gcols=Math.max(1,Math.ceil(Math.sqrt(ag.length)));const grows=Math.ceil(ag.length/gcols);
+  const rowH=Array(grows).fill(0);const colW=Array(gcols).fill(0);
+  ag.forEach((g,i)=>{rowH[Math.floor(i/gcols)]=Math.max(rowH[Math.floor(i/gcols)],g.h);colW[i%gcols]=Math.max(colW[i%gcols],g.w);});
+  const totW=colW.reduce((s,w)=>s+w+GPAD,0)-GPAD;const totH=rowH.reduce((s,h)=>s+h+GPAD,0)-GPAD;
+  let cX=-totW/2,cY=-totH/2;
+  ag.forEach((g,i)=>{
+    const r2=Math.floor(i/gcols),c2=i%gcols;if(c2===0&&i>0){cX=-totW/2;cY+=rowH[r2-1]+GPAD;}
+    g.x=cX;g.y=cY;cX+=colW[c2]+GPAD;
+    const gn=mem[g.id]||[];const cols=Math.max(1,Math.ceil(Math.sqrt(gn.length)));
+    gn.forEach((n,j)=>{n.x=g.x+NPAD+(j%cols)*(DW+NPAD);n.y=g.y+LH+NPAD+Math.floor(j/cols)*(NH+NPAD);});
+  });
+  // repel groups
+  repelGroupList(ag,GPAD);
+  // move nodes after repel
+  ag.forEach(g=>{const gn=mem[g.id]||[];const cols=Math.max(1,Math.ceil(Math.sqrt(gn.length)));gn.forEach((n,j)=>{n.x=g.x+NPAD+(j%cols)*(DW+NPAD);n.y=g.y+LH+NPAD+Math.floor(j/cols)*(NH+NPAD);});});
+  // ungrouped below
+  const by=totH/2+GPAD;
+  ug.forEach((n,i)=>{const c=Math.max(1,Math.ceil(Math.sqrt(ug.length)));n.x=(i%c)*(DW+NPAD*2)-c*(DW+NPAD)/2;n.y=by+Math.floor(i/c)*(NH+NPAD);});
+  // save
+  await Promise.all(nodes.map(n=>{_tw('canvas_nodes',n.id);return sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y),group_id:n.group_id||null}).eq('id',n.id);}));
+  await Promise.all(groups.map(g=>{_tw('canvas_groups',g.id);return sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}));
+  simRunning=false;toast('Layout done ✓');
+}
+
+// SIDEBAR
+let sidebarOpen=false;
+function toggleSidebar(){sidebarOpen=!sidebarOpen;document.getElementById('sidebar').classList.toggle('open',sidebarOpen);document.getElementById('sb-toggle').classList.toggle('open',sidebarOpen);document.getElementById('sb-toggle').textContent=sidebarOpen?'◀':'▶';}
+function showSbTab(id,el){document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('on'));document.getElementById('sbp-'+id).classList.add('on');el.classList.add('on');}
+function onSpreadSlider(v){spreadGap=parseInt(v);document.getElementById('spread-val').textContent=v+' px';}
+function onNWSlider(v){DW=parseInt(v);document.getElementById('nw-val').textContent=v+' px wide';nodes.forEach(n=>{if(!n._customW)n.w=DW;});}
+
+// SAVED CANVASES
+async function loadCanvasList(){
+  const{data}=await sb.from('saved_canvases').select('*').order('updated_at',{ascending:false});
+  const list=document.getElementById('sb-list');
+  if(!data?.length){list.innerHTML='<div class="sb-empty">No saved canvases.</div>';return;}
+  list.innerHTML=data.map(c=>`<div class="sb-item"><div class="sb-name">${c.name}</div><div class="sb-meta">${c.node_count||0} nodes · ${new Date(c.updated_at).toLocaleDateString()}</div><div class="sb-item-actions"><button class="sb-del" onclick="loadCanvas('${c.id}')">Load</button><button class="sb-del" onclick="delCanvas('${c.id}')">Del</button></div></div>`).join('');
+}
+async function saveCanvas(){
+  const name=document.getElementById('sb-name-input').value.trim();if(!name){toast('Enter a name');return;}
+  await sb.from('saved_canvases').insert({name,snapshot:{nodes:nodes.map(n=>({...n})),links:links.map(l=>({...l})),groups:groups.map(g=>({...g}))},node_count:nodes.length,author:who});
+  document.getElementById('sb-name-input').value='';await loadCanvasList();toast('Canvas saved');
+}
+async function loadCanvas(id){
+  if(!confirm('Load? Current canvas will be cleared.'))return;
+  const{data}=await sb.from('saved_canvases').select('snapshot').eq('id',id).single();if(!data?.snapshot)return;
+  await sb.from('canvas_nodes').delete().neq('id','_');await sb.from('canvas_links').delete().neq('id','_');await sb.from('canvas_groups').delete().neq('id','_');
+  const{nodes:sn,links:sl,groups:sg}=data.snapshot;
+  if(sg?.length)await sb.from('canvas_groups').insert(sg);if(sn?.length)await sb.from('canvas_nodes').insert(sn);if(sl?.length)await sb.from('canvas_links').insert(sl);
+  await loadAll();toast('Canvas loaded');
+}
+async function delCanvas(id){if(!confirm('Delete saved canvas?'))return;await sb.from('saved_canvases').delete().eq('id',id);await loadCanvasList();}
+async function newCanvas(){if(!confirm('Clear canvas?'))return;await sb.from('canvas_nodes').delete().neq('id','_');await sb.from('canvas_links').delete().neq('id','_');await sb.from('canvas_groups').delete().neq('id','_');nodes=[];links=[];groups=[];toast('Fresh canvas');}
+
+// CLAUDE
+function toggleClaude(){claudeOn=!claudeOn;document.getElementById('clt').classList.toggle('on',claudeOn);document.getElementById('cp').classList.toggle('open',claudeOn);if(claudeOn)analyzeCanvas();}
+async function callClaude(messages,maxTokens=1600){
   const res=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,max_tokens:maxTokens})});
   const data=await res.json();return data.content?.[0]?.text||'';
 }
-function canvasCtx(){
-  const nl=nodes.map(n=>`- id:"${n.id}" label:"${n.label}" type:${n.type}${n.url?' url:'+n.url:''}`).join('\n');
+function cCtx(){
+  const nl=nodes.map(n=>`- id:"${n.id}" label:"${n.label}" type:${n.type}${n.url?' url:'+n.url:''} group_id:${n.group_id||'none'}`).join('\n');
   const ll=links.map(l=>{const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);return s&&t?`- "${s.label}" → "${t.label}"`:null;}).filter(Boolean).join('\n');
-  const gl=groups.map(g=>`- id:"${g.id}" label:"${g.label}" contains:[${nodesInGroup(g).map(n=>'"'+n.label+'"').join(',')}]`).join('\n');
+  const gl=groups.map(g=>`- id:"${g.id}" label:"${g.label}" members:[${nigByGid(g.id).map(n=>'"'+n.label+'"').join(',')}]`).join('\n');
   return{nl,ll,gl};
 }
 async function analyzeCanvas(){
-  const body=document.getElementById('cpb');body.innerHTML='<div class="cplo">Reading the canvas...</div>';
-  const{nl,ll,gl}=canvasCtx();
-  const prompt=`You are analyzing a shared canvas for 100xbtr_sound — a boutique horn speaker company founded by Will (design/CNC), Brendan (cabinetry), and Nishant (EE/horn speaker design).
+  const body=document.getElementById('cpb');body.innerHTML='<div class="cplo">Reading canvas...</div>';
+  const{nl,ll,gl}=cCtx();
+  const prompt=`You are analyzing a shared canvas for 100xbtr_sound — a boutique horn speaker company (Will: design/CNC, Brendan: cabinetry, Nishant: EE/horn design).
 Nodes:\n${nl||'(none)'}\nConnections:\n${ll||'(none)'}\nGroups:\n${gl||'(none)'}
 Respond ONLY with valid JSON, no markdown:
-{"reading":"2-3 sentences on what the canvas reveals. Be specific.","gaps":[{"question":"specific gap","connect":["node label"]}],"suggestions":[{"from":"exact node label","to":"exact node label","reason":"brief reason"}],"actions":[{"type":"create_group","label":"Name","nodeLabels":["label1","label2"],"description":"why"},{"type":"create_node","label":"Label","nodeType":"idea","description":"why"},{"type":"create_link","from":"label","to":"label","description":"why"}]}
-Max 2 gaps, 2 suggestions, 3 actions.`;
-  try{
-    const text=await callClaude([{role:'user',content:prompt}],1400);
-    renderAnalysis(JSON.parse(text.replace(/```json|```/g,'').trim()));
-  }catch(e){body.innerHTML='<div class="cplo">Analysis failed — check Netlify function and ANTHROPIC_API_KEY env var.</div>';}
+{"reading":"2-3 sentences specific to actual nodes","gaps":[{"question":"specific gap","connect":["node label"]}],"suggestions":[{"from":"exact node label","to":"exact node label","reason":"brief reason"}],"actions":[{"type":"create_group","label":"Name","nodeLabels":["label1"],"description":"why"},{"type":"create_node","label":"Label","nodeType":"idea","group":"group label","description":"why"},{"type":"create_link","from":"label","to":"label","description":"why"}]}
+Max 3 gaps, 3 suggestions, 6 actions.`;
+  try{const text=await callClaude([{role:'user',content:prompt}],2000);renderAnalysis(JSON.parse(text.replace(/```json|```/g,'').trim()));}
+  catch(e){body.innerHTML='<div class="cplo">Analysis failed — check Netlify function + ANTHROPIC_API_KEY.</div>';}
 }
-function actionLabel(a){
-  if(a.type==='create_group')return`Create group "${a.label}"`;
-  if(a.type==='create_node')return`Add node "${a.label}"`;
-  if(a.type==='create_link')return`Connect "${a.from}" → "${a.to}"`;return'Action';
-}
+function aLabel(a){if(a.type==='create_group')return`Create group "${a.label}"`;if(a.type==='create_node')return`Add node "${a.label}"`;if(a.type==='create_link')return`Connect "${a.from}" → "${a.to}"`;return'Action';}
 function renderAnalysis(data){
   const body=document.getElementById('cpb');let html='';
   if(data.reading)html+=`<div class="cps"><div class="cpst">Reading</div><div class="cpr">${data.reading}</div></div>`;
-  if(data.gaps?.length){html+='<div class="cps"><div class="cpst">Gaps</div>';data.gaps.forEach(g=>{const qj=JSON.stringify(g.question);html+=`<div class="cpg"><div class="cpgq">${g.question}</div><button class="cpga" onclick="addGapNode(${qj})">+ node</button></div>`;});html+='</div>';}
-  if(data.suggestions?.length){html+='<div class="cps"><div class="cpst">Suggested connections</div>';data.suggestions.forEach(s=>{html+=`<div class="cpco"><span style="flex:1;">"${s.from}" → "${s.to}"<br><span style="font-size:10px;color:var(--tx3)">${s.reason}</span></span><button class="cpcl" onclick="addSugLink(${JSON.stringify(s.from)},${JSON.stringify(s.to)})">Connect</button></div>`;});html+='</div>';}
-  if(data.actions?.length){html+='<div class="cps"><div class="cpst">Actions I can take</div>';data.actions.forEach(a=>{const aj=JSON.stringify(a).replace(/"/g,'&quot;');html+=`<div class="cpac"><div class="cpact">${actionLabel(a)}</div><div class="cpacb">${a.description||''}</div><button class="cpado" onclick='executeAction(${JSON.stringify(a)})'>Do it</button><button class="cpadx" onclick="this.parentElement.remove()">Skip</button></div>`;});html+='</div>';}
-  body.innerHTML=html||'<div style="font-size:12px;color:var(--tx3)">Add more nodes and connections first.</div>';
-}
-async function executeAction(a){
-  // normalize schema — handle both label/name, direct x,y or position.x,y
-  const label=a.label||a.name||a.text||'untitled';
-  const ax=a.x!==undefined?a.x:(a.position?.x||((Math.random()-0.5)*500));
-  const ay=a.y!==undefined?a.y:(a.position?.y||((Math.random()-0.5)*400));
-  const color=a.color||(GROUP_COLORS[Math.floor(Math.random()*GROUP_COLORS.length)]);
-
-  if(a.type==='create_group'){
-    // if nodeLabels given, wrap around them; else use given x,y
-    const targets=nodes.filter(n=>a.nodeLabels?.some(l=>n.label.toLowerCase().includes(l.toLowerCase())));
-    let x=ax,y=ay,w=a.w||280,h=a.h||200;
-    if(targets.length>0){
-      const pad=32;
-      x=Math.min(...targets.map(n=>n.x))-pad;
-      y=Math.min(...targets.map(n=>n.y))-pad-20;
-      w=Math.max(...targets.map(n=>n.x+(n.w||DW)))-x+pad;
-      h=Math.max(...targets.map(n=>n.y+(n.h||DH)))-y+pad;
-    }
-    await sb.from('canvas_groups').insert({
-      id:'g-'+Date.now(),label,type:'idea',color,
-      x,y,w:Math.max(w,200),h:Math.max(h,150)
-    });
-  }else if(a.type==='create_node'){
-    const nodeLabel=(label.split('\n')[0]).substring(0,60); // strip multiline
-    const type=a.nodeType||a.node_type||'idea';
-    await sb.from('canvas_nodes').insert({
-      id:'n-'+Date.now(),label:nodeLabel,type,
-      url:a.url||'',img_url:'',author:'claude',
-      x:ax,y:ay,w:a.w||DW,h:a.h||DH
-    });
-  }else if(a.type==='create_link'){
-    const fromLabel=a.from||a.source;const toLabel=a.to||a.target;
-    const src=nodes.find(n=>n.label===fromLabel||n.label.toLowerCase().includes((fromLabel||'').toLowerCase()));
-    const tgt=nodes.find(n=>n.label===toLabel||n.label.toLowerCase().includes((toLabel||'').toLowerCase()));
-    if(src&&tgt)await addLink(src.id,tgt.id);
+  if(data.gaps?.length){html+='<div class="cps"><div class="cpst">Gaps</div>';data.gaps.forEach(g=>{const qj=JSON.stringify(g.question);html+=`<div class="cpg"><div class="cpgq">${g.question}</div><button class="cpga" onclick='addGapNode(${qj})'>+ node</button></div>`;});html+='</div>';}
+  if(data.suggestions?.length){html+='<div class="cps"><div class="cpst">Suggested connections</div>';data.suggestions.forEach(s=>{html+=`<div class="cpco"><span style="flex:1;">"${s.from}" → "${s.to}"<br><span style="font-size:9px;color:#444440">${s.reason}</span></span><button class="cpcl" onclick='addSugLink(${JSON.stringify(s.from)},${JSON.stringify(s.to)})'>Connect</button></div>`;});html+='</div>';}
+  if(data.actions?.length){
+    html+='<div class="cps"><div class="cpst">Actions</div>';
+    data.actions.forEach(a=>{html+=`<div class="cpac"><div class="cpact">${aLabel(a)}</div><div class="cpacb">${a.description||''}</div><button class="cpado" onclick='execA(${JSON.stringify(a)})'>Do it</button><button class="cpadx" onclick="this.parentElement.remove()">Skip</button></div>`;});
+    html+=`<button class="cpsend" style="margin-top:4px;" onclick="execAll(${JSON.stringify(data.actions)})">Do all ↵</button>`;
+    html+='</div>';
   }
-  // reload so newly created nodes are available for subsequent actions
-  await loadAll();
+  body.innerHTML=html||'<div class="cplo">Add more nodes for a meaningful analysis.</div>';
 }
 async function addGapNode(question){
-  await sb.from('canvas_nodes').insert({id:'q-'+Date.now(),label:question.substring(0,60),type:'question',url:'',img_url:'',author:'claude',x:(Math.random()-0.5)*300,y:(Math.random()-0.5)*200,w:DW,h:DH});toast('Gap question added');
+  const id='q-'+Date.now();const x=(Math.random()-0.5)*300,y=(Math.random()-0.5)*200;_tw('canvas_nodes',id);
+  await sb.from('canvas_nodes').insert({id,label:question.substring(0,60),type:'question',url:'',img_url:'',author:'claude',x:Math.round(x),y:Math.round(y),w:DW,h:DH,group_id:null});
+  nodes.push({id,label:question.substring(0,60),type:'question',url:'',img_url:'',author:'claude',x,y,w:DW,h:DH,group_id:null});toast('Gap node added');
 }
-async function addSugLink(fromLabel,toLabel){
-  const src=nodes.find(n=>n.label===fromLabel),tgt=nodes.find(n=>n.label===toLabel);
-  if(!src||!tgt){toast('Could not find those nodes');return;}
-  await sb.from('canvas_links').insert({id:'l-'+Date.now(),source:src.id,target:tgt.id,claude:true});toast('Connection added');
+async function addSugLink(fl,tl){const src=nodes.find(n=>n.label===fl),tgt=nodes.find(n=>n.label===tl);if(!src||!tgt){toast('Nodes not found');return;}await addLink(src.id,tgt.id);}
+async function execA(a){
+  if(typeof a==='string')a=JSON.parse(a);
+  if(a.type==='create_group'){
+    const id='g-'+Date.now();const color=GC[groups.length%GC.length];const x=(Math.random()-0.5)*400,y=(Math.random()-0.5)*300;_tw('canvas_groups',id);
+    await sb.from('canvas_groups').insert({id,label:a.label,color,x:Math.round(x),y:Math.round(y),w:300,h:200});groups.push({id,label:a.label,color,x,y,w:300,h:200});toast(`Group "${a.label}" created`);
+  } else if(a.type==='create_node'){
+    const id='n-'+Date.now();const g=a.group?groups.find(gg=>gg.label.toLowerCase().includes(a.group.toLowerCase())):null;
+    const gm=g?nigByGid(g.id):[];const NPAD=28,LH=32,NH=DH;let x,y,gid=null;
+    if(g){
+      const cols=Math.max(1,Math.ceil(Math.sqrt(gm.length+1)));const idx=gm.length;
+      x=g.x+NPAD+(idx%cols)*(DW+NPAD);y=g.y+LH+NPAD+Math.floor(idx/cols)*(NH+NPAD);
+      const nw=NPAD+cols*(DW+NPAD);const nr=Math.ceil((gm.length+1)/cols);const nh=LH+NPAD+nr*(NH+NPAD);
+      g.w=Math.max(g.w,nw);g.h=Math.max(g.h,nh);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);gid=g.id;
+    } else {x=(Math.random()-0.5)*400;y=(Math.random()-0.5)*300;}
+    _tw('canvas_nodes',id);await sb.from('canvas_nodes').insert({id,label:a.label,type:a.nodeType||'idea',url:'',img_url:'',author:'claude',x:Math.round(x),y:Math.round(y),w:DW,h:DH,group_id:gid});
+    nodes.push({id,label:a.label,type:a.nodeType||'idea',url:'',img_url:'',author:'claude',x,y,w:DW,h:DH,group_id:gid});
+    if(g){const m=nigByGid(g.id);sizeGAN(g,m);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
+    toast(`Node "${a.label}" added`);
+  } else if(a.type==='create_link'){
+    const src=nodes.find(n=>n.label===a.from),tgt=nodes.find(n=>n.label===a.to);
+    if(src&&tgt)await addLink(src.id,tgt.id);else toast('Nodes not found');
+  }
+}
+async function execAll(actions){
+  for(const a of actions.filter(x=>x.type==='create_group'))await execA(a);
+  for(const a of actions.filter(x=>x.type==='create_node'))await execA(a);
+  for(const a of actions.filter(x=>x.type==='create_link'))await execA(a);
+  await repairGroups();toast(`Done — ${actions.length} actions`);if(claudeOn)setTimeout(analyzeCanvas,600);
 }
 async function askClaude(){
   const prompt=document.getElementById('cpp').value.trim();if(!prompt)return;
-  const body=document.getElementById('cpb');const prev=body.innerHTML;
-  body.innerHTML='<div class="cplo">Thinking...</div>';
-  const{nl,ll,gl}=canvasCtx();
-
-  const STRICT_SCHEMA=`IMPORTANT — you MUST respond ONLY with valid JSON using EXACTLY this schema, no other fields:
-{
-  "response": "short message to show the user",
-  "actions": [
-    {"type":"create_group","label":"Group Name","color":"#378ADD","x":0,"y":0,"w":280,"h":200},
-    {"type":"create_node","label":"Node Label","nodeType":"idea","x":100,"y":50},
-    {"type":"create_link","from":"exact source node label","to":"exact target node label"}
-  ]
-}
-
-nodeType must be one of: idea, reference, material, decision, image, question, anchor
-color must be a valid hex color
-x,y are world coordinates — spread nodes across a range like -400 to 400
-Do NOT add any fields not shown above. Do NOT wrap in markdown. Return raw JSON only.`;
-
-  const sysCtx=`You are an AI collaborator embedded in a shared visual canvas for 100xbtr_sound — a boutique horn speaker company founded by Will (design/CNC), Brendan (cabinetry), and Nishant (EE/horn speakers).
-
-Current canvas state:
-Nodes: ${nl||'(none)'}
-Links: ${ll||'(none)'}
-Groups: ${gl||'(none)'}
-
-When the user asks you to DO something on the canvas (organize, create nodes, add groups, map something out), respond with JSON actions.
-When the user asks a question or wants to chat, respond with plain conversational text.
-
-${STRICT_SCHEMA}`;
-
+  const body=document.getElementById('cpb');const prev=body.innerHTML;body.innerHTML='<div class="cplo">Thinking...</div>';
+  const{nl,ll,gl}=cCtx();
+  const sys=`You are an AI collaborator for 100xbtr_sound (Will, Brendan, Nishant — boutique horn speakers).
+Canvas Nodes: ${nl||'(none)'}\nLinks: ${ll||'(none)'}\nGroups: ${gl||'(none)'}
+If asked to DO something, respond with JSON: {"response":"message","actions":[...same schema as analyze...]}. Otherwise respond with plain text.`;
   try{
-    const text=await callClaude([{role:'user',content:sysCtx+'\n\nUser request: '+prompt}],2000);
-    const cleaned=text.replace(/```json|```/g,'').trim();
-    let parsed=null;
-    try{parsed=JSON.parse(cleaned);}catch(e){
-      // not JSON — show as text response
-      body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${cleaned.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</div></div>`;
-      document.getElementById('cpp').value='';
-      return;
-    }
-    if(parsed?.actions?.length){
-      const actionsJson=JSON.stringify(parsed.actions);
-      body.innerHTML=prev+
-        `<div class="cps"><div class="cpst">Claude</div><div class="cpr">${parsed.response||'Here is what I propose:'}</div></div>`+
-        `<div class="cps"><div class="cpst">Proposed actions (${parsed.actions.length})</div>`+
-        parsed.actions.map(a=>`<div class="cpac"><div class="cpact">${actionLabel(a)}</div></div>`).join('')+
-        `<div style="display:flex;gap:6px;margin-top:8px;">
-          <button class="cpado" style="flex:1;" onclick='executeAllActions(${actionsJson.replace(/'/g,"&#39;")})'>Do all (${parsed.actions.length})</button>
-          <button class="cpadx" onclick="this.parentElement.parentElement.remove()">Skip all</button>
-        </div></div>`;
-    }else if(parsed?.response){
-      body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${parsed.response}</div></div>`;
-    }else{
-      body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${cleaned.replace(/\n/g,'<br>')}</div></div>`;
-    }
+    const text=await callClaude([{role:'user',content:sys+'\n\nUser: '+prompt}],1200);
+    let parsed=null;try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}catch(e){}
+    if(parsed?.actions){
+      body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${parsed.response||'Done.'}</div></div>`;
+      let ah='<div class="cps"><div class="cpst">Proposed actions</div>';
+      parsed.actions.forEach(a=>{ah+=`<div class="cpac"><div class="cpact">${aLabel(a)}</div><div class="cpacb">${a.description||''}</div><button class="cpado" onclick='execA(${JSON.stringify(a)})'>Do it</button><button class="cpadx" onclick="this.parentElement.remove()">Skip</button></div>`;});
+      ah+=`<button class="cpsend" style="margin-top:4px;" onclick="execAll(${JSON.stringify(parsed.actions)})">Do all ↵</button>`;
+      body.innerHTML+=ah+'</div>';
+    } else {body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${text.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</div></div>`;}
     document.getElementById('cpp').value='';
-  }catch(e){body.innerHTML=prev+'<div class="cplo">Request failed — check Netlify function.</div>';}
+  }catch(e){body.innerHTML=prev+'<div class="cplo">Request failed.</div>';}
 }
 
-async function executeAllActions(actions){
-  if(typeof actions==='string')actions=JSON.parse(actions);
-  // Separate into groups, nodes, links — execute in order
-  const grpActions=actions.filter(a=>a.type==='create_group');
-  const nodeActions=actions.filter(a=>a.type==='create_node');
-  const linkActions=actions.filter(a=>a.type==='create_link');
-  // build a group name→id map as we create groups
-  const groupMap={}; // label → group object
-  for(const a of grpActions){
-    await executeAction(a);
-    await loadAll();
-    // find the group we just created by label
-    const g=groups.find(x=>x.label===a.label);
-    if(g)groupMap[a.label]=g;
-  }
-  // create nodes — if action has a "group" field, place inside that group
-  // Also track which group each node belongs to by matching nodeLabels
-  const nodeGroupMap={}; // nodeLabel → group
-  Object.entries(groupMap).forEach(([gLabel,g])=>{
-    const matchingAction=grpActions.find(a=>a.label===gLabel);
-    if(matchingAction?.nodeLabels){
-      matchingAction.nodeLabels.forEach(nl=>nodeGroupMap[nl.toLowerCase()]=g);
-    }
-  });
-  for(const a of nodeActions){
-    const nodeLabel=(a.label||'').toLowerCase();
-    // find if this node belongs to a group
-    const g=Object.entries(nodeGroupMap).find(([k])=>nodeLabel.includes(k))?.[1]||
-             Object.values(groupMap).find(g=>a.group&&g.label.toLowerCase().includes(a.group?.toLowerCase()));
-    if(g){
-      const NPAD=32,LABEL_H=36,NH=DH||60;
-      const memberCount=nodes.filter(n=>n.group_id===g.id).length;
-      const cols=Math.max(1,Math.min(3,Math.ceil(Math.sqrt(memberCount+1))));
-      const col=memberCount%cols,row=Math.floor(memberCount/cols);
-      // place relative to group origin with generous padding
-      a.x=g.x+NPAD+col*(DW+NPAD);
-      a.y=g.y+LABEL_H+NPAD+row*(NH+NPAD);
-      // pre-size group to guarantee it contains this node
-      const neededW=NPAD+cols*(DW+NPAD);
-      const neededRows=Math.ceil((memberCount+1)/cols);
-      const neededH=LABEL_H+NPAD+neededRows*(NH+NPAD)+NPAD;
-      g.w=Math.max(g.w,neededW);
-      g.h=Math.max(g.h,neededH);
-      _trackWrite('canvas_groups',g.id);
-      await sb.from('canvas_groups').update({w:g.w,h:g.h}).eq('id',g.id);
-      a.group_id=g.id;
-    }
-    await executeAction(a,g?.id);
-    await loadAll();
-    // after each node, resize its group to wrap all members so far
-    if(g){
-      const freshG=groups.find(x=>x.id===g.id);
-      if(freshG)autoResizeGroup(freshG);
-    }
-  }
-  for(const a of linkActions){await executeAction(a);await loadAll();}
-  // Final pass: snap and resize all groups
-  await snapNodesToGroups();
-  toast(`Done — ${actions.length} actions`);
-  if(claudeOn)setTimeout(analyzeCanvas,800);
-}
-
-async function snapNodesToGroups(){
-  // assign group_id to any node sitting inside a group
-  const updates=[];
-  nodes.forEach(n=>{
-    const gid=getGroupId(n);
-    if(gid&&n.group_id!==gid){
-      n.group_id=gid;
-      updates.push(sb.from('canvas_nodes').update({group_id:gid}).eq('id',n.id));
-    }
-  });
-  if(updates.length)await Promise.all(updates);
-  // resize all groups to wrap their members
-  for(const g of groups)autoResizeGroup(g);
-}
-
-
-// SIDEBAR — SAVED CANVASES
-let sidebarOpen=false;
-let activeCanvasId=null;
-let allCanvases=[];
-
-async function newCanvas(){
-  if(!confirm('Start a fresh canvas? This will clear all nodes, links, and groups from the live canvas.'))return;
-  // delete all from DB
-  await Promise.all([
-    sb.from('canvas_nodes').delete().neq('id','__none__'),
-    sb.from('canvas_links').delete().neq('id','__none__'),
-    sb.from('canvas_groups').delete().neq('id','__none__'),
-  ]);
-  nodes=[];links=[];groups=[];activeCanvasId=null;
-  renderCanvasList();
-  toast('New canvas started');
-}
-
-function toggleSidebar(){
-  sidebarOpen=!sidebarOpen;
-  document.getElementById('sidebar').classList.toggle('open',sidebarOpen);
-  const btn=document.getElementById('sb-toggle');
-  btn.classList.toggle('open',sidebarOpen);
-  btn.textContent=sidebarOpen?'◀':'▶';
-  if(sidebarOpen)loadCanvasList();
-}
-
-async function loadCanvasList(){
-  const{data}=await sb.from('saved_canvases').select('*').order('updated_at',{ascending:false});
-  allCanvases=data||[];
-  renderCanvasList();
-}
-
-function renderCanvasList(){
-  const list=document.getElementById('sb-list');
-  if(!allCanvases.length){
-    list.innerHTML='<div class="sb-empty">No saved canvases yet.<br>Save the current canvas below.</div>';
-    return;
-  }
-  list.innerHTML=allCanvases.map(c=>`
-    <div class="sb-item${activeCanvasId===c.id?' active':''}" onclick="loadSavedCanvas('${c.id}')">
-      <div class="sb-name">${c.name}</div>
-      <div class="sb-meta">${new Date(c.updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})} · ${c.node_count||0} nodes</div>
-      <div class="sb-item-actions">
-        <button class="sb-del" onclick="event.stopPropagation();deleteSavedCanvas('${c.id}')">Delete</button>
-      </div>
-    </div>`).join('');
-}
-
-async function saveCanvas(){
-  const nameInput=document.getElementById('sb-name-input');
-  const name=nameInput.value.trim();
-  if(!name){nameInput.focus();return;}
-  const snapshot={
-    nodes:nodes.map(n=>({...n})),
-    links:links.map(l=>({...l,source:l.source?.id||l.source,target:l.target?.id||l.target})),
-    groups:groups.map(g=>({...g}))
-  };
-  const now=new Date().toISOString();
-  const{data,error}=await sb.from('saved_canvases').insert({
-    name,
-    snapshot:JSON.stringify(snapshot),
-    node_count:nodes.length,
-    author:who,
-    created_at:now,
-    updated_at:now
-  }).select().single();
-  if(error){toast('Save failed: '+error.message);return;}
-  activeCanvasId=data.id;
-  nameInput.value='';
-  await loadCanvasList();
-  toast('Canvas saved: "'+name+'"');
-}
-
-async function loadSavedCanvas(id){
-  const c=allCanvases.find(x=>x.id===id);
-  if(!c)return;
-  if(!confirm('Load "'+c.name+'"? This will replace the current canvas view (live canvas stays unchanged).'))return;
-  activeCanvasId=id;
-  try{
-    const snap=JSON.parse(c.snapshot);
-    // load into local state for viewing — does NOT overwrite the live DB canvas
-    nodes=snap.nodes||[];
-    links=snap.links||[];
-    groups=snap.groups||[];
-    renderCanvasList();
-    toast('Loaded: "'+c.name+'"');
-  }catch(e){toast('Load failed');}
-}
-
-async function deleteSavedCanvas(id){
-  const c=allCanvases.find(x=>x.id===id);
-  if(!c||!confirm('Delete "'+c.name+'"?'))return;
-  await sb.from('saved_canvases').delete().eq('id',id);
-  if(activeCanvasId===id)activeCanvasId=null;
-  await loadCanvasList();
-  toast('Deleted');
-}
-
-// DB
+// DB / RT
 async function initDB(){
-  // fresh canvas — no seed nodes, start blank
+  const{data}=await sb.from('canvas_nodes').select('id').limit(1);
+  if(!data?.length){
+    await sb.from('canvas_nodes').insert([
+      {id:'a1',label:'First build',type:'anchor',x:0,y:0,w:DW,h:DH,author:'system',url:'',img_url:'',group_id:null},
+      {id:'a2',label:'Horn-loaded design',type:'idea',x:240,y:-80,w:DW,h:DH,author:'system',url:'',img_url:'',group_id:null},
+      {id:'a3',label:'Baltic birch cabinet',type:'material',x:240,y:80,w:DW,h:DH,author:'system',url:'',img_url:'',group_id:null},
+      {id:'a4',label:'Ojas reference',type:'reference',x:-260,y:0,w:DW,h:DH,author:'system',url:'https://ojas.nyc',img_url:'',group_id:null},
+    ]);
+    await sb.from('canvas_links').insert([{id:'l1',source:'a1',target:'a2',claude:false,sport:0,tport:0},{id:'l2',source:'a1',target:'a3',claude:false,sport:0,tport:0},{id:'l3',source:'a4',target:'a1',claude:false,sport:0,tport:0}]);
+  }
 }
-// Track IDs we wrote ourselves — skip reloading from our own changes
-const _myWrites={nodes:new Set(),groups:new Set(),links:new Set()};
-function _trackWrite(table,id){
-  _myWrites[table]?.add(id);
-  setTimeout(()=>_myWrites[table]?.delete(id),3000);
-}
-
 async function loadAll(){
   const[{data:n},{data:l},{data:g}]=await Promise.all([sb.from('canvas_nodes').select('*'),sb.from('canvas_links').select('*'),sb.from('canvas_groups').select('*')]);
   nodes=n||[];links=l||[];groups=g||[];
-  nodes.forEach(n=>{
-    if(!n.group_id){
-      const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
-      for(const g of groups){
-        if(cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h){n.group_id=g.id;break;}
-      }
-    }
-  });
+  nodes.forEach(n=>{if(!n.group_id){const gid=getGid(n);if(gid)n.group_id=gid;}});
 }
-
-// Selective reload — only refresh items we didn't write ourselves
-async function _rtReload(table,id){
-  if(_myWrites[table]?.has(id))return; // our own write, skip
-  // reload just that one record into local state
-  if(table==='canvas_nodes'){
-    const{data}=await sb.from('canvas_nodes').select('*').eq('id',id).single();
-    if(data){const i=nodes.findIndex(n=>n.id===id);if(i>=0)nodes[i]=data;else nodes.push(data);}
-  }else if(table==='canvas_groups'){
-    const{data}=await sb.from('canvas_groups').select('*').eq('id',id).single();
-    if(data){const i=groups.findIndex(g=>g.id===id);if(i>=0)groups[i]=data;else groups.push(data);}
-  }else if(table==='canvas_links'){
-    await loadAll(); // links are simple, just reload all
-  }
+async function _rtR(table,id){
+  if(_mw[table]?.has(id)||_mw[table]?.has('*'))return;
+  if(table==='canvas_nodes'){const{data}=await sb.from('canvas_nodes').select('*').eq('id',id).single();if(data){const i=nodes.findIndex(n=>n.id===id);if(i>=0)nodes[i]={...nodes[i],...data};else nodes.push(data);}}
+  else if(table==='canvas_groups'){const{data}=await sb.from('canvas_groups').select('*').eq('id',id).single();if(data){const i=groups.findIndex(g=>g.id===id);if(i>=0)groups[i]={...groups[i],...data};else groups.push(data);}}
+  else await loadAll();
 }
-
-async function _rtDelete(table,id){
-  if(_myWrites[table]?.has(id))return;
-  if(table==='canvas_nodes'){nodes=nodes.filter(n=>n.id!==id);}
-  else if(table==='canvas_groups'){groups=groups.filter(g=>g.id!==id);}
-  else if(table==='canvas_links'){links=links.filter(l=>(l.id||l.source)!==id);}
+async function _rtD(table,id){
+  if(_mw[table]?.has(id))return;
+  if(table==='canvas_nodes')nodes=nodes.filter(n=>n.id!==id);
+  else if(table==='canvas_groups')groups=groups.filter(g=>g.id!==id);
+  else await loadAll();
 }
-
 function setupRT(){
-  sb.channel('canvas-rt6')
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'canvas_nodes'},e=>_rtReload('canvas_nodes',e.new.id))
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'canvas_nodes'},e=>_rtReload('canvas_nodes',e.new.id))
-    .on('postgres_changes',{event:'DELETE',schema:'public',table:'canvas_nodes'},e=>_rtDelete('canvas_nodes',e.old.id))
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'canvas_groups'},e=>_rtReload('canvas_groups',e.new.id))
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'canvas_groups'},e=>_rtReload('canvas_groups',e.new.id))
-    .on('postgres_changes',{event:'DELETE',schema:'public',table:'canvas_groups'},e=>_rtDelete('canvas_groups',e.old.id))
+  sb.channel('canvas-rt8')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'canvas_nodes'},e=>_rtR('canvas_nodes',e.new.id))
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'canvas_nodes'},e=>_rtR('canvas_nodes',e.new.id))
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'canvas_nodes'},e=>_rtD('canvas_nodes',e.old.id))
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'canvas_groups'},e=>_rtR('canvas_groups',e.new.id))
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'canvas_groups'},e=>_rtR('canvas_groups',e.new.id))
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'canvas_groups'},e=>_rtD('canvas_groups',e.old.id))
     .on('postgres_changes',{event:'*',schema:'public',table:'canvas_links'},()=>loadAll())
     .subscribe();
 }
-
-// LAYOUT ENGINE
-let simRunning=false;
-
-function getGroupId(n){
-  // position-based check
-  const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
-  for(const g of groups){if(cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h)return g.id;}
-  return null;
-}
-
-async function runLayout(){
-  if(!nodes.length){toast('No nodes to arrange');return;}
-  if(simRunning)return;
-  simRunning=true;
-  toast('Arranging...');
-
-  const NPAD=32,LABEL_H=36,GPAD=80,NH=DH||60;
-
-  // 1. Build membership by group_id, fall back to position
-  const membership={};
-  const ungrouped=[];
-  nodes.forEach(n=>{
-    const gid=n.group_id||getGroupId(n);
-    n.group_id=gid;
-    if(gid&&groups.find(g=>g.id===gid)){
-      if(!membership[gid])membership[gid]=[];
-      membership[gid].push(n);
-    } else ungrouped.push(n);
-  });
-
-  // 2. Size and lay out nodes inside each group
-  groups.forEach(g=>{
-    const gnodes=membership[g.id]||[];
-    if(!gnodes.length)return;
-    const cols=Math.max(1,Math.ceil(Math.sqrt(gnodes.length)));
-    const rows=Math.ceil(gnodes.length/cols);
-    // size group first
-    g.w=NPAD+cols*(DW+NPAD);
-    g.h=LABEL_H+NPAD+rows*(NH+NPAD);
-    g.w=Math.max(g.w,220);g.h=Math.max(g.h,140);
-    // place nodes inside
-    gnodes.forEach((n,i)=>{
-      n.x=g.x+NPAD+(i%cols)*(DW+NPAD);
-      n.y=g.y+LABEL_H+NPAD+Math.floor(i/cols)*(NH+NPAD);
-    });
-  });
-
-  // 3. Arrange groups in a grid centered at origin
-  const activeGroups=groups.filter(g=>(membership[g.id]||[]).length>0);
-  const gcols=Math.max(1,Math.ceil(Math.sqrt(activeGroups.length)));
-  const grows=Math.ceil(activeGroups.length/gcols);
-  // compute row heights and col widths
-  const rowH=Array(grows).fill(0);
-  const colW=Array(gcols).fill(0);
-  activeGroups.forEach((g,i)=>{
-    rowH[Math.floor(i/gcols)]=Math.max(rowH[Math.floor(i/gcols)],g.h);
-    colW[i%gcols]=Math.max(colW[i%gcols],g.w);
-  });
-  const totalW=colW.reduce((s,w)=>s+w+GPAD,0)-GPAD;
-  const totalH=rowH.reduce((s,h)=>s+h+GPAD,0)-GPAD;
-  let curX=-totalW/2,curY=-totalH/2;
-  activeGroups.forEach((g,i)=>{
-    const r=Math.floor(i/gcols),c=i%gcols;
-    if(c===0&&i>0){curX=-totalW/2;curY+= rowH[r-1]+GPAD;}
-    g.x=curX;g.y=curY;
-    curX+=colW[c]+GPAD;
-    // re-place nodes now that group is positioned
-    const gnodes=membership[g.id]||[];
-    const cols=Math.max(1,Math.ceil(Math.sqrt(gnodes.length)));
-    gnodes.forEach((n,j)=>{
-      n.x=g.x+NPAD+(j%cols)*(DW+NPAD);
-      n.y=g.y+LABEL_H+NPAD+Math.floor(j/cols)*(NH+NPAD);
-    });
-  });
-
-  // 4. Place ungrouped nodes below
-  const belowY=totalH/2+GPAD;
-  ungrouped.forEach((n,i)=>{
-    const cols=Math.max(1,Math.ceil(Math.sqrt(Math.max(1,ungrouped.length))));
-    n.x=(i%cols)*(DW+NPAD*2)-cols*(DW+NPAD)/2;
-    n.y=belowY+Math.floor(i/cols)*(NH+NPAD);
-  });
-
-  // 5. Save all positions
-  await Promise.all(nodes.map(n=>{
-    _trackWrite('canvas_nodes',n.id);
-    return sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y),group_id:n.group_id||null}).eq('id',n.id);
-  }));
-  await Promise.all(groups.map(g=>{
-    _trackWrite('canvas_groups',g.id);
-    return sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
-  }));
-
-  simRunning=false;
-  toast('Layout done ✓');
-}
-
-
 let toastT=null;
-function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.style.opacity='1';clearTimeout(toastT);toastT=setTimeout(()=>el.style.opacity='0',2200);}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.style.opacity='1';clearTimeout(toastT);toastT=setTimeout(()=>el.style.opacity='0',2400);}
 </script>
 </body>
 </html>
