@@ -209,7 +209,7 @@ const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-auth',persis
 const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#b43cb4',anchor:'#888780'};
 const GROUP_COLORS=['#378ADD','#1D9E75','#BA7517','#D85A30','#7F77DD','#b43cb4','#888780','#2D7D46','#C0392B','#8E44AD'];
 const TYPES=Object.keys(TC);
-const DW=180,DH=60,MW=120,MH=44,PR=6,RH=14;
+const DW=180,DH=60,MW=120,MH=44,PR=6,RH=20;
 
 let user=null,who='';
 let nodes=[],links=[],groups=[];
@@ -256,6 +256,7 @@ function initCanvas(){
   canvas.addEventListener('contextmenu',onRC);
   canvas.addEventListener('dblclick',onDbl);
   document.addEventListener('keydown',onKey);
+  document.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;canvas.style.cursor='default';}});
   document.addEventListener('paste',onPaste);
   requestAnimationFrame(loop);
 }
@@ -393,8 +394,12 @@ function drawNodes(){
     drawPort(n.x+w,n.y+h/2,'#8aaa88',pr);           // right
     drawPort(n.x+w/2,n.y,'#a0a8d0',pr*0.8);         // top
     drawPort(n.x+w/2,n.y+h,'#a0a8d0',pr*0.8);       // bottom
-    // resize handle
-    ctx.fillStyle='#b0b0aa';ctx.fillRect(n.x+w-7,n.y+h-7,5,5);
+    // resize handle — bigger
+    const rhs=10/cam.z;
+    ctx.fillStyle='#909090';
+    ctx.beginPath();
+    ctx.moveTo(n.x+w,n.y+h-rhs);ctx.lineTo(n.x+w,n.y+h);ctx.lineTo(n.x+w-rhs,n.y+h);
+    ctx.closePath();ctx.fill();
   });
 }
 
@@ -440,14 +445,11 @@ function outP(n,side){
 // find nearest port side
 function nearestPort(n,wx,wy,isOut){
   const w=n.w||DW,h=n.h||DH;
-  const ports=isOut?[
-    {side:0,x:n.x+w,y:n.y+h/2},
-    {side:2,x:n.x+w/2,y:n.y},
-    {side:3,x:n.x+w/2,y:n.y+h},
-  ]:[
-    {side:0,x:n.x,y:n.y+h/2},
-    {side:2,x:n.x+w/2,y:n.y},
-    {side:3,x:n.x+w/2,y:n.y+h},
+  // all 4 sides available for both in and out
+  const ports=[
+    {side:0,x:isOut?n.x+w:n.x,y:n.y+h/2},  // left/right
+    {side:2,x:n.x+w/2,y:n.y},               // top
+    {side:3,x:n.x+w/2,y:n.y+h},             // bottom
   ];
   let best=ports[0],bestD=Infinity;
   ports.forEach(p=>{const d=Math.hypot(wx-p.x,wy-p.y);if(d<bestD){bestD=d;best=p;}});
@@ -465,7 +467,7 @@ function hitGroup(wx,wy){return[...groups].reverse().find(g=>wx>=g.x&&wx<=g.x+g.
 function hitNResize(n,wx,wy){const w=n.w||DW,h=n.h||DH;return wx>=n.x+w-RH&&wy>=n.y+h-RH;}
 function hitGResize(g,wx,wy){return wx>=g.x+g.w-RH&&wy>=g.y+g.h-RH;}
 function hitAnyPort(n,wx,wy){
-  const w=n.w||DW,h=n.h||DH;const pr=(PR+8)/cam.z;
+  const w=n.w||DW,h=n.h||DH;const pr=(PR+14)/cam.z;
   const ports=[{x:n.x,y:n.y+h/2},{x:n.x+w,y:n.y+h/2},{x:n.x+w/2,y:n.y},{x:n.x+w/2,y:n.y+h}];
   return ports.some(p=>Math.hypot(wx-p.x,wy-p.y)<pr);
 }
@@ -474,9 +476,14 @@ function hitAnyPort(n,wx,wy){
 let mouseDownPos={x:0,y:0};
 let mouseMoved=false;
 const CLICK_THRESH=5;
+let spaceDown=false;
 
 function onDown(e){
+  // middle mouse = pan
+  if(e.button===1){e.preventDefault();drag={on:true,pan:true,ox:e.clientX-canvas.getBoundingClientRect().left,oy:e.clientY-canvas.getBoundingClientRect().top,camX:cam.x,camY:cam.y};return;}
   if(e.button!==0)return;closeCtx();
+  // space+drag = pan
+  if(spaceDown){const r=canvas.getBoundingClientRect();const cx=e.clientX-r.left,cy=e.clientY-r.top;drag={on:true,pan:true,ox:cx,oy:cy,camX:cam.x,camY:cam.y};return;}
   const{wx,wy,cx,cy}=wp(e);
   mouseDownPos={x:cx,y:cy};mouseMoved=false;
   lm={x:cx,y:cy};
@@ -528,12 +535,10 @@ function onMove(e){
   const wx=(cx-canvas.width/2-cam.x)/cam.z,wy=(cy-canvas.height/2-cam.y)/cam.z;
   if(!drag.on)return;
   if(drag.pan){
-    if(mouseMoved){
-      // if moved significantly, pan; window select shown via winSel
-      cam.x=drag.camX+(cx-drag.ox);cam.y=drag.camY+(cy-drag.oy);
-      // but also update window select bounds
-      winSel.ex=cx;winSel.ey=cy;
-    }
+    cam.x=drag.camX+(cx-drag.ox);cam.y=drag.camY+(cy-drag.oy);
+    if(spaceDown)canvas.style.cursor='grabbing';
+  }else if(drag.winsel){
+    winSel.ex=cx;winSel.ey=cy;
   }else if(drag.node){
     // multi-node drag
     drag.multiNodes.forEach(({n,ox,oy})=>{n.x=wx-ox;n.y=wy-oy;});
@@ -559,14 +564,11 @@ function onMove(e){
 async function onUp(e){
   canvas.style.cursor='default';
   const{wx,wy,cx,cy}=wp(e);
-  // window selection — if barely moved, treat as click (deselect or pan)
   if(winSel.on){
     winSel.on=false;
-    if(mouseMoved&&Math.hypot(cx-mouseDownPos.x,cy-mouseDownPos.y)>8){
-      // finalize window selection
+    if(Math.hypot(cx-mouseDownPos.x,cy-mouseDownPos.y)>8){
       const minX=Math.min(winSel.sx,winSel.ex),maxX=Math.max(winSel.sx,winSel.ex);
       const minY=Math.min(winSel.sy,winSel.ey),maxY=Math.max(winSel.sy,winSel.ey);
-      // convert to world
       const wMinX=(minX-canvas.width/2-cam.x)/cam.z,wMinY=(minY-canvas.height/2-cam.y)/cam.z;
       const wMaxX=(maxX-canvas.width/2-cam.x)/cam.z,wMaxY=(maxY-canvas.height/2-cam.y)/cam.z;
       const newSelNodes=nodes.filter(n=>{const w=n.w||DW,h=n.h||DH;return n.x>=wMinX&&n.x+w<=wMaxX&&n.y>=wMinY&&n.y+h<=wMaxY;}).map(n=>n.id);
@@ -574,8 +576,6 @@ async function onUp(e){
       selected={nodes:newSelNodes,groups:newSelGroups};
       if(newSelNodes.length+newSelGroups.length>0)toast(`Selected ${newSelNodes.length} nodes, ${newSelGroups.length} groups`);
     }
-    // revert camera if we were panning during window select
-    if(drag.pan&&!mouseMoved){cam.x=drag.camX;cam.y=drag.camY;}
   }
   if(drag.node){
     await Promise.all(drag.multiNodes.map(({n})=>sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id)));
@@ -618,7 +618,8 @@ function onDbl(e){
 }
 
 function onKey(e){
-  if(e.key==='Escape'){linkFrom=null;closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};}
+  if(e.code==='Space'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){spaceDown=true;canvas.style.cursor='grab';}
+  if(e.key==='Escape'){linkFrom=null;closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};canvas.style.cursor='default';}
   if((e.key==='Delete'||e.key==='Backspace')&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){
     deleteSelected();
   }
