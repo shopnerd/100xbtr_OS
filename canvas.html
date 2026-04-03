@@ -8,41 +8,30 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#e8e8e4;--grid:#d8d8d4;
-  --node-bg:#f4f4f0;--node-border:#c0c0bc;--node-shadow:rgba(0,0,0,0.12);
-  --wire:#a0a09c;--wire-claude:#7F77DD;--wire-gap:#D85A30;
+  --bg:#e8e8e4;--grid:#d0d0cc;
+  --node-bg:#f4f4f0;--node-border:#c0c0bc;
   --tx:#2a2a28;--tx2:#6a6a66;--tx3:#a0a09c;
-  --port-in:#7a9ab8;--port-out:#8aaa88;
-  --group-idea:rgba(55,138,221,0.08);--group-idea-b:rgba(55,138,221,0.25);
-  --group-ref:rgba(29,158,117,0.08);--group-ref-b:rgba(29,158,117,0.25);
-  --group-mat:rgba(186,117,23,0.08);--group-mat-b:rgba(186,117,23,0.25);
-  --group-dec:rgba(216,90,48,0.08);--group-dec-b:rgba(216,90,48,0.25);
-  --group-img:rgba(127,119,221,0.08);--group-img-b:rgba(127,119,221,0.25);
-  --group-q:rgba(180,60,180,0.08);--group-q-b:rgba(180,60,180,0.3);
-  --type-idea:#378ADD;--type-ref:#1D9E75;--type-mat:#BA7517;
-  --type-dec:#D85A30;--type-img:#7F77DD;--type-q:#b43cb4;--type-anchor:#888780;
-  --panel-bg:#f8f8f4;
+  --type-idea:#378ADD;--type-reference:#1D9E75;--type-material:#BA7517;
+  --type-decision:#D85A30;--type-image:#7F77DD;--type-question:#b43cb4;--type-anchor:#888780;
   --r:4px;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);overflow:hidden;height:100vh;display:flex;flex-direction:column;color:var(--tx);}
-
-/* AUTH */
 #auth-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);}
-.auth-box{background:var(--node-bg);border:1px solid var(--node-border);border-radius:6px;padding:2.5rem;max-width:360px;width:100%;text-align:center;box-shadow:0 4px 20px var(--node-shadow);}
-.auth-logo{font-size:20px;font-weight:500;letter-spacing:-0.02em;margin-bottom:4px;color:var(--tx);}
+.auth-box{background:var(--node-bg);border:1px solid var(--node-border);border-radius:6px;padding:2.5rem;max-width:360px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.12);}
+.auth-logo{font-size:20px;font-weight:500;letter-spacing:-0.02em;margin-bottom:4px;}
 .auth-logo span{color:var(--tx3);font-weight:400;}
 .auth-sub{font-size:12px;color:var(--tx2);margin-bottom:1.5rem;line-height:1.6;}
 .auth-btn{width:100%;padding:9px 14px;border-radius:var(--r);border:1px solid var(--node-border);background:var(--node-bg);color:var(--tx);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
 .auth-btn:hover{background:#eee;}
 .auth-err{font-size:12px;color:#c0392b;margin-top:8px;display:none;}
-
-/* TOP BAR */
+#app{display:none;flex-direction:column;height:100vh;}
 #topbar{height:36px;background:var(--node-bg);border-bottom:1px solid var(--node-border);display:flex;align-items:center;padding:0 12px;gap:10px;flex-shrink:0;z-index:100;}
-.tb-logo{font-size:13px;font-weight:500;color:var(--tx);letter-spacing:-0.01em;}
+.tb-logo{font-size:13px;font-weight:500;letter-spacing:-0.01em;}
 .tb-logo span{color:var(--tx3);font-weight:400;}
 .tb-sep{width:1px;height:16px;background:var(--node-border);}
-.tb-link{font-size:11px;color:var(--tx2);text-decoration:none;padding:3px 8px;border:1px solid var(--node-border);border-radius:var(--r);background:transparent;}
-.tb-link:hover{background:var(--grid);}
+.tb-link{font-size:11px;color:var(--tx2);text-decoration:none;padding:3px 8px;border:1px solid var(--node-border);border-radius:var(--r);}
+.tb-link:hover{background:var(--bg);}
+.tb-hint{font-size:11px;color:var(--tx3);}
 .tb-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
 .tb-user{font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:4px;}
 .live-dot{width:6px;height:6px;border-radius:50%;background:#1D9E75;animation:pulse 2s ease-in-out infinite;}
@@ -50,70 +39,57 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tb-signout{font-size:11px;color:var(--tx3);background:none;border:none;cursor:pointer;}
 .tb-signout:hover{color:var(--tx);}
 .claude-toggle-wrap{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx2);}
-.toggle-track{position:relative;width:28px;height:16px;background:var(--node-border);border-radius:8px;cursor:pointer;transition:background 0.2s;}
-.toggle-track.on{background:var(--type-q);}
+.toggle-track{position:relative;width:28px;height:16px;background:var(--node-border);border-radius:8px;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
+.toggle-track.on{background:var(--type-question);}
 .toggle-thumb{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform 0.2s;}
 .toggle-track.on .toggle-thumb{transform:translateX(12px);}
-
-/* CANVAS */
-#canvas-wrap{flex:1;position:relative;overflow:hidden;cursor:default;}
-#gh-canvas{position:absolute;top:0;left:0;}
-
-/* INPUT BAR */
-#input-bar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);width:min(560px,88vw);background:var(--node-bg);border:1px solid var(--node-border);border-radius:var(--r);padding:8px 12px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 16px var(--node-shadow);z-index:50;}
+#canvas-wrap{flex:1;position:relative;overflow:hidden;}
+#gh-canvas{position:absolute;top:0;left:0;cursor:crosshair;}
+#input-bar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);width:min(560px,88vw);background:var(--node-bg);border:1px solid var(--node-border);border-radius:var(--r);padding:8px 12px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 16px rgba(0,0,0,0.1);z-index:50;}
 #node-input{flex:1;border:none;outline:none;font-size:13px;background:transparent;color:var(--tx);font-family:inherit;}
 #node-input::placeholder{color:var(--tx3);}
-.ib-type{font-size:11px;padding:3px 8px;border:1px solid var(--node-border);border-radius:var(--r);background:transparent;color:var(--tx2);cursor:pointer;}
-.ib-type.sel{color:#fff;}
-.ib-add{padding:4px 12px;border-radius:var(--r);border:1px solid var(--node-border);background:var(--tx);color:var(--node-bg);font-size:11px;cursor:pointer;}
-#img-upload{display:none;}
+.ib-add{padding:4px 12px;border-radius:var(--r);border:none;background:var(--tx);color:var(--node-bg);font-size:11px;cursor:pointer;}
 .ib-img{padding:4px 10px;border-radius:var(--r);border:1px solid var(--node-border);background:transparent;color:var(--tx2);font-size:11px;cursor:pointer;}
-
-/* CLAUDE PANEL */
-#claude-panel{position:absolute;top:44px;right:0;width:280px;height:calc(100vh - 44px);background:var(--panel-bg);border-left:1px solid var(--node-border);display:none;flex-direction:column;z-index:80;overflow:hidden;}
+#img-upload{display:none;}
+#claude-panel{position:absolute;top:44px;right:0;width:280px;height:calc(100vh - 44px);background:#f8f8f4;border-left:1px solid var(--node-border);display:none;flex-direction:column;z-index:80;}
 #claude-panel.open{display:flex;}
 .cp-header{padding:10px 12px;border-bottom:1px solid var(--node-border);display:flex;align-items:center;gap:6px;flex-shrink:0;}
-.cp-dot{width:8px;height:8px;border-radius:50%;background:var(--type-q);}
-.cp-title{font-size:12px;font-weight:500;color:var(--tx);}
+.cp-dot{width:8px;height:8px;border-radius:50%;background:var(--type-question);}
+.cp-title{font-size:12px;font-weight:500;}
 .cp-analyze{margin-left:auto;padding:3px 10px;font-size:11px;border:1px solid var(--node-border);border-radius:var(--r);background:transparent;color:var(--tx2);cursor:pointer;}
-.cp-analyze:hover{background:var(--grid);}
+.cp-analyze:hover{background:var(--bg);}
 .cp-body{flex:1;overflow-y:auto;padding:10px 12px;}
 .cp-section{margin-bottom:14px;}
 .cp-section-title{font-size:10px;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;}
 .cp-reading{font-size:12px;color:var(--tx);line-height:1.7;background:var(--node-bg);border:1px solid var(--node-border);border-radius:var(--r);padding:8px 10px;}
 .cp-gap{background:var(--node-bg);border:1px solid var(--node-border);border-radius:var(--r);padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
 .cp-gap-q{font-size:12px;color:var(--tx);line-height:1.5;flex:1;}
-.cp-gap-add{font-size:10px;padding:2px 8px;border:1px solid var(--type-q);color:var(--type-q);border-radius:var(--r);background:transparent;cursor:pointer;white-space:nowrap;flex-shrink:0;}
-.cp-gap-add:hover{background:var(--type-q);color:#fff;}
+.cp-gap-add{font-size:10px;padding:2px 8px;border:1px solid var(--type-question);color:var(--type-question);border-radius:var(--r);background:transparent;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.cp-gap-add:hover{background:var(--type-question);color:#fff;}
 .cp-conn{background:var(--node-bg);border:1px solid var(--node-border);border-radius:var(--r);padding:7px 10px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;color:var(--tx2);}
 .cp-conn-link{font-size:10px;padding:2px 8px;border:1px solid var(--node-border);border-radius:var(--r);background:transparent;cursor:pointer;color:var(--tx2);white-space:nowrap;}
-.cp-conn-link:hover{background:var(--grid);}
+.cp-conn-link:hover{background:var(--bg);}
 .cp-prompt-wrap{padding:10px 12px;border-top:1px solid var(--node-border);flex-shrink:0;}
-.cp-prompt{width:100%;font-size:12px;padding:7px 9px;border:1px solid var(--node-border);border-radius:var(--r);background:var(--node-bg);color:var(--tx);font-family:inherit;resize:none;height:56px;outline:none;}
-.cp-prompt:focus{border-color:var(--type-q);}
-.cp-send{width:100%;margin-top:6px;padding:5px;border-radius:var(--r);border:1px solid var(--node-border);background:var(--type-q);color:#fff;font-size:12px;cursor:pointer;}
+.cp-prompt{width:100%;font-size:12px;padding:7px 9px;border:1px solid var(--node-border);border-radius:var(--r);background:var(--node-bg);color:var(--tx);font-family:inherit;resize:none;height:52px;outline:none;}
+.cp-prompt:focus{border-color:var(--type-question);}
+.cp-send{width:100%;margin-top:6px;padding:5px;border-radius:var(--r);border:none;background:var(--type-question);color:#fff;font-size:12px;cursor:pointer;}
 .cp-loading{font-size:12px;color:var(--tx3);font-style:italic;padding:8px 0;}
-
-/* NODE EDIT PANEL */
-#node-edit{position:absolute;background:var(--node-bg);border:1px solid var(--node-border);border-radius:var(--r);padding:10px 12px;width:200px;z-index:90;display:none;box-shadow:0 4px 16px var(--node-shadow);}
+#node-edit{position:absolute;background:var(--node-bg);border:1px solid var(--node-border);border-radius:var(--r);padding:10px 12px;width:210px;z-index:90;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.12);}
 .ne-title{font-size:10px;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;}
 .ne-input{width:100%;font-size:12px;padding:5px 7px;border:1px solid var(--node-border);border-radius:var(--r);background:#fff;color:var(--tx);font-family:inherit;outline:none;margin-bottom:6px;}
-.ne-input:focus{border-color:var(--type-idea);}
+.ne-input:focus{border-color:#378ADD;}
 .ne-types{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px;}
 .ne-type{font-size:10px;padding:2px 7px;border-radius:var(--r);border:1px solid var(--node-border);background:transparent;color:var(--tx2);cursor:pointer;}
 .ne-type.on{color:#fff;}
 .ne-actions{display:flex;gap:5px;}
 .ne-save{flex:1;padding:4px;border-radius:var(--r);border:none;background:var(--tx);color:var(--node-bg);font-size:11px;cursor:pointer;}
 .ne-del{padding:4px 8px;border-radius:var(--r);border:1px solid var(--node-border);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;}
-
-/* TOAST */
-#toast{position:absolute;bottom:72px;left:50%;transform:translateX(-50%);background:var(--tx);color:var(--node-bg);font-size:11px;padding:5px 14px;border-radius:20px;opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:200;}
-
-/* CONTEXT MENU */
-#ctx-menu{position:absolute;background:var(--node-bg);border:1px solid var(--node-border);border-radius:var(--r);padding:4px 0;z-index:150;display:none;box-shadow:0 4px 16px var(--node-shadow);min-width:160px;}
-.ctx-item{padding:6px 14px;font-size:12px;color:var(--tx);cursor:pointer;}
-.ctx-item:hover{background:var(--grid);}
+#ctx-menu{position:absolute;background:var(--node-bg);border:1px solid var(--node-border);border-radius:var(--r);padding:4px 0;z-index:150;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.12);min-width:170px;}
+.ctx-item{padding:6px 14px;font-size:12px;color:var(--tx);cursor:pointer;display:flex;align-items:center;gap:8px;}
+.ctx-item:hover{background:var(--bg);}
+.ctx-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .ctx-sep{height:1px;background:var(--node-border);margin:3px 0;}
+#toast{position:absolute;bottom:72px;left:50%;transform:translateX(-50%);background:var(--tx);color:var(--node-bg);font-size:11px;padding:5px 14px;border-radius:20px;opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:200;}
 </style>
 </head>
 <body>
@@ -130,13 +106,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<div id="app" style="display:none;flex-direction:column;height:100vh;">
+<div id="app">
   <div id="topbar">
     <div class="tb-logo">100xbtr<span>_canvas</span></div>
     <div class="tb-sep"></div>
     <a href="https://sound.100xbtr.com" class="tb-link">← OS</a>
     <div class="tb-sep"></div>
-    <span style="font-size:11px;color:var(--tx3);">right-click canvas to add · drag to pan · scroll to zoom · click node to edit · shift+click to connect</span>
+    <span class="tb-hint">right-click to add · drag to pan · scroll to zoom · click node to edit · shift+click to connect · drag node edge to resize</span>
     <div class="tb-right">
       <div class="claude-toggle-wrap">
         <span>Claude</span>
@@ -165,11 +141,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <button class="cp-analyze" onclick="analyzeCanvas()">Analyze</button>
       </div>
       <div class="cp-body" id="cp-body">
-        <div style="font-size:12px;color:var(--tx3);line-height:1.7;padding:8px 0;">Click Analyze to read the canvas and surface gaps, patterns, and suggested connections.</div>
+        <div style="font-size:12px;color:var(--tx3);line-height:1.7;padding:4px 0;">Click Analyze to read the canvas. I'll surface gaps, patterns, and suggested connections based on what's here.</div>
       </div>
       <div class="cp-prompt-wrap">
-        <textarea class="cp-prompt" id="cp-prompt" placeholder="Ask Claude anything about the canvas..."></textarea>
-        <button class="cp-send" onclick="askClaude()">Ask</button>
+        <textarea class="cp-prompt" id="cp-prompt" placeholder="Ask me anything about the canvas..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askClaude();}"></textarea>
+        <button class="cp-send" onclick="askClaude()">Ask ↵</button>
       </div>
     </div>
 
@@ -185,13 +161,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
 
     <div id="ctx-menu">
-      <div class="ctx-item" onclick="ctxAddType('idea')">+ Idea / thought</div>
-      <div class="ctx-item" onclick="ctxAddType('reference')">+ Reference / URL</div>
-      <div class="ctx-item" onclick="ctxAddType('material')">+ Material / spec</div>
-      <div class="ctx-item" onclick="ctxAddType('decision')">+ Decision</div>
-      <div class="ctx-item" onclick="ctxAddType('image')">+ Image</div>
+      <div class="ctx-item" onclick="ctxAdd('idea')"><div class="ctx-dot" style="background:#378ADD"></div>Idea / thought</div>
+      <div class="ctx-item" onclick="ctxAdd('reference')"><div class="ctx-dot" style="background:#1D9E75"></div>Reference / URL</div>
+      <div class="ctx-item" onclick="ctxAdd('material')"><div class="ctx-dot" style="background:#BA7517"></div>Material / spec</div>
+      <div class="ctx-item" onclick="ctxAdd('decision')"><div class="ctx-dot" style="background:#D85A30"></div>Decision</div>
+      <div class="ctx-item" onclick="ctxAdd('image')"><div class="ctx-dot" style="background:#7F77DD"></div>Image</div>
       <div class="ctx-sep"></div>
-      <div class="ctx-item" onclick="closeCtx()">Cancel</div>
+      <div class="ctx-item" onclick="ctxAddGroup()"><div class="ctx-dot" style="background:#888780"></div>Add group</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item" onclick="closeCtx()" style="color:var(--tx3)">Cancel</div>
     </div>
 
     <div id="toast"></div>
@@ -204,24 +182,22 @@ const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 const ALLOWED=['zolaray25@gmail.com','fraektaard@gmail.com','nishbphoto@gmail.com'];
 const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-auth',persistSession:true,detectSessionInUrl:true}});
 
-const TYPE_COLOR={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#b43cb4',anchor:'#888780'};
-const TYPES=['idea','reference','material','decision','image','question','anchor'];
+const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#b43cb4',anchor:'#888780'};
+const TYPES=Object.keys(TC);
+const GRID=32;
+const DEF_W=180,DEF_H=60,MIN_W=120,MIN_H=44,PORT_R=5;
+const RESIZE_HIT=10;
 
 let currentUser=null,who='';
-let nodes=[],links=[];
+let nodes=[],links=[],groups=[];
 let selectedNode=null,linkingFrom=null;
-let ctxPos={x:0,y:0};
 let claudeOn=false;
-
-// Canvas state
 let canvas,ctx;
 let camX=0,camY=0,zoom=1;
-let isDragging=false,dragStart={x:0,y:0},dragCamStart={x:0,y:0};
-let isDraggingNode=false,dragNode=null,dragNodeStart={x:0,y:0};
+let drag={active:false,node:null,group:null,resize:null,pan:false,ox:0,oy:0,cx:0,cy:0};
+let lastMouse={x:0,y:0};
+let ctxPos={x:0,y:0};
 let imgCache={};
-
-const GRID=24;
-const NODE_W=160,NODE_H=44,PORT_R=5,PORT_MARGIN=10;
 
 // AUTH
 async function signInGoogle(){
@@ -231,62 +207,51 @@ async function signInGoogle(){
   if(error){err.textContent=error.message;err.style.display='block';}
 }
 async function signOut(){await sb.auth.signOut();window.location.reload();}
-
-sb.auth.onAuthStateChange((event,session)=>{
-  if((event==='SIGNED_IN'||event==='TOKEN_REFRESHED')&&session?.user)startApp(session.user);
+sb.auth.onAuthStateChange((ev,session)=>{
+  if((ev==='SIGNED_IN'||ev==='TOKEN_REFRESHED')&&session?.user)startApp(session.user);
 });
-(async()=>{
-  const{data:{session}}=await sb.auth.getSession();
-  if(session?.user)await startApp(session.user);
-})();
+(async()=>{const{data:{session}}=await sb.auth.getSession();if(session?.user)await startApp(session.user);})();
 
 async function startApp(u){
-  const email=u.email.toLowerCase();
-  if(!ALLOWED.includes(email)){await sb.auth.signOut();return;}
-  currentUser=u;who=email.split('@')[0];
+  if(!ALLOWED.includes(u.email.toLowerCase())){await sb.auth.signOut();return;}
+  currentUser=u;who=u.email.split('@')[0];
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='flex';
-  document.getElementById('user-email-display').textContent=email;
+  document.getElementById('user-email-display').textContent=u.email;
   initCanvas();
   await initDB();
-  await loadCanvas();
+  await loadAll();
   setupRealtime();
 }
 
-// CANVAS INIT
+// CANVAS
 function initCanvas(){
   canvas=document.getElementById('gh-canvas');
   ctx=canvas.getContext('2d');
   resize();
   window.addEventListener('resize',resize);
-  canvas.addEventListener('mousedown',onMouseDown);
-  canvas.addEventListener('mousemove',onMouseMove);
-  canvas.addEventListener('mouseup',onMouseUp);
+  canvas.addEventListener('mousedown',onDown);
+  canvas.addEventListener('mousemove',onMove);
+  canvas.addEventListener('mouseup',onUp);
   canvas.addEventListener('wheel',onWheel,{passive:false});
   canvas.addEventListener('contextmenu',onRightClick);
   canvas.addEventListener('dblclick',onDblClick);
   document.addEventListener('keydown',onKey);
   document.addEventListener('paste',onPaste);
-  requestAnimationFrame(drawLoop);
+  requestAnimationFrame(loop);
 }
 
 function resize(){
-  const wrap=document.getElementById('canvas-wrap');
-  canvas.width=wrap.clientWidth;
-  canvas.height=wrap.clientHeight;
+  const w=document.getElementById('canvas-wrap');
+  canvas.width=w.clientWidth;canvas.height=w.clientHeight;
 }
 
-// DRAW LOOP
-function drawLoop(){
-  draw();
-  requestAnimationFrame(drawLoop);
-}
+function loop(){draw();requestAnimationFrame(loop);}
 
 function draw(){
   const W=canvas.width,H=canvas.height;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#e8e8e4';
-  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#e8e8e4';ctx.fillRect(0,0,W,H);
   drawGrid(W,H);
   ctx.save();
   ctx.translate(W/2+camX,H/2+camY);
@@ -294,314 +259,313 @@ function draw(){
   drawGroups();
   drawLinks();
   drawNodes();
-  if(linkingFrom){
-    const m=lastMouse;
-    if(m){
-      const sp=nodeOutputPort(linkingFrom);
-      ctx.beginPath();
-      ctx.moveTo(sp.x,sp.y);
-      const mx=(m.x-canvas.width/2-camX)/zoom;
-      const my=(m.y-canvas.height/2-camY)/zoom;
-      ctx.bezierCurveTo(sp.x+60,sp.y,mx-60,my,mx,my);
-      ctx.strokeStyle='#7F77DD';
-      ctx.lineWidth=1.5/zoom;
-      ctx.setLineDash([4,3]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
+  if(linkingFrom&&lastMouse){
+    const sp=outPort(linkingFrom);
+    const mx=(lastMouse.x-W/2-camX)/zoom;
+    const my=(lastMouse.y-H/2-camY)/zoom;
+    ctx.beginPath();ctx.moveTo(sp.x,sp.y);
+    const dx=Math.abs(mx-sp.x)*0.5;
+    ctx.bezierCurveTo(sp.x+dx,sp.y,mx-dx,my,mx,my);
+    ctx.strokeStyle='rgba(127,119,221,0.6)';ctx.lineWidth=1.5/zoom;
+    ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);
   }
   ctx.restore();
 }
 
 function drawGrid(W,H){
   const step=GRID*zoom;
+  ctx.strokeStyle='rgba(180,180,174,0.5)';
+  ctx.lineWidth=0.5;
   const ox=(W/2+camX)%step;
   const oy=(H/2+camY)%step;
-  ctx.fillStyle='#d0d0cc';
-  for(let x=ox;x<W;x+=step){
-    for(let y=oy;y<H;y+=step){
-      ctx.beginPath();
-      ctx.arc(x,y,0.8,0,Math.PI*2);
-      ctx.fill();
-    }
-  }
+  ctx.beginPath();
+  for(let x=ox;x<W;x+=step){ctx.moveTo(x,0);ctx.lineTo(x,H);}
+  for(let y=oy;y<H;y+=step){ctx.moveTo(0,y);ctx.lineTo(W,y);}
+  ctx.stroke();
 }
 
 function drawGroups(){
-  const typeGroups={};
-  nodes.forEach(n=>{
-    if(!typeGroups[n.type])typeGroups[n.type]=[];
-    typeGroups[n.type].push(n);
-  });
-  Object.entries(typeGroups).forEach(([type,ns])=>{
-    if(ns.length<2)return;
-    const pad=28;
-    const minX=Math.min(...ns.map(n=>n.x))-pad;
-    const minY=Math.min(...ns.map(n=>n.y))-pad-16;
-    const maxX=Math.max(...ns.map(n=>n.x+NODE_W))+pad;
-    const maxY=Math.max(...ns.map(n=>n.y+NODE_H))+pad;
-    const color=TYPE_COLOR[type]||'#888';
-    ctx.fillStyle=color+'12';
-    ctx.strokeStyle=color+'44';
+  groups.forEach(g=>{
+    const color=TC[g.type]||'#888780';
+    ctx.fillStyle=color+'18';
+    ctx.strokeStyle=color+'55';
     ctx.lineWidth=1/zoom;
-    roundRect(ctx,minX,minY,maxX-minX,maxY-minY,6);
-    ctx.fill();
-    ctx.stroke();
-    ctx.font=`500 ${10/zoom}px -apple-system,sans-serif`;
-    ctx.fillStyle=color+'99';
-    ctx.textBaseline='top';
-    ctx.fillText(type.charAt(0).toUpperCase()+type.slice(1)+'s',minX+6,minY+4);
+    rr(ctx,g.x,g.y,g.w,g.h,6/zoom);
+    ctx.fill();ctx.stroke();
+    ctx.font=`500 ${11/zoom}px -apple-system,sans-serif`;
+    ctx.fillStyle=color+'cc';
+    ctx.textBaseline='top';ctx.textAlign='left';
+    ctx.fillText(g.label||'Group',g.x+8,g.y+6);
+    // resize handle
+    ctx.fillStyle=color+'66';
+    ctx.fillRect(g.x+g.w-8,g.y+g.h-8,6,6);
   });
 }
 
 function drawLinks(){
   links.forEach(l=>{
-    const src=nodes.find(n=>n.id===l.source||n.id===(l.source&&l.source.id));
-    const tgt=nodes.find(n=>n.id===l.target||n.id===(l.target&&l.target.id));
-    if(!src||!tgt)return;
-    const sp=nodeOutputPort(src);
-    const tp=nodeInputPort(tgt);
-    ctx.beginPath();
-    ctx.moveTo(sp.x,sp.y);
-    const dx=Math.abs(tp.x-sp.x)*0.5;
+    const s=nodeById(l.source?.id||l.source);
+    const t=nodeById(l.target?.id||l.target);
+    if(!s||!t)return;
+    const sp=outPort(s),tp=inPort(t);
+    const dx=Math.abs(tp.x-sp.x)*0.45;
+    ctx.beginPath();ctx.moveTo(sp.x,sp.y);
     ctx.bezierCurveTo(sp.x+dx,sp.y,tp.x-dx,tp.y,tp.x,tp.y);
-    ctx.strokeStyle=l.claude?'#7F77DD44':'#a0a09c';
+    ctx.strokeStyle=l.claude?'rgba(127,119,221,0.5)':'rgba(140,140,132,0.7)';
     ctx.lineWidth=(l.claude?2:1.2)/zoom;
     ctx.setLineDash(l.claude?[5,3]:[]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.stroke();ctx.setLineDash([]);
   });
 }
 
 function drawNodes(){
   nodes.forEach(n=>{
-    const isSelected=selectedNode&&selectedNode.id===n.id;
-    const isLinking=linkingFrom&&linkingFrom.id===n.id;
-    const color=TYPE_COLOR[n.type]||'#888';
-    const x=n.x,y=n.y,w=NODE_W,h=NODE_H;
-
-    // Shadow
-    ctx.shadowColor='rgba(0,0,0,0.15)';
-    ctx.shadowBlur=isSelected?8:4;
-    ctx.shadowOffsetY=isSelected?3:1;
-
-    // Body
-    ctx.fillStyle=isSelected?'#ffffff':'#f4f4f0';
-    ctx.strokeStyle=isSelected?color:isLinking?'#7F77DD':'#c0c0bc';
-    ctx.lineWidth=(isSelected?2:1)/zoom;
-    roundRect(ctx,x,y,w,h,var_r());
-    ctx.fill();
-    ctx.stroke();
-    ctx.shadowColor='transparent';
-    ctx.shadowBlur=0;
-
-    // Color band on left
+    const sel=selectedNode?.id===n.id;
+    const link=linkingFrom?.id===n.id;
+    const color=TC[n.type]||'#888';
+    const w=n.w||DEF_W,h=n.h||DEF_H;
+    // shadow
+    ctx.shadowColor='rgba(0,0,0,0.13)';ctx.shadowBlur=sel?8:3;ctx.shadowOffsetY=sel?2:1;
+    // body
+    ctx.fillStyle=sel?'#fff':'#f4f4f0';
+    ctx.strokeStyle=sel?color:link?'#7F77DD':'#c0c0bc';
+    ctx.lineWidth=(sel?1.8:1)/zoom;
+    rr(ctx,n.x,n.y,w,h,4/zoom);ctx.fill();ctx.stroke();
+    ctx.shadowColor='transparent';ctx.shadowBlur=0;
+    // color band
     ctx.fillStyle=color;
-    roundRectLeft(ctx,x,y,4,h,var_r());
-    ctx.fill();
-
-    // Image
+    rrLeft(ctx,n.x,n.y,4,h,4/zoom);ctx.fill();
+    // image thumb
+    let textX=n.x+10,textW=w-20;
     if(n.img_url){
+      const sz=h-8;
       const img=imgCache[n.img_url];
-      if(img&&img.complete){
-        const iSize=h-8;
-        ctx.save();
-        ctx.beginPath();
-        roundRect(ctx,x+8,y+4,iSize,iSize,2);
-        ctx.clip();
-        ctx.drawImage(img,x+8,y+4,iSize,iSize);
-        ctx.restore();
+      if(img&&img.complete&&img.naturalWidth>0){
+        ctx.save();ctx.beginPath();rr(ctx,n.x+8,n.y+4,sz,sz,2/zoom);ctx.clip();
+        ctx.drawImage(img,n.x+8,n.y+4,sz,sz);ctx.restore();
       } else if(!img){
-        const i=new Image();
-        i.crossOrigin='anonymous';
-        i.src=n.img_url;
-        imgCache[n.img_url]=i;
+        const i=new Image();i.crossOrigin='anonymous';i.src=n.img_url;imgCache[n.img_url]=i;
       }
+      textX=n.x+sz+14;textW=w-sz-22;
     }
-
-    // Label
-    const lx=n.img_url?x+NODE_H+4:x+12;
-    const lw=n.img_url?w-NODE_H-20:w-24;
-    ctx.font=`${n.type==='anchor'?'500 ':''}${11/zoom}px -apple-system,sans-serif`;
-    ctx.fillStyle=isSelected?'#1a1a18':'#2a2a28';
-    ctx.textBaseline='middle';
-    ctx.textAlign='left';
-    const label=truncate(n.label||'',lw,ctx);
-    ctx.fillText(label,lx,y+h/2-4);
-
-    // Type label
+    // label — wrapped
+    const fontSize=11/zoom;
+    ctx.font=`${n.type==='anchor'?'500 ':''}${fontSize}px -apple-system,sans-serif`;
+    ctx.fillStyle='#2a2a28';ctx.textBaseline='top';ctx.textAlign='left';
+    const lines=wrapText(ctx,n.label||'',textW);
+    const lineH=fontSize*1.35;
+    const totalTextH=lines.length*lineH;
+    const startY=n.y+(h-totalTextH)/2-fontSize*0.3;
+    lines.forEach((line,i)=>ctx.fillText(line,textX,startY+i*lineH));
+    // type tag
     ctx.font=`${9/zoom}px -apple-system,sans-serif`;
     ctx.fillStyle=color+'bb';
-    ctx.fillText(n.type,lx,y+h/2+7);
-
-    // Author
+    ctx.fillText(n.type,n.x+10,n.y+h-13/zoom);
+    // author
     ctx.textAlign='right';
-    ctx.font=`${8/zoom}px -apple-system,sans-serif`;
     ctx.fillStyle='#a0a09c';
-    ctx.fillText(n.author||'',x+w-8,y+h-6);
-
-    // Input port (left)
-    ctx.beginPath();
-    ctx.arc(x,y+h/2,PORT_R/zoom,0,Math.PI*2);
-    ctx.fillStyle='#7a9ab8';
-    ctx.fill();
-    ctx.strokeStyle='#f4f4f0';
-    ctx.lineWidth=1/zoom;
-    ctx.stroke();
-
-    // Output port (right)
-    ctx.beginPath();
-    ctx.arc(x+w,y+h/2,PORT_R/zoom,0,Math.PI*2);
-    ctx.fillStyle='#8aaa88';
-    ctx.fill();
-    ctx.strokeStyle='#f4f4f0';
-    ctx.lineWidth=1/zoom;
-    ctx.stroke();
+    ctx.font=`${8/zoom}px -apple-system,sans-serif`;
+    ctx.fillText(n.author||'',n.x+w-6,n.y+h-13/zoom);
+    // ports
+    drawPort(n.x,n.y+h/2,'#7a9ab8');
+    drawPort(n.x+w,n.y+h/2,'#8aaa88');
+    // resize handle
+    ctx.fillStyle='#c0c0bc';
+    ctx.fillRect(n.x+w-6,n.y+h-6,4,4);
   });
 }
 
-function var_r(){return 4/zoom;}
+function drawPort(x,y,color){
+  ctx.beginPath();ctx.arc(x,y,PORT_R/zoom,0,Math.PI*2);
+  ctx.fillStyle=color;ctx.fill();
+  ctx.strokeStyle='#f4f4f0';ctx.lineWidth=1/zoom;ctx.stroke();
+}
 
-function roundRect(ctx,x,y,w,h,r){
+function wrapText(ctx,text,maxW){
+  if(!text)return[''];
+  const words=text.split(' ');
+  const lines=[];let line='';
+  words.forEach(w=>{
+    const test=line?line+' '+w:w;
+    if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w;}
+    else line=test;
+  });
+  if(line)lines.push(line);
+  return lines.length?lines:[''];
+}
+
+function rr(ctx,x,y,w,h,r){
   ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.lineTo(x+w-r,y);
-  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-  ctx.lineTo(x+w,y+h-r);
-  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-  ctx.lineTo(x+r,y+h);
-  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-  ctx.lineTo(x,y+r);
-  ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
   ctx.closePath();
 }
 
-function roundRectLeft(ctx,x,y,w,h,r){
+function rrLeft(ctx,x,y,w,h,r){
   ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.lineTo(x+w,y);
-  ctx.lineTo(x+w,y+h);
-  ctx.lineTo(x+r,y+h);
-  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-  ctx.lineTo(x,y+r);
-  ctx.quadraticCurveTo(x,y,x+r,y);
-  ctx.closePath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w,y);ctx.lineTo(x+w,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
 }
 
-function truncate(text,maxW,ctx){
-  if(ctx.measureText(text).width<=maxW)return text;
-  let t=text;
-  while(t.length>0&&ctx.measureText(t+'…').width>maxW)t=t.slice(0,-1);
-  return t+'…';
-}
+function inPort(n){return{x:n.x,y:n.y+(n.h||DEF_H)/2};}
+function outPort(n){return{x:n.x+(n.w||DEF_W),y:n.y+(n.h||DEF_H)/2};}
+function nodeById(id){return nodes.find(n=>n.id===id);}
 
-function nodeInputPort(n){return{x:n.x,y:n.y+NODE_H/2};}
-function nodeOutputPort(n){return{x:n.x+NODE_W,y:n.y+NODE_H/2};}
-
-// MOUSE
-let lastMouse=null;
 function worldPos(e){
   const r=canvas.getBoundingClientRect();
-  const cx=e.clientX-r.left;
-  const cy=e.clientY-r.top;
-  return{
-    x:(cx-canvas.width/2-camX)/zoom,
-    y:(cy-canvas.height/2-camY)/zoom,
-    cx,cy
-  };
+  const cx=e.clientX-r.left,cy=e.clientY-r.top;
+  return{wx:(cx-canvas.width/2-camX)/zoom,wy:(cy-canvas.height/2-camY)/zoom,cx,cy};
 }
 
 function hitNode(wx,wy){
-  return [...nodes].reverse().find(n=>wx>=n.x&&wx<=n.x+NODE_W&&wy>=n.y&&wy<=n.y+NODE_H);
+  return [...nodes].reverse().find(n=>{
+    const w=n.w||DEF_W,h=n.h||DEF_H;
+    return wx>=n.x&&wx<=n.x+w&&wy>=n.y&&wy<=n.y+h;
+  });
 }
 
-function hitOutputPort(n,wx,wy){
-  const p=nodeOutputPort(n);
-  return Math.hypot(wx-p.x,wy-p.y)<(PORT_R+4)/zoom;
+function hitNodeResize(n,wx,wy){
+  const w=n.w||DEF_W,h=n.h||DEF_H;
+  return wx>=n.x+w-RESIZE_HIT&&wy>=n.y+h-RESIZE_HIT&&wx<=n.x+w+4&&wy<=n.y+h+4;
 }
 
-function onMouseDown(e){
+function hitGroup(wx,wy){
+  return [...groups].reverse().find(g=>wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+g.h);
+}
+
+function hitGroupResize(g,wx,wy){
+  return wx>=g.x+g.w-12&&wy>=g.y+g.h-12;
+}
+
+function hitOutPort(n,wx,wy){
+  const p=outPort(n);
+  return Math.hypot(wx-p.x,wy-p.y)<(PORT_R+6)/zoom;
+}
+
+function onDown(e){
   if(e.button!==0)return;
   closeCtx();
-  const{x,y,cx,cy}=worldPos(e);
-  const hit=hitNode(x,y);
-  if(hit){
-    if(e.shiftKey||hitOutputPort(hit,x,y)){
-      if(!linkingFrom){linkingFrom=hit;toast('Shift-click another node to connect');}
-      else{
-        if(linkingFrom.id!==hit.id)addLink(linkingFrom.id,hit.id);
-        linkingFrom=null;
-      }
+  const{wx,wy,cx,cy}=worldPos(e);
+  lastMouse={x:cx,y:cy};
+
+  // check nodes first
+  const n=[...nodes].reverse().find(nd=>{
+    const w=nd.w||DEF_W,h=nd.h||DEF_H;
+    return wx>=nd.x&&wx<=nd.x+w&&wy>=nd.y&&wy<=nd.y+h;
+  });
+
+  if(n){
+    // resize handle?
+    if(hitNodeResize(n,wx,wy)){
+      drag={active:true,resize:n,ox:wx,oy:wy,startW:n.w||DEF_W,startH:n.h||DEF_H};
       return;
     }
-    isDraggingNode=true;
-    dragNode=hit;
-    dragNodeStart={x:x-hit.x,y:y-hit.y};
-    openNodeEdit(hit,cx,cy);
-  } else {
-    linkingFrom=null;
-    isDragging=true;
-    dragStart={x:cx,y:cy};
-    dragCamStart={x:camX,y:camY};
-    closeNodeEdit();
-    selectedNode=null;
+    // shift = linking
+    if(e.shiftKey||hitOutPort(n,wx,wy)){
+      if(!linkingFrom){linkingFrom=n;toast('Click another node to connect');}
+      else{if(linkingFrom.id!==n.id)addLink(linkingFrom.id,n.id);linkingFrom=null;}
+      return;
+    }
+    // drag node
+    drag={active:true,node:n,ox:wx-n.x,oy:wy-n.y};
+    openNodeEdit(n,cx,cy);
+    return;
   }
+
+  // check groups
+  const g=hitGroup(wx,wy);
+  if(g){
+    if(hitGroupResize(g,wx,wy)){
+      drag={active:true,resizeGroup:g,ox:wx,oy:wy,startW:g.w,startH:g.h};
+    } else {
+      drag={active:true,group:g,ox:wx-g.x,oy:wy-g.y};
+    }
+    return;
+  }
+
+  // pan
+  linkingFrom=null;closeNodeEdit();selectedNode=null;
+  drag={active:true,pan:true,ox:cx,oy:cy,camX,camY};
 }
 
-function onMouseMove(e){
-  const{x,y,cx,cy}=worldPos(e);
+function onMove(e){
+  const r=canvas.getBoundingClientRect();
+  const cx=e.clientX-r.left,cy=e.clientY-r.top;
   lastMouse={x:cx,y:cy};
-  if(isDraggingNode&&dragNode){
-    dragNode.x=snapGrid(x-dragNodeStart.x);
-    dragNode.y=snapGrid(y-dragNodeStart.y);
-  } else if(isDragging){
-    camX=dragCamStart.x+(cx-dragStart.x);
-    camY=dragCamStart.y+(cy-dragStart.y);
+  const wx=(cx-canvas.width/2-camX)/zoom;
+  const wy=(cy-canvas.height/2-camY)/zoom;
+
+  if(!drag.active)return;
+  if(drag.pan){
+    camX=drag.camX+(cx-drag.ox);
+    camY=drag.camY+(cy-drag.oy);
+  } else if(drag.node){
+    drag.node.x=wx-drag.ox;
+    drag.node.y=wy-drag.oy;
+  } else if(drag.group){
+    drag.group.x=wx-drag.ox;
+    drag.group.y=wy-drag.oy;
+  } else if(drag.resize){
+    const dw=wx-drag.ox,dh=wy-drag.oy;
+    drag.resize.w=Math.max(MIN_W,drag.startW+dw);
+    drag.resize.h=Math.max(MIN_H,drag.startH+dh);
+  } else if(drag.resizeGroup){
+    drag.resizeGroup.w=Math.max(80,drag.startW+(wx-drag.ox));
+    drag.resizeGroup.h=Math.max(60,drag.startH+(wy-drag.oy));
   }
 }
 
-async function onMouseUp(e){
-  if(isDraggingNode&&dragNode){
-    await sb.from('canvas_nodes').update({x:dragNode.x,y:dragNode.y}).eq('id',dragNode.id);
+async function onUp(){
+  if(drag.node){
+    const n=drag.node;
+    await sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id);
+  } else if(drag.resize){
+    const n=drag.resize;
+    await sb.from('canvas_nodes').update({x:n.x,y:n.y,w:n.w,h:n.h}).eq('id',n.id);
+  } else if(drag.group){
+    const g=drag.group;
+    await sb.from('canvas_groups').update({x:g.x,y:g.y}).eq('id',g.id);
+  } else if(drag.resizeGroup){
+    const g=drag.resizeGroup;
+    await sb.from('canvas_groups').update({w:g.w,h:g.h}).eq('id',g.id);
   }
-  isDragging=false;
-  isDraggingNode=false;
-  dragNode=null;
+  drag={active:false};
 }
 
 function onWheel(e){
   e.preventDefault();
+  const r=canvas.getBoundingClientRect();
+  const cx=e.clientX-r.left,cy=e.clientY-r.top;
   const factor=e.deltaY>0?0.9:1.1;
-  const{cx,cy}=worldPos(e);
   const wx=(cx-canvas.width/2-camX)/zoom;
   const wy=(cy-canvas.height/2-camY)/zoom;
-  zoom=Math.max(0.2,Math.min(3,zoom*factor));
+  zoom=Math.max(0.15,Math.min(4,zoom*factor));
   camX=cx-canvas.width/2-wx*zoom;
   camY=cy-canvas.height/2-wy*zoom;
 }
 
 function onRightClick(e){
   e.preventDefault();
-  const{x,y,cx,cy}=worldPos(e);
-  const hit=hitNode(x,y);
-  if(!hit){
-    ctxPos={x,y};
-    const menu=document.getElementById('ctx-menu');
-    menu.style.display='block';
-    menu.style.left=cx+'px';
-    menu.style.top=cy+'px';
-  }
+  const{wx,wy,cx,cy}=worldPos(e);
+  ctxPos={x:wx,y:wy};
+  const menu=document.getElementById('ctx-menu');
+  menu.style.display='block';
+  menu.style.left=Math.min(cx,canvas.width-180)+'px';
+  menu.style.top=Math.min(cy,canvas.height-240)+'px';
 }
 
 function onDblClick(e){
-  const{x,y}=worldPos(e);
-  const hit=hitNode(x,y);
-  if(hit&&hit.url){window.open(hit.url,'_blank');}
+  const{wx,wy}=worldPos(e);
+  const n=hitNode(wx,wy);
+  if(n?.url)window.open(n.url,'_blank');
 }
 
 function onKey(e){
   if(e.key==='Escape'){linkingFrom=null;closeNodeEdit();closeCtx();}
-  if((e.key==='Delete'||e.key==='Backspace')&&selectedNode&&document.activeElement===document.body){
+  if((e.key==='Delete'||e.key==='Backspace')&&selectedNode&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){
     deleteSelectedNode();
   }
 }
@@ -611,43 +575,42 @@ async function onPaste(e){
   if(!items)return;
   for(const item of items){
     if(item.type.startsWith('image/')){
-      const file=item.getAsFile();
-      if(file)addImageFile({files:[file]});
+      addImageFile({files:[item.getAsFile()]});
     }
   }
 }
 
-function snapGrid(v){return Math.round(v/GRID)*GRID;}
 function closeCtx(){document.getElementById('ctx-menu').style.display='none';}
 
-// ADD NODES
-async function ctxAddType(type){
+// ADD
+async function ctxAdd(type){
   closeCtx();
   const id='n-'+Date.now();
-  const x=snapGrid(ctxPos.x-NODE_W/2);
-  const y=snapGrid(ctxPos.y-NODE_H/2);
-  await sb.from('canvas_nodes').insert({id,label:type,type,url:'',img_url:'',author:who,x,y});
+  await sb.from('canvas_nodes').insert({id,label:type,type,url:'',img_url:'',author:who,x:ctxPos.x,y:ctxPos.y,w:DEF_W,h:DEF_H});
   toast('Added — click to edit');
+}
+
+async function ctxAddGroup(){
+  closeCtx();
+  const id='g-'+Date.now();
+  await sb.from('canvas_groups').insert({id,label:'Group',type:'idea',x:ctxPos.x,y:ctxPos.y,w:240,h:160});
+  toast('Group added — drag to move, drag corner to resize');
 }
 
 async function quickAdd(){
   const inp=document.getElementById('node-input');
-  const text=inp.value.trim();
-  if(!text)return;
+  const text=inp.value.trim();if(!text)return;
   const isURL=/^https?:\/\//i.test(text);
   const type=isURL?'reference':'idea';
   const id='n-'+Date.now();
-  const spread=nodes.length*10;
-  const x=snapGrid((Math.random()-0.5)*200+spread%300);
-  const y=snapGrid((Math.random()-0.5)*150);
+  const spread=nodes.length;
+  const x=(Math.random()-0.5)*300+Math.sin(spread)*80;
+  const y=(Math.random()-0.5)*200+Math.cos(spread)*60;
   let label=text;
-  if(isURL){
-    try{label=new URL(text).hostname.replace('www.','');}catch(e){label=text.substring(0,30);}
-  }
-  await sb.from('canvas_nodes').insert({id,label:label.substring(0,40),type,url:isURL?text:'',img_url:'',author:who,x,y});
+  if(isURL){try{label=new URL(text).hostname.replace('www.','');}catch(e){}}
+  await sb.from('canvas_nodes').insert({id,label:label.substring(0,50),type,url:isURL?text:'',img_url:'',author:who,x,y,w:DEF_W,h:DEF_H});
   if(isURL)fetchTitle(id,text);
-  inp.value='';
-  toast('Added');
+  inp.value='';toast('Added');
 }
 
 async function fetchTitle(id,url){
@@ -656,178 +619,148 @@ async function fetchTitle(id,url){
     const d=await r.json();
     const m=d.contents?.match(/<title[^>]*>([^<]+)<\/title>/i);
     if(m?.[1]){
-      const t=m[1].trim().replace(/\s+/g,' ').substring(0,40);
+      const t=m[1].trim().replace(/\s+/g,' ').substring(0,50);
       await sb.from('canvas_nodes').update({label:t}).eq('id',id);
     }
   }catch(e){}
 }
 
 async function addImageFile(input){
-  const file=input.files[0];
-  if(!file)return;
+  const file=input.files?.[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=async(e)=>{
     const id='n-'+Date.now();
-    const x=snapGrid((Math.random()-0.5)*200);
-    const y=snapGrid((Math.random()-0.5)*150);
-    await sb.from('canvas_nodes').insert({id,label:'image',type:'image',url:'',img_url:e.target.result,author:who,x,y});
+    const x=(Math.random()-0.5)*200,y=(Math.random()-0.5)*150;
+    await sb.from('canvas_nodes').insert({id,label:'image',type:'image',url:'',img_url:e.target.result,author:who,x,y,w:DEF_W,h:DEF_H});
     toast('Image added');
   };
   reader.readAsDataURL(file);
-  if(input.value!==undefined)input.value='';
+  try{input.value='';}catch(e){}
 }
 
 async function addLink(srcId,tgtId){
   const exists=links.find(l=>{
-    const s=l.source?.id||l.source;
-    const t=l.target?.id||l.target;
+    const s=l.source?.id||l.source,t=l.target?.id||l.target;
     return(s===srcId&&t===tgtId)||(s===tgtId&&t===srcId);
   });
   if(exists)return;
   const id='l-'+Date.now();
-  await sb.from('canvas_links').insert({id,source:srcId,target:tgtId});
+  await sb.from('canvas_links').insert({id,source:srcId,target:tgtId,claude:false});
   toast('Connected');
 }
 
-// NODE EDIT
+// EDIT PANEL
 function openNodeEdit(node,cx,cy){
   selectedNode=node;
-  const panel=document.getElementById('node-edit');
   document.getElementById('ne-label').value=node.label||'';
   document.getElementById('ne-url').value=node.url||'';
-  const typesEl=document.getElementById('ne-types');
-  typesEl.innerHTML=TYPES.map(t=>`<button class="ne-type${node.type===t?' on':''}" style="${node.type===t?'background:'+TYPE_COLOR[t]+';border-color:'+TYPE_COLOR[t]:''}" onclick="setNodeType('${t}')">${t}</button>`).join('');
+  document.getElementById('ne-types').innerHTML=TYPES.map(t=>`<button class="ne-type${node.type===t?' on':''}" style="${node.type===t?'background:'+TC[t]+';border-color:'+TC[t]:''}" onclick="setNType('${t}')">${t}</button>`).join('');
+  const p=document.getElementById('node-edit');
   const W=canvas.width,H=canvas.height;
-  let px=cx+12,py=cy;
-  if(px+210>W)px=cx-222;
-  if(py+160>H)py=H-170;
-  panel.style.left=px+'px';
-  panel.style.top=py+'px';
-  panel.style.display='block';
+  let px=cx+14,py=cy;
+  if(px+220>W)px=cx-234;
+  if(py+180>H)py=H-190;
+  p.style.left=px+'px';p.style.top=py+'px';p.style.display='block';
 }
-
 function closeNodeEdit(){document.getElementById('node-edit').style.display='none';}
-
-function setNodeType(t){
+function setNType(t){
   if(!selectedNode)return;
   selectedNode.type=t;
   document.querySelectorAll('.ne-type').forEach(b=>{
-    const isOn=b.textContent===t;
-    b.classList.toggle('on',isOn);
-    b.style.background=isOn?TYPE_COLOR[t]:'';
-    b.style.borderColor=isOn?TYPE_COLOR[t]:'';
+    const on=b.textContent===t;
+    b.classList.toggle('on',on);
+    b.style.background=on?TC[t]:'';b.style.borderColor=on?TC[t]:'';
   });
 }
-
 async function saveNodeEdit(){
   if(!selectedNode)return;
   const label=document.getElementById('ne-label').value.trim();
   const url=document.getElementById('ne-url').value.trim();
-  const type=selectedNode.type;
-  await sb.from('canvas_nodes').update({label,url,type}).eq('id',selectedNode.id);
-  closeNodeEdit();
-  selectedNode=null;
-  toast('Saved');
+  await sb.from('canvas_nodes').update({label,url,type:selectedNode.type}).eq('id',selectedNode.id);
+  closeNodeEdit();selectedNode=null;toast('Saved');
 }
-
 async function deleteSelectedNode(){
-  if(!selectedNode)return;
-  if(!confirm('Delete this node?'))return;
+  if(!selectedNode||!confirm('Delete this node?'))return;
   await sb.from('canvas_nodes').delete().eq('id',selectedNode.id);
   await sb.from('canvas_links').delete().or(`source.eq.${selectedNode.id},target.eq.${selectedNode.id}`);
-  closeNodeEdit();
-  selectedNode=null;
+  closeNodeEdit();selectedNode=null;
 }
 
-// CLAUDE TOGGLE
+// CLAUDE
 function toggleClaude(){
   claudeOn=!claudeOn;
-  const track=document.getElementById('claude-toggle');
-  track.classList.toggle('on',claudeOn);
+  document.getElementById('claude-toggle').classList.toggle('on',claudeOn);
   document.getElementById('claude-panel').classList.toggle('open',claudeOn);
   if(claudeOn)analyzeCanvas();
 }
 
-// CLAUDE ANALYSIS
+async function callClaude(messages,maxTokens=1000){
+  const res=await fetch('/.netlify/functions/claude',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({messages,max_tokens:maxTokens})
+  });
+  const data=await res.json();
+  return data.content?.[0]?.text||'';
+}
+
 async function analyzeCanvas(){
   const body=document.getElementById('cp-body');
   body.innerHTML='<div class="cp-loading">Reading the canvas...</div>';
-  const nodeList=nodes.map(n=>`- ${n.label} (${n.type}${n.url?' — '+n.url:''})`).join('\n');
+  const nodeList=nodes.map(n=>`- "${n.label}" (${n.type}${n.url?' — '+n.url:''})`).join('\n');
   const linkList=links.map(l=>{
-    const s=nodes.find(n=>n.id===(l.source?.id||l.source));
-    const t=nodes.find(n=>n.id===(l.target?.id||l.target));
+    const s=nodeById(l.source?.id||l.source);
+    const t=nodeById(l.target?.id||l.target);
     return s&&t?`- "${s.label}" → "${t.label}"`:null;
   }).filter(Boolean).join('\n');
 
-  const prompt=`You are analyzing a collaborative canvas for a boutique horn speaker company called 100xbtr_sound. Three founders (Will, Brendan, Nishant) are building this canvas together.
+  const prompt=`You are analyzing a shared collaborative canvas for 100xbtr_sound — a boutique horn speaker company being founded by three makers: Will (design/CNC), Brendan (cabinetry/hi-fi), and Nishant (electrical engineering/horn speakers). They are building a Grasshopper-style visual canvas to think together.
 
 Canvas nodes:
-${nodeList||'(empty)'}
+${nodeList||'(none yet)'}
 
-Connections:
-${linkList||'(none)'}
+Connections between nodes:
+${linkList||'(none yet)'}
 
-Please respond in JSON with this exact structure:
-{
-  "reading": "A 2-3 sentence reading of what this canvas reveals about where the company is in its thinking right now. Be specific about the actual nodes.",
-  "gaps": [
-    {"question": "A specific gap or missing connection you notice", "connect": ["node label 1", "node label 2"]},
-    {"question": "Another gap", "connect": ["node label"]}
-  ],
-  "suggestions": [
-    {"from": "exact node label", "to": "exact node label", "reason": "why these should connect"}
-  ]
-}
-Limit to 2-3 gaps and 2-3 suggestions. Be specific to what's actually on the canvas.`;
+Respond ONLY with valid JSON, no markdown fences:
+{"reading":"2-3 sentences describing what this canvas reveals about where the company's thinking is right now. Be specific to the actual nodes.","gaps":[{"question":"A specific gap or blind spot you notice","connect":["node label"]},{"question":"Another gap","connect":["node label","node label"]}],"suggestions":[{"from":"exact node label","to":"exact node label","reason":"brief reason"}]}
+Max 3 gaps, max 3 suggestions.`;
 
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    const data=await res.json();
-    const text=data.content?.[0]?.text||'{}';
-    const clean=text.replace(/```json|```/g,'').trim();
-    const parsed=JSON.parse(clean);
+    const text=await callClaude([{role:'user',content:prompt}],1000);
+    const parsed=JSON.parse(text);
     renderAnalysis(parsed);
   }catch(e){
-    body.innerHTML='<div class="cp-loading">Analysis failed — try again.</div>';
+    body.innerHTML='<div class="cp-loading">Analysis failed. Make sure the Netlify function is deployed and ANTHROPIC_API_KEY is set in Netlify environment variables.</div>';
   }
 }
 
 function renderAnalysis(data){
   const body=document.getElementById('cp-body');
   let html='';
-  if(data.reading){
-    html+=`<div class="cp-section"><div class="cp-section-title">Reading</div><div class="cp-reading">${data.reading}</div></div>`;
-  }
+  if(data.reading)html+=`<div class="cp-section"><div class="cp-section-title">Reading</div><div class="cp-reading">${data.reading}</div></div>`;
   if(data.gaps?.length){
     html+='<div class="cp-section"><div class="cp-section-title">Gaps & questions</div>';
     data.gaps.forEach(g=>{
-      html+=`<div class="cp-gap"><div class="cp-gap-q">${g.question}</div><button class="cp-gap-add" onclick="addGapNode(${JSON.stringify(g.question).replace(/'/g,"&#39;")})">+ node</button></div>`;
+      const qStr=JSON.stringify(g.question);
+      html+=`<div class="cp-gap"><div class="cp-gap-q">${g.question}</div><button class="cp-gap-add" onclick="addGapNode(${qStr})">+ node</button></div>`;
     });
     html+='</div>';
   }
   if(data.suggestions?.length){
     html+='<div class="cp-section"><div class="cp-section-title">Suggested connections</div>';
     data.suggestions.forEach(s=>{
-      html+=`<div class="cp-conn"><span>"${s.from}" → "${s.to}"</span><button class="cp-conn-link" onclick="addSuggestedLink(${JSON.stringify(s.from)},${JSON.stringify(s.to)})">Connect</button></div>`;
+      html+=`<div class="cp-conn"><span style="flex:1;">"${s.from}" → "${s.to}"<br><span style="font-size:10px;color:var(--tx3);">${s.reason}</span></span><button class="cp-conn-link" onclick="addSuggestedLink(${JSON.stringify(s.from)},${JSON.stringify(s.to)})">Connect</button></div>`;
     });
     html+='</div>';
   }
-  body.innerHTML=html||'<div style="font-size:12px;color:var(--tx3);">Nothing to analyze yet — add some nodes first.</div>';
+  body.innerHTML=html||'<div style="font-size:12px;color:var(--tx3);">Nothing significant to surface yet — add more nodes and connections.</div>';
 }
 
 async function addGapNode(question){
   const id='q-'+Date.now();
-  const x=snapGrid((Math.random()-0.5)*300);
-  const y=snapGrid((Math.random()-0.5)*200);
-  await sb.from('canvas_nodes').insert({id,label:question.substring(0,60),type:'question',url:'',img_url:'',author:'claude',x,y});
+  const x=(Math.random()-0.5)*300,y=(Math.random()-0.5)*200;
+  await sb.from('canvas_nodes').insert({id,label:question.substring(0,60),type:'question',url:'',img_url:'',author:'claude',x,y,w:DEF_W,h:DEF_H});
   toast('Gap question added to canvas');
 }
 
@@ -846,20 +779,10 @@ async function askClaude(){
   const body=document.getElementById('cp-body');
   const prev=body.innerHTML;
   body.innerHTML='<div class="cp-loading">Thinking...</div>';
-  const nodeList=nodes.map(n=>`- ${n.label} (${n.type})`).join('\n');
+  const nodeList=nodes.map(n=>`- "${n.label}" (${n.type})`).join('\n');
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:600,
-        messages:[{role:'user',content:`Canvas context — 100xbtr_sound, a boutique horn speaker company:\n${nodeList}\n\nUser question: ${prompt}`}]
-      })
-    });
-    const data=await res.json();
-    const text=data.content?.[0]?.text||'No response.';
-    body.innerHTML=prev+`<div class="cp-section"><div class="cp-section-title">Response</div><div class="cp-reading">${text.replace(/\n/g,'<br>')}</div></div>`;
+    const text=await callClaude([{role:'user',content:`You are advising 100xbtr_sound, a boutique horn speaker company (founders: Will, Brendan, Nishant).\n\nCanvas context:\n${nodeList}\n\nQuestion: ${prompt}`}],600);
+    body.innerHTML=prev+`<div class="cp-section"><div class="cp-section-title">Response</div><div class="cp-reading">${text.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</div></div>`;
     document.getElementById('cp-prompt').value='';
   }catch(e){
     body.innerHTML=prev+'<div class="cp-loading">Request failed.</div>';
@@ -871,11 +794,11 @@ async function initDB(){
   const{data}=await sb.from('canvas_nodes').select('id').limit(1);
   if(!data?.length){
     await sb.from('canvas_nodes').insert([
-      {id:'anchor-1',label:'First build',type:'anchor',x:0,y:0,author:'system',url:'',img_url:''},
-      {id:'anchor-2',label:'Baltic birch cabinet',type:'material',x:216,y:-72,author:'system',url:'',img_url:''},
-      {id:'anchor-3',label:'Horn-loaded floor-standing',type:'idea',x:216,y:72,author:'system',url:'',img_url:''},
-      {id:'anchor-4',label:'Ojas reference',type:'reference',x:-216,y:-72,author:'system',url:'https://ojas.nyc',img_url:''},
-      {id:'anchor-5',label:"Nishant's driver design",type:'decision',x:-216,y:72,author:'system',url:'',img_url:''},
+      {id:'anchor-1',label:'First build',type:'anchor',x:0,y:0,w:DEF_W,h:DEF_H,author:'system',url:'',img_url:''},
+      {id:'anchor-2',label:'Baltic birch cabinet',type:'material',x:240,y:-80,w:DEF_W,h:DEF_H,author:'system',url:'',img_url:''},
+      {id:'anchor-3',label:'Horn-loaded floor-standing',type:'idea',x:240,y:80,w:DEF_W,h:DEF_H,author:'system',url:'',img_url:''},
+      {id:'anchor-4',label:'Ojas reference',type:'reference',x:-240,y:-80,w:DEF_W,h:DEF_H,author:'system',url:'https://ojas.nyc',img_url:''},
+      {id:'anchor-5',label:"Nishant's driver design",type:'decision',x:-240,y:80,w:DEF_W,h:DEF_H,author:'system',url:'',img_url:''},
     ]);
     await sb.from('canvas_links').insert([
       {id:'l1',source:'anchor-1',target:'anchor-2',claude:false},
@@ -886,29 +809,28 @@ async function initDB(){
   }
 }
 
-async function loadCanvas(){
-  const[{data:n},{data:l}]=await Promise.all([
+async function loadAll(){
+  const[{data:n},{data:l},{data:g}]=await Promise.all([
     sb.from('canvas_nodes').select('*'),
     sb.from('canvas_links').select('*'),
+    sb.from('canvas_groups').select('*'),
   ]);
-  nodes=n||[];
-  links=l||[];
+  nodes=n||[];links=l||[];groups=g||[];
 }
 
 function setupRealtime(){
-  sb.channel('canvas-rt2')
-    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_nodes'},()=>loadCanvas())
-    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_links'},()=>loadCanvas())
+  sb.channel('canvas-rt3')
+    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_nodes'},()=>loadAll())
+    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_links'},()=>loadAll())
+    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_groups'},()=>loadAll())
     .subscribe();
 }
 
-// TOAST
 let toastT=null;
 function toast(msg){
   const el=document.getElementById('toast');
   el.textContent=msg;el.style.opacity='1';
-  clearTimeout(toastT);
-  toastT=setTimeout(()=>el.style.opacity='0',2000);
+  clearTimeout(toastT);toastT=setTimeout(()=>el.style.opacity='0',2200);
 }
 </script>
 </body>
