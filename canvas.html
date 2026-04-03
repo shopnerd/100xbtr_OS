@@ -129,7 +129,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="tb-sep"></div>
     <a href="https://sound.100xbtr.com" class="tb-link">← OS</a>
     <div class="tb-sep"></div>
-    <span class="tb-hint">right-click to add · drag to pan · scroll to zoom · click port to wire · shift+click to multi-select · double-click to edit</span>
+    <span class="tb-hint">right-click canvas to add · drag to pan · click port dot to wire nodes · shift+click to multi-select · double-click to edit</span>
     <div class="tb-right">
       <div class="ctw">
         <span>Claude</span>
@@ -209,7 +209,7 @@ const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-auth',persis
 const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#b43cb4',anchor:'#888780'};
 const GROUP_COLORS=['#378ADD','#1D9E75','#BA7517','#D85A30','#7F77DD','#b43cb4','#888780','#2D7D46','#C0392B','#8E44AD'];
 const TYPES=Object.keys(TC);
-const DW=180,DH=60,MW=120,MH=44,PR=6,RH=20;
+const DW=180,DH=60,MW=120,MH=44,PR=10,RH=20;
 
 let user=null,who='';
 let nodes=[],links=[],groups=[];
@@ -274,7 +274,7 @@ function draw(){
   drawGroups();drawLinks();drawNodes();
   // link preview
   if(linkFrom){
-    const sp=outP(linkFrom,0);
+    const sp=portPos(linkFrom,linkFrom._sport||0);
     const mx=(lm.x-W/2-cam.x)/cam.z,my=(lm.y-H/2-cam.y)/cam.z;
     const dx=Math.abs(mx-sp.x)*0.5;
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);
@@ -381,12 +381,12 @@ function drawNodes(){
       ctx.font=`${9/cam.z}px -apple-system,sans-serif`;
       ctx.fillText('↗',n.x+w-6,n.y+8/cam.z);
     }
-    // ports — all 4 sides
+    // ports — all 4 sides, equal size
     const pr=PR/cam.z;
-    drawPort(n.x,n.y+h/2,'#7a9ab8',pr);           // left
-    drawPort(n.x+w,n.y+h/2,'#8aaa88',pr);           // right
-    drawPort(n.x+w/2,n.y,'#a0a8d0',pr*0.8);         // top
-    drawPort(n.x+w/2,n.y+h,'#a0a8d0',pr*0.8);       // bottom
+    drawPort(n.x,n.y+h/2,'#7a9ab8',pr);        // left (blue)
+    drawPort(n.x+w,n.y+h/2,'#8aaa88',pr);      // right (green)
+    drawPort(n.x+w/2,n.y,'#a89ab8',pr);        // top (purple)
+    drawPort(n.x+w/2,n.y+h,'#a89ab8',pr);      // bottom (purple)
     // resize handle — bigger
     const rhs=10/cam.z;
     ctx.fillStyle='#909090';
@@ -434,14 +434,13 @@ function portPos(n,side){
 function inP(n,side){return portPos(n,side===undefined?1:side);}
 function outP(n,side){return portPos(n,side===undefined?0:side);}
 // find nearest port side
-function nearestPort(n,wx,wy,isOut){
+function nearestPort(n,wx,wy){
   const w=n.w||DW,h=n.h||DH;
-  // all 4 port positions - pick nearest to click
   const ports=[
-    {side:0,x:n.x+w,y:n.y+h/2},   // right
-    {side:1,x:n.x,y:n.y+h/2},     // left  
-    {side:2,x:n.x+w/2,y:n.y},     // top
-    {side:3,x:n.x+w/2,y:n.y+h},   // bottom
+    {side:0,x:n.x+w,y:n.y+h/2},  // right
+    {side:1,x:n.x,y:n.y+h/2},    // left
+    {side:2,x:n.x+w/2,y:n.y},    // top
+    {side:3,x:n.x+w/2,y:n.y+h},  // bottom
   ];
   let best=ports[0],bestD=Infinity;
   ports.forEach(p=>{const d=Math.hypot(wx-p.x,wy-p.y);if(d<bestD){bestD=d;best=p;}});
@@ -459,8 +458,15 @@ function hitGroup(wx,wy){return[...groups].reverse().find(g=>wx>=g.x&&wx<=g.x+g.
 function hitNResize(n,wx,wy){const w=n.w||DW,h=n.h||DH;return wx>=n.x+w-RH&&wy>=n.y+h-RH;}
 function hitGResize(g,wx,wy){return wx>=g.x+g.w-RH&&wy>=g.y+g.h-RH;}
 function hitAnyPort(n,wx,wy){
-  const w=n.w||DW,h=n.h||DH;const pr=(PR+14)/cam.z;
-  const ports=[{x:n.x,y:n.y+h/2},{x:n.x+w,y:n.y+h/2},{x:n.x+w/2,y:n.y},{x:n.x+w/2,y:n.y+h}];
+  // must click the actual port circle — PR+4 tolerance
+  const w=n.w||DW,h=n.h||DH;
+  const pr=(PR+4)/cam.z;
+  const ports=[
+    {x:n.x+w,y:n.y+h/2},   // right
+    {x:n.x,y:n.y+h/2},     // left
+    {x:n.x+w/2,y:n.y},     // top
+    {x:n.x+w/2,y:n.y+h},   // bottom
+  ];
   return ports.some(p=>Math.hypot(wx-p.x,wy-p.y)<pr);
 }
 
@@ -482,15 +488,20 @@ function onDown(e){
   const n=hitNode(wx,wy);
   if(n){
     if(hitNResize(n,wx,wy)){drag={on:true,resize:n,ox:wx,oy:wy,sw:n.w||DW,sh:n.h||DH};canvas.style.cursor='se-resize';return;}
-    if(e.shiftKey||hitAnyPort(n,wx,wy)){
-      if(!linkFrom){linkFrom=n;linkFrom._sport=nearestPort(n,wx,wy,true);toast('Click another node to connect');}
-      else{
-        if(linkFrom.id!==n.id){const tport=nearestPort(n,wx,wy,false);addLink(linkFrom.id,n.id,linkFrom._sport,tport);}
-        linkFrom=null;
-      }
+    // port click ONLY triggers wire — shift not involved
+    if(hitAnyPort(n,wx,wy)){
+      if(!linkFrom){linkFrom=n;linkFrom._sport=nearestPort(n,wx,wy);toast('Now click a port on another node');}
+      else if(linkFrom.id!==n.id){addLink(linkFrom.id,n.id,linkFrom._sport,nearestPort(n,wx,wy));linkFrom=null;}
+      else{linkFrom=null;}
       return;
     }
-    // single click = start drag
+    // shift+click node body = multi-select ONLY, never wire
+    if(e.shiftKey){
+      if(selected.nodes.includes(n.id)){selected={nodes:selected.nodes.filter(id=>id!==n.id),groups:selected.groups};}
+      else{selected={nodes:[...selected.nodes,n.id],groups:selected.groups};}
+      return;
+    }
+    // plain click = select + drag
     if(!selected.nodes.includes(n.id)){selected={nodes:[n.id],groups:[]};}
     drag={on:true,node:n,ox:wx-n.x,oy:wy-n.y,
       multiNodes:selected.nodes.map(id=>({n:nById(id),ox:wx-(nById(id)?.x||0),oy:wy-(nById(id)?.y||0)})).filter(x=>x.n),
@@ -515,11 +526,9 @@ function onDown(e){
     canvas.style.cursor='grabbing';
     return;
   }
-  // start window selection or pan
+  // empty canvas = pan
   linkFrom=null;closeNE();closeGE();selNode=null;selGroup=null;
   if(!e.shiftKey){selected={nodes:[],groups:[]};}
-  // check if starting window select vs pan
-  winSel={on:true,sx:cx,sy:cy,ex:cx,ey:cy};
   drag={on:true,pan:true,ox:cx,oy:cy,camX:cam.x,camY:cam.y};
 }
 
