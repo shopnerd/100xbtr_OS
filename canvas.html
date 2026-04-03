@@ -129,7 +129,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="tb-sep"></div>
     <a href="https://sound.100xbtr.com" class="tb-link">← OS</a>
     <div class="tb-sep"></div>
-    <span class="tb-hint">right-click to add · drag to pan · scroll to zoom · drag node to move · double-click to edit · shift+click to connect · drag to window-select</span>
+    <span class="tb-hint">right-click to add · drag to pan · scroll to zoom · click port to wire · shift+click to multi-select · double-click to edit</span>
     <div class="tb-right">
       <div class="ctw">
         <span>Claude</span>
@@ -219,7 +219,7 @@ let cam={x:0,y:0,z:1};
 // drag states
 let drag={on:false};
 // window selection
-let winSel={on:false,sx:0,sy:0,ex:0,ey:0};
+
 let selected={nodes:[],groups:[]};
 let lm={x:0,y:0};
 let ctxPos={x:0,y:0};
@@ -283,14 +283,7 @@ function draw(){
     ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);
   }
   ctx.restore();
-  // window selection rect (screen space)
-  if(winSel.on){
-    const x=Math.min(winSel.sx,winSel.ex),y=Math.min(winSel.sy,winSel.ey);
-    const w=Math.abs(winSel.ex-winSel.sx),h=Math.abs(winSel.ey-winSel.sy);
-    ctx.fillStyle='rgba(55,138,221,0.08)';ctx.fillRect(x,y,w,h);
-    ctx.strokeStyle='rgba(55,138,221,0.6)';ctx.lineWidth=1;
-    ctx.setLineDash([4,3]);ctx.strokeRect(x,y,w,h);ctx.setLineDash([]);
-  }
+
 }
 
 function drawGrid(W,H){
@@ -331,7 +324,7 @@ function drawLinks(){
   links.forEach(l=>{
     const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
     if(!s||!t)return;
-    const sp=outP(s,l.sport||0),tp=inP(t,l.tport||0);
+    const sp=portPos(s,l.sport!==undefined?l.sport:0),tp=portPos(t,l.tport!==undefined?l.tport:1);
     const dx=Math.abs(tp.x-sp.x)*0.45;
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);
     ctx.bezierCurveTo(sp.x+dx,sp.y,tp.x-dx,tp.y,tp.x,tp.y);
@@ -430,26 +423,25 @@ function rrL(ctx,x,y,w,h,r){
 }
 
 // PORT POSITIONS — 4 sides
-function inP(n,side){
+function portPos(n,side){
   const w=n.w||DW,h=n.h||DH;
-  if(side===2)return{x:n.x+w/2,y:n.y};       // top
-  if(side===3)return{x:n.x+w/2,y:n.y+h};     // bottom
-  return{x:n.x,y:n.y+h/2};                    // left (default)
+  if(side===0)return{x:n.x+w,y:n.y+h/2};  // right
+  if(side===1)return{x:n.x,y:n.y+h/2};    // left
+  if(side===2)return{x:n.x+w/2,y:n.y};    // top
+  if(side===3)return{x:n.x+w/2,y:n.y+h};  // bottom
+  return{x:n.x+w,y:n.y+h/2};
 }
-function outP(n,side){
-  const w=n.w||DW,h=n.h||DH;
-  if(side===2)return{x:n.x+w/2,y:n.y};
-  if(side===3)return{x:n.x+w/2,y:n.y+h};
-  return{x:n.x+w,y:n.y+h/2};                  // right (default)
-}
+function inP(n,side){return portPos(n,side===undefined?1:side);}
+function outP(n,side){return portPos(n,side===undefined?0:side);}
 // find nearest port side
 function nearestPort(n,wx,wy,isOut){
   const w=n.w||DW,h=n.h||DH;
-  // all 4 sides available for both in and out
+  // all 4 port positions - pick nearest to click
   const ports=[
-    {side:0,x:isOut?n.x+w:n.x,y:n.y+h/2},  // left/right
-    {side:2,x:n.x+w/2,y:n.y},               // top
-    {side:3,x:n.x+w/2,y:n.y+h},             // bottom
+    {side:0,x:n.x+w,y:n.y+h/2},   // right
+    {side:1,x:n.x,y:n.y+h/2},     // left  
+    {side:2,x:n.x+w/2,y:n.y},     // top
+    {side:3,x:n.x+w/2,y:n.y+h},   // bottom
   ];
   let best=ports[0],bestD=Infinity;
   ports.forEach(p=>{const d=Math.hypot(wx-p.x,wy-p.y);if(d<bestD){bestD=d;best=p;}});
@@ -510,6 +502,11 @@ function onDown(e){
   const g=hitGroup(wx,wy);
   if(g){
     if(hitGResize(g,wx,wy)){drag={on:true,rg:g,ox:wx,oy:wy,sw:g.w,sh:g.h};canvas.style.cursor='se-resize';return;}
+    if(e.shiftKey){
+      if(selected.groups.includes(g.id)){selected.groups=selected.groups.filter(id=>id!==g.id);}
+      else{selected.groups=[...selected.groups,g.id];}
+      return;
+    }
     if(!selected.groups.includes(g.id)){selected={nodes:[],groups:[g.id]};}
     const members=nodesInGroup(g).map(n=>({n,ox:wx-n.x,oy:wy-n.y}));
     drag={on:true,group:g,ox:wx-g.x,oy:wy-g.y,members,
@@ -537,8 +534,6 @@ function onMove(e){
   if(drag.pan){
     cam.x=drag.camX+(cx-drag.ox);cam.y=drag.camY+(cy-drag.oy);
     if(spaceDown)canvas.style.cursor='grabbing';
-  }else if(drag.winsel){
-    winSel.ex=cx;winSel.ey=cy;
   }else if(drag.node){
     // multi-node drag
     drag.multiNodes.forEach(({n,ox,oy})=>{n.x=wx-ox;n.y=wy-oy;});
@@ -564,19 +559,7 @@ function onMove(e){
 async function onUp(e){
   canvas.style.cursor='default';
   const{wx,wy,cx,cy}=wp(e);
-  if(winSel.on){
-    winSel.on=false;
-    if(Math.hypot(cx-mouseDownPos.x,cy-mouseDownPos.y)>8){
-      const minX=Math.min(winSel.sx,winSel.ex),maxX=Math.max(winSel.sx,winSel.ex);
-      const minY=Math.min(winSel.sy,winSel.ey),maxY=Math.max(winSel.sy,winSel.ey);
-      const wMinX=(minX-canvas.width/2-cam.x)/cam.z,wMinY=(minY-canvas.height/2-cam.y)/cam.z;
-      const wMaxX=(maxX-canvas.width/2-cam.x)/cam.z,wMaxY=(maxY-canvas.height/2-cam.y)/cam.z;
-      const newSelNodes=nodes.filter(n=>{const w=n.w||DW,h=n.h||DH;return n.x>=wMinX&&n.x+w<=wMaxX&&n.y>=wMinY&&n.y+h<=wMaxY;}).map(n=>n.id);
-      const newSelGroups=groups.filter(g=>g.x>=wMinX&&g.x+g.w<=wMaxX&&g.y>=wMinY&&g.y+g.h<=wMaxY).map(g=>g.id);
-      selected={nodes:newSelNodes,groups:newSelGroups};
-      if(newSelNodes.length+newSelGroups.length>0)toast(`Selected ${newSelNodes.length} nodes, ${newSelGroups.length} groups`);
-    }
-  }
+
   if(drag.node){
     await Promise.all(drag.multiNodes.map(({n})=>sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id)));
     if(drag.multiGroups?.length)await Promise.all(drag.multiGroups.map(({g})=>sb.from('canvas_groups').update({x:g.x,y:g.y}).eq('id',g.id)));
@@ -594,7 +577,7 @@ function onWheel(e){
   const cx=e.clientX-r.left,cy=e.clientY-r.top;
   const f=e.deltaY>0?0.9:1.1;
   const wx=(cx-canvas.width/2-cam.x)/cam.z,wy=(cy-canvas.height/2-cam.y)/cam.z;
-  cam.z=Math.max(0.15,Math.min(4,cam.z*f));
+  cam.z=Math.max(0.04,Math.min(4,cam.z*f));
   cam.x=cx-canvas.width/2-wx*cam.z;cam.y=cy-canvas.height/2-wy*cam.z;
 }
 
