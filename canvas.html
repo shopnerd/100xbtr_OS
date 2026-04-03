@@ -1299,19 +1299,21 @@ async function executeAllActions(actions){
     const g=Object.entries(nodeGroupMap).find(([k])=>nodeLabel.includes(k))?.[1]||
              Object.values(groupMap).find(g=>a.group&&g.label.toLowerCase().includes(a.group?.toLowerCase()));
     if(g){
-      const NPAD=24,LABEL_H=30,NH=DH||60;
+      const NPAD=32,LABEL_H=36,NH=DH||60;
       const memberCount=nodes.filter(n=>n.group_id===g.id).length;
       const cols=Math.max(1,Math.min(3,Math.ceil(Math.sqrt(memberCount+1))));
       const col=memberCount%cols,row=Math.floor(memberCount/cols);
-      // place relative to group origin
+      // place relative to group origin with generous padding
       a.x=g.x+NPAD+col*(DW+NPAD);
       a.y=g.y+LABEL_H+NPAD+row*(NH+NPAD);
-      // expand group width/height to fit this new node immediately
-      const neededW=(cols*(DW+NPAD))+NPAD;
+      // pre-size group to guarantee it contains this node
+      const neededW=NPAD+cols*(DW+NPAD);
       const neededRows=Math.ceil((memberCount+1)/cols);
-      const neededH=LABEL_H+NPAD+neededRows*(NH+NPAD);
-      if(g.w<neededW){g.w=neededW;await sb.from('canvas_groups').update({w:g.w}).eq('id',g.id);}
-      if(g.h<neededH){g.h=neededH;await sb.from('canvas_groups').update({h:g.h}).eq('id',g.id);}
+      const neededH=LABEL_H+NPAD+neededRows*(NH+NPAD)+NPAD;
+      g.w=Math.max(g.w,neededW);
+      g.h=Math.max(g.h,neededH);
+      _trackWrite('canvas_groups',g.id);
+      await sb.from('canvas_groups').update({w:g.w,h:g.h}).eq('id',g.id);
       a.group_id=g.id;
     }
     await executeAction(a,g?.id);
@@ -1514,100 +1516,108 @@ function getGroupId(n){
   return null;
 }
 
-function runLayout(){
+async function runLayout(){
   if(!nodes.length){toast('No nodes to arrange');return;}
   if(simRunning)return;
-  toast('Arranging nodes...');
-  simRunning=true;_simTick=0;
+  simRunning=true;
+  toast('Arranging...');
 
-  // Group nodes by their group membership
-  const grouped={};
+  const NPAD=32,LABEL_H=36,GPAD=80,NH=DH||60;
+
+  // 1. Build membership by group_id, fall back to position
+  const membership={};
   const ungrouped=[];
   nodes.forEach(n=>{
-    const gid=getGroupId(n);
-    if(gid){if(!grouped[gid])grouped[gid]=[];grouped[gid].push(n);}
-    else ungrouped.push(n);
+    const gid=n.group_id||getGroupId(n);
+    n.group_id=gid;
+    if(gid&&groups.find(g=>g.id===gid)){
+      if(!membership[gid])membership[gid]=[];
+      membership[gid].push(n);
+    } else ungrouped.push(n);
   });
 
-  // assign group_id to all nodes before layout
-  nodes.forEach(n=>{n.group_id=getGroupId(n);});
-  // STEP 1: arrange nodes within each group in a compact grid
-  const PAD=20,INNER_COL_W=DW+PAD,INNER_ROW_H=(DH||60)+PAD;
-  Object.entries(grouped).forEach(([gid,gnodes])=>{
-    const g=groups.find(x=>x.id===gid);if(!g)return;
+  // 2. Size and lay out nodes inside each group
+  groups.forEach(g=>{
+    const gnodes=membership[g.id]||[];
+    if(!gnodes.length)return;
     const cols=Math.max(1,Math.ceil(Math.sqrt(gnodes.length)));
-    gnodes.forEach((n,i)=>{
-      n.x=g.x+PAD+4+(i%cols)*INNER_COL_W;
-      n.y=g.y+26+(Math.floor(i/cols))*INNER_ROW_H;
-    });
-    // resize group to fit
     const rows=Math.ceil(gnodes.length/cols);
-    g.w=Math.max(200,cols*INNER_COL_W+PAD*2);
-    g.h=Math.max(120,rows*INNER_ROW_H+PAD+26);
+    // size group first
+    g.w=NPAD+cols*(DW+NPAD);
+    g.h=LABEL_H+NPAD+rows*(NH+NPAD);
+    g.w=Math.max(g.w,220);g.h=Math.max(g.h,140);
+    // place nodes inside
+    gnodes.forEach((n,i)=>{
+      n.x=g.x+NPAD+(i%cols)*(DW+NPAD);
+      n.y=g.y+LABEL_H+NPAD+Math.floor(i/cols)*(NH+NPAD);
+    });
   });
 
-  // STEP 2: arrange groups in a grid layout with spacing
-  const glist=groups.filter(g=>grouped[g.id]?.length>0);
-  const gcols=Math.max(1,Math.ceil(Math.sqrt(glist.length)));
-  const GPAD=60;
-  let maxRowH=0;
-  let gx=0,gy=0,rowH=0;
-  glist.forEach((g,i)=>{
-    if(i>0&&i%gcols===0){gx=0;gy+=rowH+GPAD;rowH=0;}
-    g.x=gx-(gcols*300)/2;
-    g.y=gy-glist.length*80;
-    gx+=g.w+GPAD;
-    rowH=Math.max(rowH,g.h);
+  // 3. Arrange groups in a grid centered at origin
+  const activeGroups=groups.filter(g=>(membership[g.id]||[]).length>0);
+  const gcols=Math.max(1,Math.ceil(Math.sqrt(activeGroups.length)));
+  const grows=Math.ceil(activeGroups.length/gcols);
+  // compute row heights and col widths
+  const rowH=Array(grows).fill(0);
+  const colW=Array(gcols).fill(0);
+  activeGroups.forEach((g,i)=>{
+    rowH[Math.floor(i/gcols)]=Math.max(rowH[Math.floor(i/gcols)],g.h);
+    colW[i%gcols]=Math.max(colW[i%gcols],g.w);
+  });
+  const totalW=colW.reduce((s,w)=>s+w+GPAD,0)-GPAD;
+  const totalH=rowH.reduce((s,h)=>s+h+GPAD,0)-GPAD;
+  let curX=-totalW/2,curY=-totalH/2;
+  activeGroups.forEach((g,i)=>{
+    const r=Math.floor(i/gcols),c=i%gcols;
+    if(c===0&&i>0){curX=-totalW/2;curY+= rowH[r-1]+GPAD;}
+    g.x=curX;g.y=curY;
+    curX+=colW[c]+GPAD;
+    // re-place nodes now that group is positioned
+    const gnodes=membership[g.id]||[];
+    const cols=Math.max(1,Math.ceil(Math.sqrt(gnodes.length)));
+    gnodes.forEach((n,j)=>{
+      n.x=g.x+NPAD+(j%cols)*(DW+NPAD);
+      n.y=g.y+LABEL_H+NPAD+Math.floor(j/cols)*(NH+NPAD);
+    });
   });
 
-  // STEP 3: place ungrouped nodes below
+  // 4. Place ungrouped nodes below
+  const belowY=totalH/2+GPAD;
   ungrouped.forEach((n,i)=>{
-    const cols=Math.max(1,Math.ceil(Math.sqrt(ungrouped.length)));
-    n.x=(i%cols)*(DW+PAD)-cols*(DW+PAD)/2;
-    n.y=500+(Math.floor(i/cols))*(DH+PAD);
+    const cols=Math.max(1,Math.ceil(Math.sqrt(Math.max(1,ungrouped.length))));
+    n.x=(i%cols)*(DW+NPAD*2)-cols*(DW+NPAD)/2;
+    n.y=belowY+Math.floor(i/cols)*(NH+NPAD);
   });
 
-  // STEP 4: now run physics to refine — repel overlapping nodes, attract linked ones
-  _simNodes=nodes.map(n=>({id:n.id,ref:n,x:n.x+(n.w||DW)/2,y:n.y+(n.h||DH)/2,w:n.w||DW,h:n.h||DH,vx:0,vy:0,gid:getGroupId(n)}));
-  _simLinks=[];
-  links.forEach(l=>{
-    const si=_simNodes.findIndex(n=>n.id===(l.source?.id||l.source));
-    const ti=_simNodes.findIndex(n=>n.id===(l.target?.id||l.target));
-    if(si>=0&&ti>=0)_simLinks.push({s:si,t:ti});
-  });
+  // 5. Save all positions
+  await Promise.all(nodes.map(n=>{
+    _trackWrite('canvas_nodes',n.id);
+    return sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y),group_id:n.group_id||null}).eq('id',n.id);
+  }));
+  await Promise.all(groups.map(g=>{
+    _trackWrite('canvas_groups',g.id);
+    return sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
+  }));
 
-  _tickSim();
+  simRunning=false;
+  toast('Layout done ✓');
 }
 
+// stub — no longer used
 function _tickSim(){
-  if(_simTick>=SIM_TICKS){simRunning=false;_finishLayout();return;}
-  const alpha=Math.max(0.005,0.8*(1-_simTick/SIM_TICKS));
-  
-  // repulsion
-  for(let i=0;i<_simNodes.length;i++){
-    const a=_simNodes[i];
-    for(let j=i+1;j<_simNodes.length;j++){
-      const b=_simNodes[j];
-      // only repel within same group
-      if(a.gid&&b.gid&&a.gid!==b.gid)continue;
-      const dx=b.x-a.x||0.1,dy=b.y-a.y||0.1;
-      const dist=Math.max(1,Math.hypot(dx,dy));
-      const minD=(a.w+b.w)/2+24;
-      if(dist<minD){
-        const f=alpha*400*(minD-dist)/(dist*minD);
-        const fx=dx*f,fy=dy*f;
-        a.vx-=fx;a.vy-=fy;b.vx+=fx;b.vy+=fy;
-      }
-    }
-  }
-  // link pull (cross-group only — within group already arranged)
-  _simLinks.forEach(({s,t})=>{
-    const a=_simNodes[s],b=_simNodes[t];
-    if(a.gid&&b.gid&&a.gid===b.gid)return;
-    const dx=b.x-a.x,dy=b.y-a.y;
-    const dist=Math.max(1,Math.hypot(dx,dy));
-    const target=280;
-    const f=alpha*(dist-target)*0.03/dist;
+  simRunning=false;
+}
+function _finishLayout(){}
+// old physics vars kept to avoid errors
+let _simNodes=[],_simLinks=[],_simTick=0;
+const SIM_TICKS=1;
+
+function _DEAD_tickSim_old(){
+  const alpha=0;
+  const dx=0,dy=0;
+  const dist=1;
+  const target=280;
+  const f=alpha*(dist-target)*0.03/dist;
     a.vx+=dx*f;a.vy+=dy*f;b.vx-=dx*f;b.vy-=dy*f;
   });
 
