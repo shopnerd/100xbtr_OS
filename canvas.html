@@ -1205,14 +1205,67 @@ ${STRICT_SCHEMA}`;
 
 async function executeAllActions(actions){
   if(typeof actions==='string')actions=JSON.parse(actions);
-  let count=0;
-  for(const a of actions){
+  // Separate into groups, nodes, links — execute in order
+  const grpActions=actions.filter(a=>a.type==='create_group');
+  const nodeActions=actions.filter(a=>a.type==='create_node');
+  const linkActions=actions.filter(a=>a.type==='create_link');
+  // build a group name→id map as we create groups
+  const groupMap={}; // label → group object
+  for(const a of grpActions){
     await executeAction(a);
-    count++;
+    await loadAll();
+    // find the group we just created by label
+    const g=groups.find(x=>x.label===a.label);
+    if(g)groupMap[a.label]=g;
   }
-  toast(`Executed ${count} action${count!==1?'s':''}`);
-  // refresh analysis
-  if(claudeOn)setTimeout(analyzeCanvas,500);
+  // create nodes — if action has a "group" field, place inside that group
+  // Also track which group each node belongs to by matching nodeLabels
+  const nodeGroupMap={}; // nodeLabel → group
+  Object.entries(groupMap).forEach(([gLabel,g])=>{
+    const matchingAction=grpActions.find(a=>a.label===gLabel);
+    if(matchingAction?.nodeLabels){
+      matchingAction.nodeLabels.forEach(nl=>nodeGroupMap[nl.toLowerCase()]=g);
+    }
+  });
+  for(const a of nodeActions){
+    const nodeLabel=(a.label||'').toLowerCase();
+    // find if this node belongs to a group
+    const g=Object.entries(nodeGroupMap).find(([k])=>nodeLabel.includes(k))?.[1]||
+             Object.values(groupMap).find(g=>a.group&&g.label.toLowerCase().includes(a.group?.toLowerCase()));
+    if(g){
+      // place node inside the group with some offset
+      const memberCount=nodes.filter(n=>n.group_id===g.id).length;
+      const cols=3;
+      const col=memberCount%cols,row=Math.floor(memberCount/cols);
+      a.x=g.x+24+col*(DW+16);
+      a.y=g.y+30+row*(DH+12);
+      a.group_id=g.id;
+    }
+    await executeAction(a,g?.id);
+    await loadAll();
+    // expand group if node was placed inside
+    if(g)autoResizeGroup(g);
+  }
+  for(const a of linkActions){await executeAction(a);await loadAll();}
+  // Final pass: snap all ungrouped nodes that are inside a group
+  await snapNodesToGroups();
+  toast(`Done — ${actions.length} actions`);
+  if(claudeOn)setTimeout(analyzeCanvas,800);
+}
+
+async function snapNodesToGroups(){
+  // assign group_id to any node sitting inside a group
+  const updates=[];
+  nodes.forEach(n=>{
+    const gid=getGroupId(n);
+    if(gid&&n.group_id!==gid){
+      n.group_id=gid;
+      updates.push(sb.from('canvas_nodes').update({group_id:gid}).eq('id',n.id));
+    }
+  });
+  if(updates.length)await Promise.all(updates);
+  // resize all groups to wrap their members
+  for(const g of groups)autoResizeGroup(g);
 }
 
 
