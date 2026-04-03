@@ -255,7 +255,7 @@ const DW=180,DH=60,MW=120,MH=44,PR=6,RH=20;
 
 let user=null,who='';
 let nodes=[],links=[],groups=[];
-let selNode=null,selGroup=null,linkFrom=null,claudeOn=false;
+let selNode=null,selGroup=null,linkFrom=null,claudeOn=false,hovLink=null;
 let canvas,ctx;
 let cam={x:0,y:0,z:1};
 // drag states
@@ -373,12 +373,27 @@ function drawLinks(){
     const cp1=bezierCP(sp,sport),cp2=bezierCP(tp,tport);
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);
     ctx.bezierCurveTo(cp1.x,cp1.y,cp2.x,cp2.y,tp.x,tp.y);
-    ctx.strokeStyle=l.claude?'rgba(232,130,12,0.5)':'rgba(130,130,122,0.7)';
-    ctx.lineWidth=(l.claude?2:1.2)/cam.z;
+    const isHov=hovLink&&hovLink.id===l.id;
+    ctx.strokeStyle=l.claude?'rgba(232,130,12,0.6)':isHov?'rgba(200,50,50,0.7)':'rgba(130,130,122,0.7)';
+    ctx.lineWidth=(isHov?2.5:l.claude?2:1.2)/cam.z;
     ctx.setLineDash(l.claude?[5,3]:[]);ctx.stroke();ctx.setLineDash([]);
+    // show X on hovered wire
+    if(isHov){
+      const mid=bezierMid(sp,portPos(t,tport),bezierCP(sp,sport),bezierCP(portPos(t,tport),tport));
+      ctx.font=`bold ${11/cam.z}px sans-serif`;ctx.fillStyle='rgba(200,50,50,0.9)';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('×',mid.x,mid.y);
+    }
   });
 }
 
+function bezierMid(sp,tp,cp1,cp2){
+  const t=0.5;
+  return{
+    x:Math.pow(1-t,3)*sp.x+3*Math.pow(1-t,2)*t*cp1.x+3*(1-t)*t*t*cp2.x+t*t*t*tp.x,
+    y:Math.pow(1-t,3)*sp.y+3*Math.pow(1-t,2)*t*cp1.y+3*(1-t)*t*t*cp2.y+t*t*t*tp.y
+  };
+}
 // control point offset based on which side the port is on
 function bezierCP(p,side){
   const dist=80;
@@ -511,19 +526,74 @@ function wp(e){
   return{wx:(cx-canvas.width/2-cam.x)/cam.z,wy:(cy-canvas.height/2-cam.y)/cam.z,cx,cy};
 }
 function hitNode(wx,wy){return[...nodes].reverse().find(n=>{const w=n.w||DW,h=n.h||DH;return wx>=n.x&&wx<=n.x+w&&wy>=n.y&&wy<=n.y+h;});}
+function hitLink(wx,wy){
+  // check if click is near any wire (screen space, ~8px tolerance)
+  const W=canvas.width,H=canvas.height;
+  const sx=(wx*cam.z)+W/2+cam.x;
+  const sy=(wy*cam.z)+H/2+cam.y;
+  for(let i=links.length-1;i>=0;i--){
+    const l=links[i];
+    const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
+    if(!s||!t)continue;
+    const sport=l.sport!==undefined?l.sport:0;
+    const tport=l.tport!==undefined?l.tport:1;
+    const sp=portPos(s,sport),tp=portPos(t,tport);
+    // sample points along the bezier
+    const cp1=bezierCP(sp,sport),cp2=bezierCP(tp,tport);
+    for(let tt=0;tt<=1;tt+=0.05){
+      const bx=Math.pow(1-tt,3)*sp.x+3*Math.pow(1-tt,2)*tt*cp1.x+3*(1-tt)*tt*tt*cp2.x+tt*tt*tt*tp.x;
+      const by=Math.pow(1-tt,3)*sp.y+3*Math.pow(1-tt,2)*tt*cp1.y+3*(1-tt)*tt*tt*cp2.y+tt*tt*tt*tp.y;
+      const bsx=(bx*cam.z)+W/2+cam.x;
+      const bsy=(by*cam.z)+H/2+cam.y;
+      if(Math.hypot(sx-bsx,sy-bsy)<8)return l;
+    }
+  }
+  return null;
+}
 function hitGroup(wx,wy){return[...groups].reverse().find(g=>wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+g.h);}
 function hitNResize(n,wx,wy){const w=n.w||DW,h=n.h||DH;return wx>=n.x+w-RH&&wy>=n.y+h-RH;}
 function hitGResize(g,wx,wy){return wx>=g.x+g.w-RH&&wy>=g.y+g.h-RH;}
 function hitAnyPort(n,wx,wy){
+  // use screen-space pixels so hit zone stays constant at any zoom
   const w=n.w||DW,h=n.h||DH;
-  const pr=(PR+6)/cam.z; // slightly larger than visual for easier clicking
+  const HIT_PX=20; // 20 pixel radius in screen space
   const ports=[
     {x:n.x,y:n.y+h/2},      // left
     {x:n.x+w,y:n.y+h/2},    // right
     {x:n.x+w/2,y:n.y},      // top
     {x:n.x+w/2,y:n.y+h},    // bottom
   ];
-  return ports.some(p=>Math.hypot(wx-p.x,wy-p.y)<pr);
+  // convert port world positions to screen space for comparison
+  const W=canvas.width,H=canvas.height;
+  return ports.some(p=>{
+    const sx=(p.x*cam.z)+W/2+cam.x;
+    const sy=(p.y*cam.z)+H/2+cam.y;
+    const mx=(wx*cam.z)+W/2+cam.x;
+    const my=(wy*cam.z)+H/2+cam.y;
+    return Math.hypot(mx-sx,my-sy)<HIT_PX;
+  });
+}
+
+function whichPort(n,wx,wy){
+  // returns the side of the nearest port, in screen space
+  const w=n.w||DW,h=n.h||DH;
+  const W=canvas.width,H=canvas.height;
+  const ports=[
+    {side:1,x:n.x,y:n.y+h/2},      // left
+    {side:0,x:n.x+w,y:n.y+h/2},    // right
+    {side:2,x:n.x+w/2,y:n.y},      // top
+    {side:3,x:n.x+w/2,y:n.y+h},    // bottom
+  ];
+  const mx=(wx*cam.z)+W/2+cam.x;
+  const my=(wy*cam.z)+H/2+cam.y;
+  let best=ports[0],bestD=Infinity;
+  ports.forEach(p=>{
+    const sx=(p.x*cam.z)+W/2+cam.x;
+    const sy=(p.y*cam.z)+H/2+cam.y;
+    const d=Math.hypot(mx-sx,my-sy);
+    if(d<bestD){bestD=d;best=p;}
+  });
+  return best.side;
 }
 
 // MOUSE
@@ -546,8 +616,8 @@ function onDown(e){
     if(hitNResize(n,wx,wy)){drag={on:true,resize:n,ox:wx,oy:wy,sw:n.w||DW,sh:n.h||DH};canvas.style.cursor='se-resize';return;}
     // port click ONLY triggers wire — shift not involved
     if(hitAnyPort(n,wx,wy)){
-      if(!linkFrom){linkFrom=n;linkFrom._sport=nearestPort(n,wx,wy);toast('Now click a port on another node');}
-      else if(linkFrom.id!==n.id){addLink(linkFrom.id,n.id,linkFrom._sport,nearestPort(n,wx,wy));linkFrom=null;}
+      if(!linkFrom){linkFrom=n;linkFrom._sport=whichPort(n,wx,wy);toast('Now click a port on another node');}
+      else if(linkFrom.id!==n.id){addLink(linkFrom.id,n.id,linkFrom._sport,whichPort(n,wx,wy));linkFrom=null;}
       else{linkFrom=null;}
       return;
     }
@@ -649,6 +719,16 @@ function onWheel(e){
 function onRC(e){
   e.preventDefault();
   const{wx,wy,cx,cy}=wp(e);ctxPos={x:wx,y:wy};
+  // check if right-clicking a wire
+  const l=hitLink(wx,wy);
+  if(l){
+    const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
+    const label=s&&t?`"${s.label}" → "${t.label}"`:'wire';
+    if(confirm(`Disconnect ${label}?`)){
+      sb.from('canvas_links').delete().eq('id',l.id).then(()=>loadAll());
+    }
+    return;
+  }
   const m=document.getElementById('ctx');
   m.style.display='block';
   m.style.left=Math.min(cx,canvas.width-200)+'px';m.style.top=Math.min(cy,canvas.height-250)+'px';
@@ -660,14 +740,17 @@ function onDbl(e){
   if(n){openNE(n,cx,cy);return;}
   const g=hitGroup(wx,wy);
   if(g){openGE(g,cx,cy);return;}
-  // double-click canvas = add idea node
+  // double-click wire = disconnect
+  const l=hitLink(wx,wy);
+  if(l){disconnectLink(l);return;}
+  // double-click empty canvas = add idea node
   const id='n-'+Date.now();
   sb.from('canvas_nodes').insert({id,label:'idea',type:'idea',url:'',img_url:'',author:who,x:wx-DW/2,y:wy-DH/2,w:DW,h:DH});
 }
 
 function onKey(e){
   if(e.code==='Space'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){spaceDown=true;canvas.style.cursor='grab';}
-  if(e.key==='Escape'){linkFrom=null;closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};canvas.style.cursor='default';}
+  if(e.key==='Escape'){if(linkFrom){linkFrom=null;toast('Wire cancelled');}closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};canvas.style.cursor='default';}
   if((e.key==='Delete'||e.key==='Backspace')&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){
     deleteSelected();
   }
@@ -734,6 +817,13 @@ async function addImageFile(input){
   };
   reader.readAsDataURL(file);try{input.value='';}catch(e){}
 }
+async function disconnectLink(l){
+  const id=l.id;
+  if(!id)return;
+  await sb.from('canvas_links').delete().eq('id',id);
+  toast('Wire disconnected');
+}
+
 async function addLink(srcId,tgtId,sport=0,tport=0){
   const exists=links.find(l=>{const s=l.source?.id||l.source,t=l.target?.id||l.target;return(s===srcId&&t===tgtId)||(s===tgtId&&t===srcId);});
   if(exists)return;
@@ -1000,20 +1090,7 @@ async function deleteSavedCanvas(id){
 
 // DB
 async function initDB(){
-  const{data}=await sb.from('canvas_nodes').select('id').limit(1);
-  if(!data?.length){
-    await sb.from('canvas_nodes').insert([
-      {id:'anchor-1',label:'First build',type:'anchor',x:0,y:0,w:DW,h:DH,author:'system',url:'',img_url:''},
-      {id:'anchor-2',label:'Baltic birch cabinet',type:'material',x:240,y:-80,w:DW,h:DH,author:'system',url:'',img_url:''},
-      {id:'anchor-3',label:'Horn-loaded floor-standing',type:'idea',x:240,y:80,w:DW,h:DH,author:'system',url:'',img_url:''},
-      {id:'anchor-4',label:'Ojas reference',type:'reference',x:-240,y:-80,w:DW,h:DH,author:'system',url:'https://ojas.nyc',img_url:''},
-      {id:'anchor-5',label:"Nishant's driver design",type:'decision',x:-240,y:80,w:DW,h:DH,author:'system',url:'',img_url:''},
-    ]);
-    await sb.from('canvas_links').insert([
-      {id:'l1',source:'anchor-1',target:'anchor-2',claude:false},{id:'l2',source:'anchor-1',target:'anchor-3',claude:false},
-      {id:'l3',source:'anchor-4',target:'anchor-1',claude:false},{id:'l4',source:'anchor-5',target:'anchor-1',claude:false},
-    ]);
-  }
+  // fresh canvas — no seed nodes, start blank
 }
 async function loadAll(){
   const[{data:n},{data:l},{data:g}]=await Promise.all([sb.from('canvas_nodes').select('*'),sb.from('canvas_links').select('*'),sb.from('canvas_groups').select('*')]);
