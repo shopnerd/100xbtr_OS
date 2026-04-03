@@ -676,6 +676,15 @@ function onMove(e){
     drag.multiGroups.forEach(({g,ox,oy})=>{
       g.x=wx-ox;g.y=wy-oy;
     });
+    // live-resize: for every group that any dragged node belongs to,
+    // size it around ALL nodes with that group_id (current live positions)
+    const liveGids=new Set([...drag.multiNodes.map(({n})=>n.group_id).filter(Boolean),...(drag._prevGids||[])]);
+    liveGids.forEach(gid=>{
+      const g=groups.find(x=>x.id===gid);if(!g)return;
+      // all nodes belonging to this group, at their current positions
+      const members=nodes.filter(n=>n.group_id===gid);
+      sizeGroupAroundNodes(g,members);
+    });
   }else if(drag.group){
     drag.group.x=wx-drag.ox;drag.group.y=wy-drag.oy;
     // members positioned relative to group origin — this is the reliable approach
@@ -698,16 +707,16 @@ async function onUp(e){
   const{wx,wy,cx,cy}=wp(e);
 
   if(drag.node){
-    // capture old group IDs BEFORE we change them
+    // old group_ids before we reassign
     const oldGids=new Set(drag.multiNodes.map(({n})=>n.group_id).filter(Boolean));
-    // update node positions
+    // reassign group_id by current position
     for(const {n} of drag.multiNodes){
       const gid=getGroupId(n);
       n.group_id=gid;
       await sb.from('canvas_nodes').update({x:n.x,y:n.y,group_id:gid||null}).eq('id',n.id);
     }
     if(drag.multiGroups?.length)await Promise.all(drag.multiGroups.map(({g})=>sb.from('canvas_groups').update({x:g.x,y:g.y}).eq('id',g.id)));
-    // resize ALL affected groups: old ones (node may have left) + new ones (node may have joined)
+    // now group_ids are correct — resize all affected groups
     const newGids=new Set(drag.multiNodes.map(({n})=>n.group_id).filter(Boolean));
     const allAffected=new Set([...oldGids,...newGids]);
     allAffected.forEach(gid=>{const g=groups.find(x=>x.id===gid);if(g)autoResizeGroup(g);});
@@ -995,26 +1004,39 @@ async function addLink(srcId,tgtId,sport=0,tport=0){
   toast('Connected');
 }
 function nodesInGroup(g){
-  // prefer stored group_id, fall back to position
+  // group_id is authoritative for membership
   const byId=nodes.filter(n=>n.group_id===g.id);
   if(byId.length>0)return byId;
+  // fall back to position for legacy nodes without group_id
   return nodes.filter(n=>{const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;return cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h;});
 }
 
-function autoResizeGroup(g){
-  const members=nodesInGroup(g);
-  if(!members.length)return;
+// sizeGroupAroundMembers: use group_id membership + current node positions
+// Does NOT rely on group bounds to find members — uses stored membership
+// Size a group to wrap a specific set of node objects
+function sizeGroupAroundNodes(g, members){
+  if(!members||!members.length)return;
   const PAD=24,LABEL_H=32;
   const minX=Math.min(...members.map(n=>n.x));
   const minY=Math.min(...members.map(n=>n.y));
   const maxX=Math.max(...members.map(n=>n.x+(n.w||DW)));
   const maxY=Math.max(...members.map(n=>n.y+(n.h||DH)));
-  // always wrap tightly around members
   g.x=minX-PAD;
   g.y=minY-LABEL_H-PAD;
   g.w=maxX-g.x+PAD;
   g.h=maxY-g.y+PAD;
   g.w=Math.max(g.w,200);g.h=Math.max(g.h,120);
+}
+
+// During drag: size by which nodes currently have this group_id
+function sizeGroupAroundMembers(g){
+  const members=nodes.filter(n=>n.group_id===g.id);
+  sizeGroupAroundNodes(g,members);
+}
+
+// On release: size by group_id membership and save to DB
+function autoResizeGroup(g){
+  sizeGroupAroundMembers(g);
   sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
 }
 
@@ -1288,9 +1310,14 @@ async function executeAllActions(actions){
     }
     await executeAction(a,g?.id);
     await loadAll();
+    // after each node, resize its group to wrap all members so far
+    if(g){
+      const freshG=groups.find(x=>x.id===g.id);
+      if(freshG)autoResizeGroup(freshG);
+    }
   }
   for(const a of linkActions){await executeAction(a);await loadAll();}
-  // Final pass: snap all ungrouped nodes that are inside a group
+  // Final pass: snap and resize all groups
   await snapNodesToGroups();
   toast(`Done — ${actions.length} actions`);
   if(claudeOn)setTimeout(analyzeCanvas,800);
