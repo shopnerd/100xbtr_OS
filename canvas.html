@@ -1183,140 +1183,140 @@ function setupRT(){
     .subscribe();
 }
 
-// VANILLA FORCE LAYOUT — no external dependencies
+// FORCE LAYOUT ENGINE
 let simRunning=false;
-let simTick=0,simMax=300;
-let simN=[],simL=[];
+let _simNodes=[],_simLinks=[],_simTick=0;
+const SIM_TICKS=400;
 
 function getGroupId(n){
+  // match by position
   const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
-  const g=groups.find(g=>cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h);
-  return g?g.id:null;
+  for(const g of groups){if(cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h)return g.id;}
+  return null;
 }
 
 function runLayout(){
   if(!nodes.length){toast('No nodes to arrange');return;}
-  if(simRunning){toast('Layout already running');return;}
-  toast('Running layout...');
-  simRunning=true;simTick=0;
+  if(simRunning)return;
+  toast('Arranging nodes...');
+  simRunning=true;_simTick=0;
 
-  // build sim particles — center-based
-  simN=nodes.map(n=>({
-    id:n.id,ref:n,
-    x:n.x+(n.w||DW)/2,y:n.y+(n.h||DH)/2,
-    w:n.w||DW,h:n.h||DH,
-    vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,
-    gid:getGroupId(n)
-  }));
-
-  // build edge list with resolved indices
-  simL=[];
-  links.forEach(l=>{
-    const si=simN.findIndex(n=>n.id===(l.source?.id||l.source));
-    const ti=simN.findIndex(n=>n.id===(l.target?.id||l.target));
-    if(si>=0&&ti>=0)simL.push({s:si,t:ti});
+  // Group nodes by their group membership
+  const grouped={};
+  const ungrouped=[];
+  nodes.forEach(n=>{
+    const gid=getGroupId(n);
+    if(gid){if(!grouped[gid])grouped[gid]=[];grouped[gid].push(n);}
+    else ungrouped.push(n);
   });
 
-  stepSim();
+  // STEP 1: arrange nodes within each group in a compact grid
+  const PAD=20,INNER_COL_W=DW+PAD,INNER_ROW_H=(DH||60)+PAD;
+  Object.entries(grouped).forEach(([gid,gnodes])=>{
+    const g=groups.find(x=>x.id===gid);if(!g)return;
+    const cols=Math.max(1,Math.ceil(Math.sqrt(gnodes.length)));
+    gnodes.forEach((n,i)=>{
+      n.x=g.x+PAD+4+(i%cols)*INNER_COL_W;
+      n.y=g.y+26+(Math.floor(i/cols))*INNER_ROW_H;
+    });
+    // resize group to fit
+    const rows=Math.ceil(gnodes.length/cols);
+    g.w=Math.max(200,cols*INNER_COL_W+PAD*2);
+    g.h=Math.max(120,rows*INNER_ROW_H+PAD+26);
+  });
+
+  // STEP 2: arrange groups in a grid layout with spacing
+  const glist=groups.filter(g=>grouped[g.id]?.length>0);
+  const gcols=Math.max(1,Math.ceil(Math.sqrt(glist.length)));
+  const GPAD=60;
+  let maxRowH=0;
+  let gx=0,gy=0,rowH=0;
+  glist.forEach((g,i)=>{
+    if(i>0&&i%gcols===0){gx=0;gy+=rowH+GPAD;rowH=0;}
+    g.x=gx-(gcols*300)/2;
+    g.y=gy-glist.length*80;
+    gx+=g.w+GPAD;
+    rowH=Math.max(rowH,g.h);
+  });
+
+  // STEP 3: place ungrouped nodes below
+  ungrouped.forEach((n,i)=>{
+    const cols=Math.max(1,Math.ceil(Math.sqrt(ungrouped.length)));
+    n.x=(i%cols)*(DW+PAD)-cols*(DW+PAD)/2;
+    n.y=500+(Math.floor(i/cols))*(DH+PAD);
+  });
+
+  // STEP 4: now run physics to refine — repel overlapping nodes, attract linked ones
+  _simNodes=nodes.map(n=>({id:n.id,ref:n,x:n.x+(n.w||DW)/2,y:n.y+(n.h||DH)/2,w:n.w||DW,h:n.h||DH,vx:0,vy:0,gid:getGroupId(n)}));
+  _simLinks=[];
+  links.forEach(l=>{
+    const si=_simNodes.findIndex(n=>n.id===(l.source?.id||l.source));
+    const ti=_simNodes.findIndex(n=>n.id===(l.target?.id||l.target));
+    if(si>=0&&ti>=0)_simLinks.push({s:si,t:ti});
+  });
+
+  _tickSim();
 }
 
-function stepSim(){
-  if(!simRunning)return;
-  const alpha=Math.max(0.01,1-simTick/simMax);
-  const dt=0.8;
-
-  // forces
-  for(let i=0;i<simN.length;i++){
-    const a=simN[i];
-    // repulsion between all pairs
-    for(let j=i+1;j<simN.length;j++){
-      const b=simN[j];
-      let dx=b.x-a.x,dy=b.y-a.y;
+function _tickSim(){
+  if(_simTick>=SIM_TICKS){simRunning=false;_finishLayout();return;}
+  const alpha=Math.max(0.005,0.8*(1-_simTick/SIM_TICKS));
+  
+  // repulsion
+  for(let i=0;i<_simNodes.length;i++){
+    const a=_simNodes[i];
+    for(let j=i+1;j<_simNodes.length;j++){
+      const b=_simNodes[j];
+      // only repel within same group
+      if(a.gid&&b.gid&&a.gid!==b.gid)continue;
+      const dx=b.x-a.x||0.1,dy=b.y-a.y||0.1;
       const dist=Math.max(1,Math.hypot(dx,dy));
-      const minDist=(a.w+b.w)/2+60;
-      if(dist<minDist*2){
-        const force=alpha*800/(dist*dist);
-        const fx=dx/dist*force,fy=dy/dist*force;
-        a.vx-=fx;a.vy-=fy;
-        b.vx+=fx;b.vy+=fy;
-      }
-    }
-    // group attraction — pull toward group center
-    if(a.gid){
-      const g=groups.find(g=>g.id===a.gid);
-      if(g){
-        const gcx=g.x+g.w/2,gcy=g.y+g.h/2;
-        a.vx+=(gcx-a.x)*alpha*0.08;
-        a.vy+=(gcy-a.y)*alpha*0.08;
-      }
-    }
-  }
-  // link attraction
-  simL.forEach(({s,t})=>{
-    const a=simN[s],b=simN[t];
-    let dx=b.x-a.x,dy=b.y-a.y;
-    const dist=Math.max(1,Math.hypot(dx,dy));
-    const target=220;
-    const force=alpha*(dist-target)*0.15;
-    const fx=dx/dist*force,fy=dy/dist*force;
-    a.vx+=fx;a.vy+=fy;
-    b.vx-=fx;b.vy-=fy;
-  });
-  // group repulsion — push groups apart
-  for(let i=0;i<groups.length;i++){
-    for(let j=i+1;j<groups.length;j++){
-      const ga=groups[i],gb=groups[j];
-      const acx=ga.x+ga.w/2,acy=ga.y+ga.h/2;
-      const bcx=gb.x+gb.w/2,bcy=gb.y+gb.h/2;
-      const dx=bcx-acx,dy=bcy-acy;
-      const dist=Math.max(1,Math.hypot(dx,dy));
-      const minD=(ga.w+ga.h+gb.w+gb.h)/4+80;
+      const minD=(a.w+b.w)/2+24;
       if(dist<minD){
-        const push=(minD-dist)*alpha*0.3;
-        const fx=dx/dist*push,fy=dy/dist*push;
-        // push member nodes apart
-        simN.filter(n=>n.gid===ga.id).forEach(n=>{n.vx-=fx;n.vy-=fy;});
-        simN.filter(n=>n.gid===gb.id).forEach(n=>{n.vx+=fx;n.vy+=fy;});
+        const f=alpha*400*(minD-dist)/(dist*minD);
+        const fx=dx*f,fy=dy*f;
+        a.vx-=fx;a.vy-=fy;b.vx+=fx;b.vy+=fy;
       }
     }
   }
+  // link pull (cross-group only — within group already arranged)
+  _simLinks.forEach(({s,t})=>{
+    const a=_simNodes[s],b=_simNodes[t];
+    if(a.gid&&b.gid&&a.gid===b.gid)return;
+    const dx=b.x-a.x,dy=b.y-a.y;
+    const dist=Math.max(1,Math.hypot(dx,dy));
+    const target=280;
+    const f=alpha*(dist-target)*0.05/dist;
+    a.vx+=dx*f;a.vy+=dy*f;b.vx-=dx*f;b.vy-=dy*f;
+  });
 
-  // integrate + dampen
-  simN.forEach(n=>{
-    n.vx*=0.85;n.vy*=0.85;
-    n.x+=n.vx*dt;n.y+=n.vy*dt;
-    // apply back to node ref
+  _simNodes.forEach(n=>{
+    n.vx*=0.7;n.vy*=0.7;
+    n.x+=n.vx;n.y+=n.vy;
     n.ref.x=n.x-n.w/2;n.ref.y=n.y-n.h/2;
   });
 
-  simTick++;
-  if(simTick<simMax){
-    requestAnimationFrame(stepSim);
-  } else {
-    simRunning=false;
-    finishLayout();
-  }
+  _simTick++;
+  requestAnimationFrame(_tickSim);
 }
 
-async function finishLayout(){
-  toast('Saving layout...');
-  // batch save node positions
-  await Promise.all(simN.map(sn=>
-    sb.from('canvas_nodes').update({x:sn.ref.x,y:sn.ref.y}).eq('id',sn.id)
+async function _finishLayout(){
+  toast('Saving positions...');
+  await Promise.all(_simNodes.map(sn=>
+    sb.from('canvas_nodes').update({x:Math.round(sn.ref.x),y:Math.round(sn.ref.y)}).eq('id',sn.id)
   ));
-  // reposition groups to wrap members
   for(const g of groups){
-    const members=simN.filter(n=>n.gid===g.id);
+    const members=_simNodes.filter(n=>n.gid===g.id);
     if(!members.length)continue;
-    const pad=36;
+    const pad=28;
     const nx=Math.min(...members.map(n=>n.ref.x))-pad;
     const ny=Math.min(...members.map(n=>n.ref.y))-pad-22;
     const nw=Math.max(...members.map(n=>n.ref.x+n.w))-nx+pad;
     const nh=Math.max(...members.map(n=>n.ref.y+n.h))-ny+pad;
-    g.x=nx;g.y=ny;g.w=Math.max(nw,200);g.h=Math.max(nh,150);
+    g.x=nx;g.y=ny;g.w=Math.max(nw,180);g.h=Math.max(nh,120);
     await sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
   }
-  toast('Layout complete');
+  toast('Layout done ✓');
 }
 let toastT=null;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.style.opacity='1';clearTimeout(toastT);toastT=setTimeout(()=>el.style.opacity='0',2200);}
