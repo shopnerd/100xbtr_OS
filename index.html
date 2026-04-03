@@ -167,7 +167,7 @@ let imgCache={};
 async function signInGoogle(){
   const err=document.getElementById('auth-err');
   err.style.display='none';
-  const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href}});
+  const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://sound.100xbtr.com/canvas.html'}});
   if(error){err.textContent=error.message;err.style.display='block';}
 }
 
@@ -177,7 +177,7 @@ async function signOut(){
 }
 
 sb.auth.onAuthStateChange((event,session)=>{
-  if(event==='SIGNED_IN'&&session?.user)startApp(session.user);
+  if((event==='SIGNED_IN'||event==='TOKEN_REFRESHED')&&session?.user)startApp(session.user);
 });
 (async()=>{
   const{data:{session}}=await sb.auth.getSession();
