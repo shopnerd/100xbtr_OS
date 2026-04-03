@@ -971,12 +971,22 @@ function nodesInGroup(g){
 function autoResizeGroup(g){
   const members=nodesInGroup(g);
   if(!members.length)return;
-  const pad=28;
-  g.x=Math.min(...members.map(n=>n.x))-pad;
-  g.y=Math.min(...members.map(n=>n.y))-pad-22;
-  g.w=Math.max(...members.map(n=>n.x+(n.w||DW)))-g.x+pad;
-  g.h=Math.max(...members.map(n=>n.y+(n.h||DH)))-g.y+pad;
-  g.w=Math.max(g.w,180);g.h=Math.max(g.h,120);
+  const PAD=20,LABEL_H=28;
+  // group wraps tightly around all member nodes
+  const minX=Math.min(...members.map(n=>n.x));
+  const minY=Math.min(...members.map(n=>n.y));
+  const maxX=Math.max(...members.map(n=>n.x+(n.w||DW)));
+  const maxY=Math.max(...members.map(n=>n.y+(n.h||DH)));
+  // only shrink/grow the SIZE, never move the top-left (user may have positioned it)
+  // unless nodes are outside the current bounds
+  const needsExpand=minX<g.x+PAD||minY<g.y+LABEL_H+PAD||maxX>g.x+g.w-PAD||maxY>g.y+g.h-PAD;
+  if(needsExpand||true){ // always resize to fit
+    g.x=minX-PAD;
+    g.y=minY-LABEL_H-PAD;
+    g.w=maxX-g.x+PAD;
+    g.h=maxY-g.y+PAD;
+    g.w=Math.max(g.w,200);g.h=Math.max(g.h,120);
+  }
   sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
 }
 
@@ -1233,17 +1243,18 @@ async function executeAllActions(actions){
     const g=Object.entries(nodeGroupMap).find(([k])=>nodeLabel.includes(k))?.[1]||
              Object.values(groupMap).find(g=>a.group&&g.label.toLowerCase().includes(a.group?.toLowerCase()));
     if(g){
-      // place node inside the group with some offset
+      // grid placement: node padding so nothing overlaps
+      const NPAD=20,LABEL_H=28;
       const memberCount=nodes.filter(n=>n.group_id===g.id).length;
-      const cols=3;
+      const cols=Math.max(1,Math.min(3,Math.ceil(Math.sqrt(memberCount+1))));
       const col=memberCount%cols,row=Math.floor(memberCount/cols);
-      a.x=g.x+24+col*(DW+16);
-      a.y=g.y+30+row*(DH+12);
+      a.x=g.x+NPAD+col*(DW+NPAD);
+      a.y=g.y+LABEL_H+NPAD+row*((DH||60)+NPAD);
       a.group_id=g.id;
     }
     await executeAction(a,g?.id);
     await loadAll();
-    // expand group if node was placed inside
+    // expand group to contain all its nodes with padding
     if(g)autoResizeGroup(g);
   }
   for(const a of linkActions){await executeAction(a);await loadAll();}
