@@ -270,9 +270,7 @@ function initGraph(){
       }
       if(line)lines.push(line);
       const lineH=fontSize*1.3;
-      const totalH=lines.length*lineH;
-      const startY=node.y+r+3/scale;
-      lines.forEach((l,i)=>ctx.fillText(l,node.x,startY+i*lineH));
+      lines.forEach((l,i)=>ctx.fillText(l,node.x,node.y+r+3/scale+i*lineH));
     })
     .nodePointerAreaPaint((node,color,ctx)=>{
       ctx.fillStyle=color;
@@ -280,17 +278,18 @@ function initGraph(){
       ctx.arc(node.x,node.y,node.type==='anchor'?18:12,0,2*Math.PI);
       ctx.fill();
     })
-    .linkColor(()=>'rgba(0,0,0,0.12)')
+    .linkColor(()=>'rgba(0,0,0,0.15)')
     .linkWidth(1.5)
+    .nodeVal(node=>node.type==='anchor'?4:1)
+    .d3VelocityDecay(0.4)
+    .d3AlphaDecay(0.02)
     .onNodeClick((node,event)=>{
       if(event.shiftKey){
         if(!linkingFrom){
           linkingFrom=node;
           toast('Click another node to connect');
         } else {
-          if(linkingFrom.id!==node.id){
-            addLink(linkingFrom.id,node.id);
-          }
+          if(linkingFrom.id!==node.id) addLink(linkingFrom.id,node.id);
           linkingFrom=null;
         }
       } else {
@@ -307,23 +306,11 @@ function initGraph(){
     })
     .onNodeDragEnd(async(node)=>{
       await sb.from('canvas_nodes').update({x:node.x,y:node.y}).eq('id',node.id);
-    })
-    .cooldownTicks(200)
-    .d3Force('charge',null)
-    .d3Force('link',null)
-    .d3Force('center',null);
-
-  Graph.d3Force('charge', d3Force().forceManyBody().strength(-120));
-  Graph.d3Force('link', d3Force().forceLink().id(d=>d.id).distance(140));
-  Graph.d3Force('center', d3Force().forceCenter(0,0));
+    });
 
   window.addEventListener('resize',()=>{
     Graph.width(wrap.clientWidth).height(wrap.clientHeight);
   });
-}
-
-function d3Force(){
-  return window.d3||{forceManyBody:()=>({strength:()=>({})})};
 }
 
 function drawCircle(ctx,node,r,color,scale){
