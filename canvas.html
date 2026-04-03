@@ -714,14 +714,21 @@ async function onUp(e){
     const affectedGids=new Set([...drag.multiNodes.map(({n})=>n.group_id).filter(Boolean)]);
     affectedGids.forEach(gid=>{const g=groups.find(x=>x.id===gid);if(g)autoResizeGroup(g);});
   }else if(drag.group){
+    // suppress realtime during save to prevent loadAll() clobbering in-flight positions
+    _pauseRT=true;
+    // 1. save all member node positions first
     if(drag.members?.length){
       await Promise.all(drag.members.map(({n})=>{
         n.group_id=drag.group.id;
         return sb.from('canvas_nodes').update({x:n.x,y:n.y,group_id:drag.group.id}).eq('id',n.id);
       }));
     }
-    // resize group to exactly wrap its moved nodes
+    // 2. save group position
+    await sb.from('canvas_groups').update({x:drag.group.x,y:drag.group.y}).eq('id',drag.group.id);
+    // 3. update group size to wrap nodes
     autoResizeGroup(drag.group);
+    // 4. resume realtime
+    _pauseRT=false;
   }else if(drag.resize){const n=drag.resize;await sb.from('canvas_nodes').update({w:n.w,h:n.h}).eq('id',n.id);}
   else if(drag.rg){const g=drag.rg;await sb.from('canvas_groups').update({w:g.w,h:g.h}).eq('id',g.id);}
   drag={on:false};
@@ -1411,6 +1418,7 @@ async function initDB(){
   // fresh canvas — no seed nodes, start blank
 }
 async function loadAll(){
+  if(_pauseRT)return; // suppress during group drag save
   const[{data:n},{data:l},{data:g}]=await Promise.all([sb.from('canvas_nodes').select('*'),sb.from('canvas_links').select('*'),sb.from('canvas_groups').select('*')]);
   nodes=n||[];links=l||[];groups=g||[];
   // assign group_id in memory for any node missing it (positional fallback)
@@ -1433,6 +1441,7 @@ function setupRT(){
 
 // FORCE LAYOUT ENGINE
 let simRunning=false;
+let _pauseRT=false;
 let _simNodes=[],_simLinks=[],_simTick=0;
 const SIM_TICKS=400;
 
