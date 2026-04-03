@@ -947,19 +947,43 @@ function renderAnalysis(data){
   body.innerHTML=html||'<div style="font-size:12px;color:var(--tx3)">Add more nodes and connections first.</div>';
 }
 async function executeAction(a){
+  // normalize schema — handle both label/name, direct x,y or position.x,y
+  const label=a.label||a.name||a.text||'untitled';
+  const ax=a.x!==undefined?a.x:(a.position?.x||((Math.random()-0.5)*500));
+  const ay=a.y!==undefined?a.y:(a.position?.y||((Math.random()-0.5)*400));
+  const color=a.color||(GROUP_COLORS[Math.floor(Math.random()*GROUP_COLORS.length)]);
+
   if(a.type==='create_group'){
+    // if nodeLabels given, wrap around them; else use given x,y
     const targets=nodes.filter(n=>a.nodeLabels?.some(l=>n.label.toLowerCase().includes(l.toLowerCase())));
-    let x=-100,y=-100,w=260,h=180;
-    if(targets.length){const pad=32;x=Math.min(...targets.map(n=>n.x))-pad;y=Math.min(...targets.map(n=>n.y))-pad-20;w=Math.max(...targets.map(n=>n.x+(n.w||DW)))-x+pad;h=Math.max(...targets.map(n=>n.y+(n.h||DH)))-y+pad;}
-    await sb.from('canvas_groups').insert({id:'g-'+Date.now(),label:a.label,type:'idea',color:GROUP_COLORS[Math.floor(Math.random()*GROUP_COLORS.length)],x,y,w:Math.max(w,200),h:Math.max(h,150)});
-    toast(`Group "${a.label}" created`);
+    let x=ax,y=ay,w=a.w||280,h=a.h||200;
+    if(targets.length>0){
+      const pad=32;
+      x=Math.min(...targets.map(n=>n.x))-pad;
+      y=Math.min(...targets.map(n=>n.y))-pad-20;
+      w=Math.max(...targets.map(n=>n.x+(n.w||DW)))-x+pad;
+      h=Math.max(...targets.map(n=>n.y+(n.h||DH)))-y+pad;
+    }
+    await sb.from('canvas_groups').insert({
+      id:'g-'+Date.now(),label,type:'idea',color,
+      x,y,w:Math.max(w,200),h:Math.max(h,150)
+    });
   }else if(a.type==='create_node'){
-    await sb.from('canvas_nodes').insert({id:'n-'+Date.now(),label:a.label,type:a.nodeType||'idea',url:'',img_url:'',author:'claude',x:(Math.random()-0.5)*400,y:(Math.random()-0.5)*300,w:DW,h:DH});
-    toast(`Node "${a.label}" added`);
+    const nodeLabel=(label.split('\n')[0]).substring(0,60); // strip multiline
+    const type=a.nodeType||a.node_type||'idea';
+    await sb.from('canvas_nodes').insert({
+      id:'n-'+Date.now(),label:nodeLabel,type,
+      url:a.url||'',img_url:'',author:'claude',
+      x:ax,y:ay,w:a.w||DW,h:a.h||DH
+    });
   }else if(a.type==='create_link'){
-    const src=nodes.find(n=>n.label===a.from),tgt=nodes.find(n=>n.label===a.to);
-    if(src&&tgt)await addLink(src.id,tgt.id);else toast('Could not find those nodes');
+    const fromLabel=a.from||a.source;const toLabel=a.to||a.target;
+    const src=nodes.find(n=>n.label===fromLabel||n.label.toLowerCase().includes((fromLabel||'').toLowerCase()));
+    const tgt=nodes.find(n=>n.label===toLabel||n.label.toLowerCase().includes((toLabel||'').toLowerCase()));
+    if(src&&tgt)await addLink(src.id,tgt.id);
   }
+  // reload so newly created nodes are available for subsequent actions
+  await loadAll();
 }
 async function addGapNode(question){
   await sb.from('canvas_nodes').insert({id:'q-'+Date.now(),label:question.substring(0,60),type:'question',url:'',img_url:'',author:'claude',x:(Math.random()-0.5)*300,y:(Math.random()-0.5)*200,w:DW,h:DH});toast('Gap question added');
@@ -974,18 +998,73 @@ async function askClaude(){
   const body=document.getElementById('cpb');const prev=body.innerHTML;
   body.innerHTML='<div class="cplo">Thinking...</div>';
   const{nl,ll,gl}=canvasCtx();
-  const sysCtx=`You are an AI collaborator in a shared canvas for 100xbtr_sound (founders: Will, Brendan, Nishant — boutique horn speaker company).\nCanvas: Nodes: ${nl||'(none)'}\nLinks: ${ll||'(none)'}\nGroups: ${gl||'(none)'}\nIf user asks you to DO something (create group/node/link), respond with JSON: {"response":"message","actions":[...]}. Otherwise respond with plain text.`;
+
+  const STRICT_SCHEMA=`IMPORTANT — you MUST respond ONLY with valid JSON using EXACTLY this schema, no other fields:
+{
+  "response": "short message to show the user",
+  "actions": [
+    {"type":"create_group","label":"Group Name","color":"#378ADD","x":0,"y":0,"w":280,"h":200},
+    {"type":"create_node","label":"Node Label","nodeType":"idea","x":100,"y":50},
+    {"type":"create_link","from":"exact source node label","to":"exact target node label"}
+  ]
+}
+
+nodeType must be one of: idea, reference, material, decision, image, question, anchor
+color must be a valid hex color
+x,y are world coordinates — spread nodes across a range like -400 to 400
+Do NOT add any fields not shown above. Do NOT wrap in markdown. Return raw JSON only.`;
+
+  const sysCtx=`You are an AI collaborator embedded in a shared visual canvas for 100xbtr_sound — a boutique horn speaker company founded by Will (design/CNC), Brendan (cabinetry), and Nishant (EE/horn speakers).
+
+Current canvas state:
+Nodes: ${nl||'(none)'}
+Links: ${ll||'(none)'}
+Groups: ${gl||'(none)'}
+
+When the user asks you to DO something on the canvas (organize, create nodes, add groups, map something out), respond with JSON actions.
+When the user asks a question or wants to chat, respond with plain conversational text.
+
+${STRICT_SCHEMA}`;
+
   try{
-    const text=await callClaude([{role:'user',content:sysCtx+'\n\nUser: '+prompt}],800);
-    let parsed=null;try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}catch(e){}
-    if(parsed?.actions){
-      body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${parsed.response||'Done.'}</div></div>`;
-      let ah='<div class="cps"><div class="cpst">Proposed actions</div>';
-      parsed.actions.forEach(a=>{ah+=`<div class="cpac"><div class="cpact">${actionLabel(a)}</div><div class="cpacb">${a.description||''}</div><button class="cpado" onclick='executeAction(${JSON.stringify(a)})'>Do it</button><button class="cpadx" onclick="this.parentElement.remove()">Skip</button></div>`;});
-      body.innerHTML+=ah+'</div>';
-    }else{body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${text.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</div></div>`;}
+    const text=await callClaude([{role:'user',content:sysCtx+'\n\nUser request: '+prompt}],2000);
+    const cleaned=text.replace(/```json|```/g,'').trim();
+    let parsed=null;
+    try{parsed=JSON.parse(cleaned);}catch(e){
+      // not JSON — show as text response
+      body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${cleaned.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</div></div>`;
+      document.getElementById('cpp').value='';
+      return;
+    }
+    if(parsed?.actions?.length){
+      const actionsJson=JSON.stringify(parsed.actions);
+      body.innerHTML=prev+
+        `<div class="cps"><div class="cpst">Claude</div><div class="cpr">${parsed.response||'Here is what I propose:'}</div></div>`+
+        `<div class="cps"><div class="cpst">Proposed actions (${parsed.actions.length})</div>`+
+        parsed.actions.map(a=>`<div class="cpac"><div class="cpact">${actionLabel(a)}</div></div>`).join('')+
+        `<div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="cpado" style="flex:1;" onclick='executeAllActions(${actionsJson.replace(/'/g,"&#39;")})'>Do all (${parsed.actions.length})</button>
+          <button class="cpadx" onclick="this.parentElement.parentElement.remove()">Skip all</button>
+        </div></div>`;
+    }else if(parsed?.response){
+      body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${parsed.response}</div></div>`;
+    }else{
+      body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${cleaned.replace(/\n/g,'<br>')}</div></div>`;
+    }
     document.getElementById('cpp').value='';
-  }catch(e){body.innerHTML=prev+'<div class="cplo">Request failed.</div>';}
+  }catch(e){body.innerHTML=prev+'<div class="cplo">Request failed — check Netlify function.</div>';}
+}
+
+async function executeAllActions(actions){
+  if(typeof actions==='string')actions=JSON.parse(actions);
+  let count=0;
+  for(const a of actions){
+    await executeAction(a);
+    count++;
+  }
+  toast(`Executed ${count} action${count!==1?'s':''}`);
+  // refresh analysis
+  if(claudeOn)setTimeout(analyzeCanvas,500);
 }
 
 
