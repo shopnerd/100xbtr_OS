@@ -11,7 +11,7 @@
   --bg:#e8e8e4;--nb:#f4f4f0;--bo:#c0c0bc;
   --tx:#2a2a28;--tx2:#6a6a66;--tx3:#a0a09c;
   --idea:#378ADD;--reference:#1D9E75;--material:#BA7517;
-  --decision:#D85A30;--image:#7F77DD;--question:#b43cb4;--anchor:#888780;
+  --decision:#D85A30;--image:#7F77DD;--question:#E8820C;--anchor:#888780;
   --r:4px;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);overflow:hidden;height:100vh;display:flex;flex-direction:column;color:var(--tx);}
@@ -180,6 +180,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="sidebar">
       <div class="sb-header">
         <div class="sb-title">Canvases</div>
+        <button class="sb-new" onclick="newCanvas()">+ New</button>
       </div>
       <div class="sb-list" id="sb-list">
         <div class="sb-empty">No saved canvases yet.<br>Save the current canvas below.</div>
@@ -247,8 +248,8 @@ const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 const ALLOWED=['zolaray25@gmail.com','fraektaard@gmail.com','nishbphoto@gmail.com'];
 const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-auth',persistSession:true,detectSessionInUrl:true}});
 
-const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#b43cb4',anchor:'#888780'};
-const GROUP_COLORS=['#378ADD','#1D9E75','#BA7517','#D85A30','#7F77DD','#b43cb4','#888780','#2D7D46','#C0392B','#8E44AD'];
+const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#E8820C',anchor:'#888780'};
+const GROUP_COLORS=['#378ADD','#1D9E75','#BA7517','#D85A30','#7F77DD','#E8820C','#888780','#2D7D46','#C0392B','#8E44AD'];
 const TYPES=Object.keys(TC);
 const DW=180,DH=60,MW=120,MH=44,PR=6,RH=20;
 
@@ -321,7 +322,7 @@ function draw(){
     const mx=(lm.x-W/2-cam.x)/cam.z,my=(lm.y-H/2-cam.y)/cam.z;
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);
     ctx.bezierCurveTo(cp1.x,cp1.y,mx,my,mx,my);
-    ctx.strokeStyle='rgba(180,60,180,0.5)';ctx.lineWidth=1.5/cam.z;
+    ctx.strokeStyle='rgba(232,130,12,0.6)';ctx.lineWidth=1.5/cam.z;
     ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);
   }
   ctx.restore();
@@ -372,7 +373,7 @@ function drawLinks(){
     const cp1=bezierCP(sp,sport),cp2=bezierCP(tp,tport);
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);
     ctx.bezierCurveTo(cp1.x,cp1.y,cp2.x,cp2.y,tp.x,tp.y);
-    ctx.strokeStyle=l.claude?'rgba(180,60,180,0.45)':'rgba(130,130,122,0.7)';
+    ctx.strokeStyle=l.claude?'rgba(232,130,12,0.5)':'rgba(130,130,122,0.7)';
     ctx.lineWidth=(l.claude?2:1.2)/cam.z;
     ctx.setLineDash(l.claude?[5,3]:[]);ctx.stroke();ctx.setLineDash([]);
   });
@@ -397,7 +398,7 @@ function drawNodes(){
     const w=n.w||DW,h=n.h||DH;
     ctx.shadowColor='rgba(0,0,0,0.12)';ctx.shadowBlur=isEdit?8:3;ctx.shadowOffsetY=isEdit?2:1;
     ctx.fillStyle=isEdit?'#fff':'#f4f4f0';
-    ctx.strokeStyle=isSel?'#378ADD':isEdit?color:isLink?'#b43cb4':'#c0c0bc';
+    ctx.strokeStyle=isSel?'#378ADD':isEdit?color:isLink?'#E8820C':'#c0c0bc';
     ctx.lineWidth=(isSel||isEdit?1.8:1)/cam.z;
     rr(ctx,n.x,n.y,w,h,4/cam.z);ctx.fill();ctx.stroke();
     if(isSel&&!isEdit){
@@ -902,6 +903,19 @@ async function askClaude(){
 let sidebarOpen=false;
 let activeCanvasId=null;
 let allCanvases=[];
+
+async function newCanvas(){
+  if(!confirm('Start a fresh canvas? This will clear all nodes, links, and groups from the live canvas.'))return;
+  // delete all from DB
+  await Promise.all([
+    sb.from('canvas_nodes').delete().neq('id','__none__'),
+    sb.from('canvas_links').delete().neq('id','__none__'),
+    sb.from('canvas_groups').delete().neq('id','__none__'),
+  ]);
+  nodes=[];links=[];groups=[];activeCanvasId=null;
+  renderCanvasList();
+  toast('New canvas started');
+}
 
 function toggleSidebar(){
   sidebarOpen=!sidebarOpen;
