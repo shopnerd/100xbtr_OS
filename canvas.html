@@ -707,8 +707,7 @@ async function onUp(e){
   const{wx,wy,cx,cy}=wp(e);
 
   if(drag.node){
-    _pauseRT=true;
-    // old group_ids before we reassign
+        // old group_ids before we reassign
     const oldGids=new Set(drag.multiNodes.map(({n})=>n.group_id).filter(Boolean));
     // reassign group_id by current position
     for(const {n} of drag.multiNodes){
@@ -725,26 +724,23 @@ async function onUp(e){
       const g=groups.find(x=>x.id===gid);
       if(!g)return;
       sizeGroupAroundMembers(g);
-      return sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
+      _trackWrite('canvas_groups',g.id);return sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
     }).filter(Boolean));
-    setTimeout(()=>{_pauseRT=false;},200);
-  }else if(drag.group){
+      }else if(drag.group){
     // suppress realtime during save to prevent loadAll() clobbering in-flight positions
-    _pauseRT=true;
-    // 1. save all member node positions first
+        // 1. save all member node positions first
     if(drag.members?.length){
       await Promise.all(drag.members.map(({n})=>{
         n.group_id=drag.group.id;
-        return sb.from('canvas_nodes').update({x:n.x,y:n.y,group_id:drag.group.id}).eq('id',n.id);
+        _trackWrite('canvas_nodes',n.id);return sb.from('canvas_nodes').update({x:n.x,y:n.y,group_id:drag.group.id}).eq('id',n.id);
       }));
     }
     // 2. save group position
-    await sb.from('canvas_groups').update({x:drag.group.x,y:drag.group.y}).eq('id',drag.group.id);
+    _trackWrite('canvas_groups',drag.group.id);await sb.from('canvas_groups').update({x:drag.group.x,y:drag.group.y}).eq('id',drag.group.id);
     // 3. update group size to wrap nodes
     autoResizeGroup(drag.group);
     // 4. resume realtime
-    _pauseRT=false;
-  }else if(drag.resize){const n=drag.resize;await sb.from('canvas_nodes').update({w:n.w,h:n.h}).eq('id',n.id);}
+      }else if(drag.resize){const n=drag.resize;await sb.from('canvas_nodes').update({w:n.w,h:n.h}).eq('id',n.id);}
   else if(drag.rg){const g=drag.rg;await sb.from('canvas_groups').update({w:g.w,h:g.h}).eq('id',g.id);}
   drag={on:false};
 }
@@ -954,7 +950,7 @@ async function ctxAddToGroup(){
   const pad=32;
   g.x=Math.min(...allX)-pad;g.y=Math.min(...allY)-pad-22;
   g.w=Math.max(...allX2)-g.x+pad;g.h=Math.max(...allY2)-g.y+pad;
-  await sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
+  _trackWrite('canvas_groups',g.id);await sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
   toast(`Added to "${g.label}"`);
   selected={nodes:[],groups:[]};
 }
@@ -1046,9 +1042,8 @@ function sizeGroupAroundMembers(g){
 function autoResizeGroup(g){
   sizeGroupAroundMembers(g);
   // pause RT so the DB write doesn't trigger loadAll() and snap back
-  _pauseRT=true;
-  sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id)
-    .then(()=>{setTimeout(()=>{_pauseRT=false;},200);});
+  _trackWrite('canvas_groups',g.id);
+  sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
 }
 
 // NODE EDIT (double click)
@@ -1453,11 +1448,16 @@ async function deleteSavedCanvas(id){
 async function initDB(){
   // fresh canvas — no seed nodes, start blank
 }
+// Track IDs we wrote ourselves — skip reloading from our own changes
+const _myWrites={nodes:new Set(),groups:new Set(),links:new Set()};
+function _trackWrite(table,id){
+  _myWrites[table]?.add(id);
+  setTimeout(()=>_myWrites[table]?.delete(id),3000);
+}
+
 async function loadAll(){
-  if(_pauseRT)return; // suppress during group drag save
   const[{data:n},{data:l},{data:g}]=await Promise.all([sb.from('canvas_nodes').select('*'),sb.from('canvas_links').select('*'),sb.from('canvas_groups').select('*')]);
   nodes=n||[];links=l||[];groups=g||[];
-  // assign group_id in memory for any node missing it (positional fallback)
   nodes.forEach(n=>{
     if(!n.group_id){
       const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
@@ -1467,17 +1467,43 @@ async function loadAll(){
     }
   });
 }
+
+// Selective reload — only refresh items we didn't write ourselves
+async function _rtReload(table,id){
+  if(_myWrites[table]?.has(id))return; // our own write, skip
+  // reload just that one record into local state
+  if(table==='canvas_nodes'){
+    const{data}=await sb.from('canvas_nodes').select('*').eq('id',id).single();
+    if(data){const i=nodes.findIndex(n=>n.id===id);if(i>=0)nodes[i]=data;else nodes.push(data);}
+  }else if(table==='canvas_groups'){
+    const{data}=await sb.from('canvas_groups').select('*').eq('id',id).single();
+    if(data){const i=groups.findIndex(g=>g.id===id);if(i>=0)groups[i]=data;else groups.push(data);}
+  }else if(table==='canvas_links'){
+    await loadAll(); // links are simple, just reload all
+  }
+}
+
+async function _rtDelete(table,id){
+  if(_myWrites[table]?.has(id))return;
+  if(table==='canvas_nodes'){nodes=nodes.filter(n=>n.id!==id);}
+  else if(table==='canvas_groups'){groups=groups.filter(g=>g.id!==id);}
+  else if(table==='canvas_links'){links=links.filter(l=>(l.id||l.source)!==id);}
+}
+
 function setupRT(){
-  sb.channel('canvas-rt5')
-    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_nodes'},()=>loadAll())
+  sb.channel('canvas-rt6')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'canvas_nodes'},e=>_rtReload('canvas_nodes',e.new.id))
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'canvas_nodes'},e=>_rtReload('canvas_nodes',e.new.id))
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'canvas_nodes'},e=>_rtDelete('canvas_nodes',e.old.id))
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'canvas_groups'},e=>_rtReload('canvas_groups',e.new.id))
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'canvas_groups'},e=>_rtReload('canvas_groups',e.new.id))
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'canvas_groups'},e=>_rtDelete('canvas_groups',e.old.id))
     .on('postgres_changes',{event:'*',schema:'public',table:'canvas_links'},()=>loadAll())
-    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_groups'},()=>loadAll())
     .subscribe();
 }
 
 // FORCE LAYOUT ENGINE
 let simRunning=false;
-let _pauseRT=false;
 let _simNodes=[],_simLinks=[],_simTick=0;
 const SIM_TICKS=400;
 
@@ -1609,7 +1635,7 @@ async function _finishLayout(){
     const nw=Math.max(...members.map(n=>n.ref.x+n.w))-nx+pad;
     const nh=Math.max(...members.map(n=>n.ref.y+n.h))-ny+pad;
     g.x=nx;g.y=ny;g.w=Math.max(nw,180);g.h=Math.max(nh,120);
-    await sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
+    _trackWrite('canvas_groups',g.id);await sb.from('canvas_groups').update({x:g.x,y:g.y,w:g.w,h:g.h}).eq('id',g.id);
   }
   toast('Layout done ✓');
 }
