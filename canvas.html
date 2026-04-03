@@ -1265,19 +1265,23 @@ async function executeAllActions(actions){
     const g=Object.entries(nodeGroupMap).find(([k])=>nodeLabel.includes(k))?.[1]||
              Object.values(groupMap).find(g=>a.group&&g.label.toLowerCase().includes(a.group?.toLowerCase()));
     if(g){
-      // grid placement: node padding so nothing overlaps
-      const NPAD=28,LABEL_H=32;
+      const NPAD=24,LABEL_H=30,NH=DH||60;
       const memberCount=nodes.filter(n=>n.group_id===g.id).length;
       const cols=Math.max(1,Math.min(3,Math.ceil(Math.sqrt(memberCount+1))));
       const col=memberCount%cols,row=Math.floor(memberCount/cols);
+      // place relative to group origin
       a.x=g.x+NPAD+col*(DW+NPAD);
-      a.y=g.y+LABEL_H+NPAD+row*((DH||60)+NPAD);
+      a.y=g.y+LABEL_H+NPAD+row*(NH+NPAD);
+      // expand group width/height to fit this new node immediately
+      const neededW=(cols*(DW+NPAD))+NPAD;
+      const neededRows=Math.ceil((memberCount+1)/cols);
+      const neededH=LABEL_H+NPAD+neededRows*(NH+NPAD);
+      if(g.w<neededW){g.w=neededW;await sb.from('canvas_groups').update({w:g.w}).eq('id',g.id);}
+      if(g.h<neededH){g.h=neededH;await sb.from('canvas_groups').update({h:g.h}).eq('id',g.id);}
       a.group_id=g.id;
     }
     await executeAction(a,g?.id);
     await loadAll();
-    // expand group to contain all its nodes with padding
-    if(g)autoResizeGroup(g);
   }
   for(const a of linkActions){await executeAction(a);await loadAll();}
   // Final pass: snap all ungrouped nodes that are inside a group
