@@ -117,8 +117,9 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 /* NODE EDIT */
 #ne{position:absolute;background:var(--chrome2);border:1px solid var(--border);border-radius:var(--r);padding:10px;width:210px;z-index:90;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.15);}
 .nel{font-size:9px;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
-.nei{width:100%;font-size:10px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--tx);font-family:inherit;outline:none;margin-bottom:4px;}
+.nei{width:100%;font-size:10px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--tx);font-family:inherit;outline:none;margin-bottom:4px;resize:vertical;}
 .nei:focus{border-color:#C96B3A;}
+textarea.nei{line-height:1.4;}
 .nerow{display:flex;gap:4px;margin-bottom:4px;align-items:center;}
 .nety{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:5px;}
 .nety button{font-size:9px;padding:2px 5px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx2);cursor:pointer;font-family:inherit;}
@@ -322,7 +323,7 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
     <!-- NODE EDIT -->
     <div id="ne">
       <div class="nel">Edit node</div>
-      <input class="nei" id="nel-i" placeholder="Label...">
+      <textarea class="nei" id="nel-i" placeholder="Label… (Enter = new line, Ctrl+Enter = save)" rows="3"></textarea>
       <input class="nei" id="neu" placeholder="URL (optional)">
       <div class="nerow">
         <button class="ne-img-btn" onclick="document.getElementById('ne-img-upload').click()">+ image</button>
@@ -596,9 +597,15 @@ function drawPort(p,r,connected){
 }
 function pPos(n,side){const w=n.w||DW,h=n.h||DH;return side==='in'?{x:n.x,y:n.y+h/2}:{x:n.x+w,y:n.y+h/2};}
 function wrapTxt(ctx,text,maxW){
-  if(!text)return[''];const words=text.split(' ');const lines=[];let line='';
-  words.forEach(w=>{const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=w;}else line=t;});
-  if(line)lines.push(line);return lines.length?lines:[''];
+  if(!text)return[''];
+  const lines=[];
+  text.split('\n').forEach(para=>{
+    if(!para){lines.push('');return;}
+    const words=para.split(' ');let line='';
+    words.forEach(w=>{const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=w;}else line=t;});
+    if(line)lines.push(line);
+  });
+  return lines.length?lines:[''];
 }
 function rrect(ctx,x,y,w,h,r){
   ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
@@ -966,12 +973,17 @@ async function addLink(srcId,tgtId){
 // NODE EDIT
 function openNE(node,cx,cy){
   selNode=node;neImgData=null;
-  document.getElementById('nel-i').value=node.label||'';document.getElementById('neu').value=node.url||'';
+  const ta=document.getElementById('nel-i');
+  ta.value=node.label||'';
+  // Ctrl+Enter saves; plain Enter inserts newline (default textarea behaviour)
+  ta.onkeydown=e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();saveNE();}};
+  document.getElementById('neu').value=node.url||'';
   document.getElementById('ne-img-status').textContent=node.img_url?'Image set':'';
   document.getElementById('nety').innerHTML=TYPES.map(t=>`<button class="${node.type===t?'on':''}" style="${node.type===t?'background:'+TC[t]+';border-color:'+TC[t]+';color:#fff':''}" onclick="setNT('${t}')">${t}</button>`).join('');
   const p=document.getElementById('ne');const W=canvas.width,H=canvas.height;
-  let px=cx+14,py=cy;if(px+220>W)px=cx-234;if(py+210>H)py=H-220;
+  let px=cx+14,py=cy;if(px+220>W)px=cx-234;if(py+220>H)py=H-230;
   p.style.left=px+'px';p.style.top=py+'px';p.style.display='block';
+  ta.focus();ta.select();
 }
 function closeNE(){document.getElementById('ne').style.display='none';}
 function setNT(t){if(!selNode)return;selNode.type=t;document.querySelectorAll('#nety button').forEach(b=>{const on=b.textContent===t;b.classList.toggle('on',on);b.style.background=on?TC[t]:'';b.style.borderColor=on?TC[t]:'';b.style.color=on?'#fff':'';});}
