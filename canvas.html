@@ -370,6 +370,7 @@ let DW=180,DH=72;
 const PR=5.5;
 
 let user=null,who='';
+const NAMES={'zolaray25@gmail.com':'Will','fraektaard@gmail.com':'Brendan','nishbphoto@gmail.com':'Nishant'};
 let nodes=[],links=[],groups=[];
 let portLeft=new Set(),portRight=new Set(); // populated each frame by drawLinks
 let selNode=null,selGE=null,selGColor=null;
@@ -407,7 +408,7 @@ sb.auth.onAuthStateChange((ev,s)=>{if((ev==='SIGNED_IN'||ev==='TOKEN_REFRESHED')
 
 async function startApp(u){
   if(!ALLOWED.includes(u.email.toLowerCase())){await sb.auth.signOut();return;}
-  user=u;who=u.email.split('@')[0];
+  user=u;who=NAMES[u.email.toLowerCase()]||u.email.split('@')[0];
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('ued').textContent=u.email;
