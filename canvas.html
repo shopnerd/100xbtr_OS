@@ -1226,9 +1226,16 @@ async function askClaude(){
   const{nl,ll,gl}=cCtx();
   const sys=`You are an AI collaborator for 100xbtr_sound (Will, Brendan, Nishant — boutique horn speakers).
 Canvas Nodes: ${nl||'(none)'}\nLinks: ${ll||'(none)'}\nGroups: ${gl||'(none)'}
-If asked to DO something, respond with JSON: {"response":"message","actions":[...same schema as analyze...]}. Otherwise respond with plain text.`;
+If asked to DO something (build, create, map, add, connect), respond ONLY with valid JSON, no markdown:
+{"response":"brief message","actions":[
+  {"type":"create_group","label":"Group Name","color":"#378ADD","description":"why"},
+  {"type":"create_node","label":"Node Label","nodeType":"idea","group":"Group Name","description":"why"},
+  {"type":"create_link","from":"source label","to":"target label","description":"why"}
+]}
+Valid nodeType values: idea, reference, material, decision, image, question, anchor.
+Use "group" (the group label string) NOT "group_id". Otherwise respond with plain text.`;
   try{
-    const text=await callClaude([{role:'user',content:sys+'\n\nUser: '+prompt}],1200);
+    const text=await callClaude([{role:'user',content:sys+'\n\nUser: '+prompt}],4000);
     const parsed=extractJSON(text);
     if(parsed?.actions){
       body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${parsed.response||'Done.'}</div></div>`;
