@@ -307,6 +307,10 @@ textarea.nei{line-height:1.4;}
             <div class="sb-label">Brush size</div>
             <input type="range" class="sb-slider" min="1" max="20" value="3" oninput="mkSize=parseInt(this.value)">
           </div>
+          <div>
+            <div class="sb-label">Opacity — <span id="mk-alpha-val">85%</span></div>
+            <input type="range" class="sb-slider" min="5" max="100" value="85" oninput="mkAlpha=parseInt(this.value)/100;document.getElementById('mk-alpha-val').textContent=this.value+'%'">
+          </div>
           <!-- Actions -->
           <div style="display:flex;flex-direction:column;gap:3px;">
             <button class="sb-action-btn" onclick="clearMarkup()">✕  Clear markup</button>
@@ -1573,7 +1577,7 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 
 // ── MARKUP LAYER ────────────────────────────────────────────────────────────
 let mkCanvas=null,mkCtx=null;
-let mkTool='pen',mkColor='#e05050',mkSize=3,mkFill=false;
+let mkTool='pen',mkColor='#e05050',mkSize=3,mkFill=false,mkAlpha=0.85;
 let mkDrawing=false,mkLast=null,mkLineStart=null;
 let layerLocked={canvas:false,markup:false};
 let markupVisible=true;
@@ -1614,9 +1618,10 @@ function redrawMarkup(){
 function drawStroke(s){
   if(!mkCtx||!s.pts.length)return;
   mkCtx.save();
+  const a=s.alpha??0.85;
   mkCtx.strokeStyle=s.color;mkCtx.lineWidth=s.size;
   mkCtx.lineCap='round';mkCtx.lineJoin='round';
-  mkCtx.globalAlpha=0.85;
+  mkCtx.globalAlpha=a;
   if(s.tool==='pen'||s.tool==='erase'){
     if(s.tool==='erase'){mkCtx.globalCompositeOperation='destination-out';mkCtx.globalAlpha=1;}
     mkCtx.beginPath();mkCtx.moveTo(s.pts[0].x,s.pts[0].y);
@@ -1628,15 +1633,15 @@ function drawStroke(s){
     const y=Math.min(s.pts[0].y,s.pts[s.pts.length-1].y);
     const w=Math.abs(s.pts[s.pts.length-1].x-s.pts[0].x);
     const h=Math.abs(s.pts[s.pts.length-1].y-s.pts[0].y);
-    if(s.fill){mkCtx.fillStyle=s.color;mkCtx.globalAlpha=0.85;mkCtx.fillRect(x,y,w,h);}else{mkCtx.strokeRect(x,y,w,h);}
+    if(s.fill){mkCtx.fillStyle=s.color;mkCtx.fillRect(x,y,w,h);}else{mkCtx.strokeRect(x,y,w,h);}
   } else if(s.tool==='circle'&&s.pts.length>=2){
     const dx=s.pts[s.pts.length-1].x-s.pts[0].x,dy=s.pts[s.pts.length-1].y-s.pts[0].y;
     const rx=Math.abs(dx)/2,ry=Math.abs(dy)/2;
     const cx=s.pts[0].x+dx/2,cy=s.pts[0].y+dy/2;
     mkCtx.beginPath();mkCtx.ellipse(cx,cy,Math.max(rx,0.1),Math.max(ry,0.1),0,0,Math.PI*2);
-    if(s.fill){mkCtx.fillStyle=s.color;mkCtx.globalAlpha=0.85;mkCtx.fill();}else{mkCtx.stroke();}
+    if(s.fill){mkCtx.fillStyle=s.color;mkCtx.fill();}else{mkCtx.stroke();}
   } else if(s.tool==='text'&&s.text){
-    mkCtx.font=`${s.size*4+10}px 'SF Mono',monospace`;mkCtx.fillStyle=s.color;mkCtx.globalAlpha=0.85;
+    mkCtx.font=`${s.size*4+10}px 'SF Mono',monospace`;mkCtx.fillStyle=s.color;
     mkCtx.fillText(s.text,s.pts[0].x,s.pts[0].y);
   }
   mkCtx.restore();
@@ -1653,7 +1658,7 @@ function mkDown(e){
     mkStrokes.push(s);drawStroke(s);saveMk();
     mkDrawing=false;return;
   }
-  mkStrokes.push({tool:mkTool,color:mkColor,size:mkSize,fill:mkFill,pts:[pt]});
+  mkStrokes.push({tool:mkTool,color:mkColor,size:mkSize,fill:mkFill,alpha:mkAlpha,pts:[pt]});
 }
 function mkMove(e){
   if(!mkDrawing)return;
