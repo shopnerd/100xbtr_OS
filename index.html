@@ -1008,8 +1008,8 @@ function initCustomScroll(){
   applyW(cScrollW);
   function updateThumb(){
     const dh=document.documentElement.scrollHeight,vh=window.innerHeight;
-    if(dh<=vh){thumb.style.display='none';return;}
     thumb.style.display='block';
+    if(dh<=vh){thumb.style.height=(vh-8)+'px';thumb.style.top='4px';return;}
     const th=Math.max(28,(vh/dh)*vh);
     const tt=(window.scrollY/(dh-vh))*(vh-th);
     thumb.style.height=th+'px';thumb.style.top=tt+'px';
