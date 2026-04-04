@@ -359,6 +359,7 @@ let user=null,who='';
 let nodes=[],links=[],groups=[];
 let selNode=null,selGE=null,selGColor=null;
 let linkFrom=null,linkFromSide='out',claudeOn=false;
+let clipboard=null; // {nodes:[...snapshots], links:[...]}
 const undoStack=[];
 function pushUndo(fn){if(undoStack.length>=20)undoStack.shift();undoStack.push(fn);}
 async function undo(){if(!undoStack.length){toast('Nothing to undo');return;}await undoStack.pop()();}
@@ -863,9 +864,39 @@ function onKey(e){
   if((e.key==='Delete'||e.key==='Backspace')&&!drag.on)delSel();
   if((e.ctrlKey||e.metaKey)&&e.key==='a'){e.preventDefault();selAll();}
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='c'){e.preventDefault();copySelected();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='v'){e.preventDefault();pasteClipboard();}
 }
 function onKU(e){if(e.key==='Alt')altDown=false;if(e.key===' '){spaceDown=false;canvas.style.cursor='default';}}
 function selAll(){selected={nodes:nodes.map(n=>n.id),groups:groups.map(g=>g.id)};toast(`Selected all: ${nodes.length} nodes, ${groups.length} groups`);}
+function copySelected(){
+  if(!selected.nodes.length){toast('Select nodes first');return;}
+  const ns=selected.nodes.map(id=>nById(id)).filter(Boolean);
+  const ids=new Set(ns.map(n=>n.id));
+  // only copy internal links (both endpoints selected)
+  const ls=links.filter(l=>{const s=l.source?.id||l.source,t=l.target?.id||l.target;return ids.has(s)&&ids.has(t);});
+  clipboard={nodes:ns.map(n=>({...n})),links:ls.map(l=>({...l}))};
+  toast(`Copied ${ns.length} node${ns.length!==1?'s':''}${ls.length?' + '+ls.length+' wire'+(ls.length!==1?'s':''):''}`);
+}
+async function pasteClipboard(){
+  if(!clipboard?.nodes?.length){toast('Nothing to paste');return;}
+  const off=28;const idMap={};const newIds=[];
+  for(const n of clipboard.nodes){
+    const newId='n-'+Date.now()+'-'+Math.floor(Math.random()*9999);
+    idMap[n.id]=newId;
+    const nx={...n,id:newId,x:n.x+off,y:n.y+off,group_id:null,author:who};
+    _tw('canvas_nodes',newId);
+    await sb.from('canvas_nodes').insert({...nx,x:Math.round(nx.x),y:Math.round(nx.y)});
+    nodes.push(nx);newIds.push(newId);
+    pushUndo(async()=>{_tw('canvas_nodes',newId);await sb.from('canvas_nodes').delete().eq('id',newId);nodes=nodes.filter(nd=>nd.id!==newId);toast('Paste undone');});
+  }
+  for(const l of clipboard.links){
+    const s=idMap[l.source?.id||l.source],t=idMap[l.target?.id||l.target];
+    if(s&&t)await addLink(s,t);
+  }
+  selected={nodes:newIds,groups:[]};
+  toast(`Pasted ${newIds.length} node${newIds.length!==1?'s':''}`);
+}
 async function delSel(){
   if(!selected.nodes.length&&!selected.groups.length)return;
   if(!confirm(`Delete ${selected.nodes.length} nodes + ${selected.groups.length} groups?`))return;
