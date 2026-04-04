@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>100xbtr_sound — canvas</title>
+<title>100xbtr_sound — canvas v2</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -360,6 +360,7 @@ let nodes=[],links=[],groups=[];
 let selNode=null,selGE=null,selGColor=null;
 let linkFrom=null,linkFromSide='out',claudeOn=false;
 let clipboard=null; // {nodes:[...snapshots], links:[...]}
+let _skipImgPaste=false;
 const undoStack=[];
 function pushUndo(fn){if(undoStack.length>=20)undoStack.shift();undoStack.push(fn);}
 async function undo(){if(!undoStack.length){toast('Nothing to undo');return;}await undoStack.pop()();}
@@ -575,13 +576,13 @@ function drawNodes(){
   });
 }
 
-// white fill + dark stroke = disconnected; black fill + white stroke = connected
+// white fill + dark stroke = disconnected; orange fill + dark stroke = connected
 function drawPort(p,r,connected){
   ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);
-  ctx.fillStyle=connected?'#181816':'#f4f4f0';
+  ctx.fillStyle=connected?'#C96B3A':'#f4f4f0';
   ctx.fill();
-  ctx.strokeStyle=connected?'rgba(255,255,255,0.5)':'rgba(0,0,0,0.6)';
-  ctx.lineWidth=1.2/cam.z;ctx.stroke();
+  ctx.strokeStyle=connected?'rgba(0,0,0,0.35)':'rgba(0,0,0,0.5)';
+  ctx.lineWidth=1.5/cam.z;ctx.stroke();
 }
 function pPos(n,side){const w=n.w||DW,h=n.h||DH;return side==='in'?{x:n.x,y:n.y+h/2}:{x:n.x+w,y:n.y+h/2};}
 function wrapTxt(ctx,text,maxW){
@@ -865,7 +866,7 @@ function onKey(e){
   if((e.ctrlKey||e.metaKey)&&e.key==='a'){e.preventDefault();selAll();}
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}
   if((e.ctrlKey||e.metaKey)&&e.key==='c'){e.preventDefault();copySelected();}
-  if((e.ctrlKey||e.metaKey)&&e.key==='v'){e.preventDefault();pasteClipboard();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='v'){e.preventDefault();if(clipboard?.nodes?.length){_skipImgPaste=true;setTimeout(()=>_skipImgPaste=false,80);}pasteClipboard();}
 }
 function onKU(e){if(e.key==='Alt')altDown=false;if(e.key===' '){spaceDown=false;canvas.style.cursor='default';}}
 function selAll(){selected={nodes:nodes.map(n=>n.id),groups:groups.map(g=>g.id)};toast(`Selected all: ${nodes.length} nodes, ${groups.length} groups`);}
@@ -904,7 +905,7 @@ async function delSel(){
   for(const id of selected.groups){_tw('canvas_groups',id);await sb.from('canvas_groups').delete().eq('id',id);groups=groups.filter(g=>g.id!==id);nodes.filter(n=>n.group_id===id).forEach(n=>n.group_id=null);}
   selected={nodes:[],groups:[]};
 }
-async function onPaste(e){const items=e.clipboardData?.items;if(!items)return;for(const item of items){if(item.type.startsWith('image/')){addImageFile({files:[item.getAsFile()]});}}}
+async function onPaste(e){if(_skipImgPaste)return;const items=e.clipboardData?.items;if(!items)return;for(const item of items){if(item.type.startsWith('image/')){addImageFile({files:[item.getAsFile()]});}}}
 
 // ADD
 async function addNA(type,wx,wy){
