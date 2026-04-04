@@ -836,8 +836,8 @@ async function quickAdd(){
   if(isURL)fetchTitle(id,text);inp.value='';toast('Added');
 }
 async function fetchTitle(id,url){
-  try{const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);const d=await r.json();const m=d.contents?.match(/<title[^>]*>([^<]+)<\/title>/i);
-  if(m?.[1]){const t=m[1].trim().replace(/\s+/g,' ').substring(0,60);_tw('canvas_nodes',id);await sb.from('canvas_nodes').update({label:t}).eq('id',id);const n=nById(id);if(n)n.label=t;}}catch(e){}
+  try{const r=await fetch(`/.netlify/functions/fetch-title?url=${encodeURIComponent(url)}`);const d=await r.json();
+  if(d.title){_tw('canvas_nodes',id);await sb.from('canvas_nodes').update({label:d.title}).eq('id',id);const n=nById(id);if(n)n.label=d.title;}}catch(e){}
 }
 async function addImageFile(input){
   const file=input.files?.[0];if(!file)return;
@@ -1014,21 +1014,6 @@ Suggest which group each ungrouped node should join, or propose new groups. Resp
     toast(`Auto-associated ${data.assignments.length} nodes`);
   }catch(e){toast('Auto-associate failed: '+e.message);}
 }
-async function alignG(g,dir){await alignNodesInGroups(dir,[g]);}
-async function alignNodesInGroups(dir,gs){
-  const tgt=gs||groups;
-  for(const g of tgt){
-    const gn=nigByGid(g.id);if(gn.length<2)continue;
-    const NPAD=20,NH=DH;const cols=Math.max(1,Math.ceil(Math.sqrt(gn.length)));
-    const totalW=cols*(DW+NPAD)-NPAD;
-    let sx;if(dir==='left')sx=g.x+NPAD;else if(dir==='right')sx=g.x+g.w-NPAD-totalW;else sx=g.x+g.w/2-totalW/2;
-    gn.forEach((n,i)=>{n.x=sx+(i%cols)*(DW+NPAD);n.y=g.y+GH+NPAD+Math.floor(i/cols)*(NH+NPAD);});
-    sizeGAN(g,nigByGid(g.id));_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
-    for(const n of gn){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}
-  }
-  toast('Aligned');
-}
-
 // LAYOUT
 async function runLayout(){
   if(!nodes.length){toast('No nodes');return;}if(simRunning)return;simRunning=true;toast('Arranging...');
@@ -1100,7 +1085,8 @@ async function alignNodesInGroups(dir,gs){
 let sidebarOpen=false;
 function toggleSidebar(){sidebarOpen=!sidebarOpen;document.getElementById('sidebar').classList.toggle('open',sidebarOpen);document.getElementById('sb-toggle').classList.toggle('open',sidebarOpen);document.getElementById('sb-toggle').textContent=sidebarOpen?'◀':'▶';}
 function showSbTab(id,el){document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('on'));document.getElementById('sbp-'+id).classList.add('on');el.classList.add('on');}
-function onSpreadSlider(v){spreadGap=parseInt(v);document.getElementById('spread-val').textContent=v+' px';repelGroupsOnly();}
+let _spreadTimer=null;
+function onSpreadSlider(v){spreadGap=parseInt(v);document.getElementById('spread-val').textContent=v+' px';clearTimeout(_spreadTimer);_spreadTimer=setTimeout(()=>repelGroupsOnly(),300);}
 function onNWSlider(v){DW=parseInt(v);document.getElementById('nw-val').textContent=v+' px wide';nodes.forEach(n=>{if(!n._customW)n.w=DW;});}
 
 // SAVED CANVASES
@@ -1306,6 +1292,8 @@ function initMarkup(){
   mkCanvas.addEventListener('mouseleave',mkUp);
   // restore from localStorage
   try{const saved=localStorage.getItem('100xbtr_markup');if(saved){const img=new Image();img.onload=()=>mkCtx.drawImage(img,0,0);img.src=saved;}}catch(e){}
+  // activate pen tool by default so drawing works immediately on open
+  mkTool='pen';mkCanvas.style.pointerEvents='auto';
 }
 function syncMkSize(){
   if(!mkCanvas)return;
