@@ -1588,6 +1588,7 @@ function initMarkup(){
   mkCanvas.addEventListener('mousemove',mkMove);
   mkCanvas.addEventListener('mouseup',mkUp);
   mkCanvas.addEventListener('mouseleave',mkUp);
+  mkCanvas.addEventListener('wheel',onWheel,{passive:false});
   // restore from localStorage (new: JSON strokes array; old: PNG data URL)
   try{const saved=localStorage.getItem('100xbtr_markup');if(saved){try{const p=JSON.parse(saved);if(Array.isArray(p)){mkStrokes=p;redrawMarkup();}}catch(e){const img=new Image();img.onload=()=>mkCtx.drawImage(img,0,0);img.src=saved;}}}catch(e){}
   // sync display with markupVisible; pointer-events enabled only when Markup tab is active
