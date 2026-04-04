@@ -1303,7 +1303,8 @@ function initMarkup(){
   mkCanvas.addEventListener('mouseleave',mkUp);
   // restore from localStorage
   try{const saved=localStorage.getItem('100xbtr_markup');if(saved){const img=new Image();img.onload=()=>mkCtx.drawImage(img,0,0);img.src=saved;}}catch(e){}
-  // activate pen tool by default so drawing works immediately on open
+  // sync display with markupVisible and activate pen tool by default
+  mkCanvas.style.display=markupVisible?'block':'none';
   mkTool='pen';mkCanvas.style.pointerEvents='auto';
 }
 function syncMkSize(){
