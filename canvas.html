@@ -510,26 +510,37 @@ function drawLinks(){
 }
 
 function drawNodes(){
-  // pre-compute connected ports so we can style them per-node
+  // pre-compute connected ports
   const connIn=new Set(links.map(l=>l.target?.id||l.target));
   const connOut=new Set(links.map(l=>l.source?.id||l.source));
+  // pre-compute neighbors of selected nodes/groups — they get a secondary glow
+  const selNeighbors=new Set();
+  const selIds=new Set(selected.nodes);
+  selected.groups.forEach(gid=>nigByGid(gid).forEach(n=>selIds.add(n.id)));
+  selIds.forEach(id=>{
+    links.forEach(l=>{
+      const s=l.source?.id||l.source,t=l.target?.id||l.target;
+      if(s===id&&!selIds.has(t))selNeighbors.add(t);
+      if(t===id&&!selIds.has(s))selNeighbors.add(s);
+    });
+  });
   nodes.forEach(n=>{
-    const isSel=selected.nodes.includes(n.id);
-    const isLk=linkFrom?.id===n.id;
+    const isSel=selected.nodes.includes(n.id)||selIds.has(n.id);
+    const isNeighbor=!isSel&&selNeighbors.has(n.id);
     const color=TC[n.type]||'#666660';
     const w=n.w||DW,h=n.h||DH;
     const r=3.5/cam.z;
-    // shadow / glow
-    ctx.shadowOffsetY=isSel?0:1/cam.z;
-    ctx.shadowColor=isSel?color:'rgba(0,0,0,0.35)';
-    ctx.shadowBlur=(isSel?14:3)/cam.z;
+    // shadow / glow — always orange for both selected and neighbor
+    ctx.shadowOffsetY=0;
+    ctx.shadowColor=isSel?'#C96B3A':isNeighbor?'rgba(201,107,58,0.5)':'rgba(0,0,0,0)';
+    ctx.shadowBlur=isSel?16/cam.z:isNeighbor?10/cam.z:0;
     // body
-    ctx.fillStyle=isSel?'#b4b4b0':'#6e6e6a';
-    ctx.strokeStyle=isSel?color:'#929290';
+    ctx.fillStyle=isSel?'#b8b8b4':isNeighbor?'#858582':'#6e6e6a';
+    ctx.strokeStyle=isSel?'#C96B3A':isNeighbor?'rgba(201,107,58,0.6)':'#929290';
     ctx.lineWidth=(isSel?1.5:0.8)/cam.z;
     rrect(ctx,n.x,n.y,w,h,r);ctx.fill();ctx.stroke();
-    ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-    // left color stripe — brighter when selected
+    ctx.shadowColor='rgba(0,0,0,0)';ctx.shadowBlur=0;
+    // left color stripe
     ctx.fillStyle=isSel?color:color+'cc';rrectL(ctx,n.x,n.y,5/cam.z,h,r);ctx.fill();
     // image
     let tx=n.x+9/cam.z,tw=w-14/cam.z;
@@ -541,7 +552,7 @@ function drawNodes(){
         tx=n.x+sz+10/cam.z;tw=w-sz-14/cam.z;
       } else if(!img){const i=new Image();i.crossOrigin='anonymous';i.src=n.img_url;imgCache[n.img_url]=i;}
     }
-    // label — darker text on light selected body
+    // label — dark text on light selected body
     const fs=10/cam.z;
     ctx.font=`${fs}px 'SF Mono',monospace`;
     ctx.fillStyle=isSel?'#2a2a28':'#f0f0e8';ctx.textBaseline='middle';ctx.textAlign='left';
@@ -562,18 +573,18 @@ function drawNodes(){
     const pr=PR/cam.z;
     drawPort(pPos(n,'in'),pr,connIn.has(n.id));
     drawPort(pPos(n,'out'),pr,connOut.has(n.id));
-    // selection ring — warm orange
-    if(isSel){ctx.strokeStyle='rgba(201,107,58,0.55)';ctx.lineWidth=3/cam.z;rrect(ctx,n.x-2,n.y-2,w+4,h+4,r+1);ctx.stroke();}
+    // selection ring — orange for selected, faint for neighbor
+    if(isSel){ctx.strokeStyle='rgba(201,107,58,0.6)';ctx.lineWidth=3/cam.z;rrect(ctx,n.x-2,n.y-2,w+4,h+4,r+1);ctx.stroke();}
+    else if(isNeighbor){ctx.strokeStyle='rgba(201,107,58,0.25)';ctx.lineWidth=2/cam.z;rrect(ctx,n.x-1,n.y-1,w+2,h+2,r+0.5);ctx.stroke();}
   });
 }
 
-// connected=true → black filled port; false → white open port
+// white with dark outline = disconnected; black with light outline = connected
 function drawPort(p,r,connected){
   ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);
-  ctx.fillStyle=connected?'#1c1c1a':'#f0f0ec';
-  ctx.fill();
-  ctx.strokeStyle=connected?'rgba(255,255,255,0.25)':'rgba(20,20,18,0.6)';
-  ctx.lineWidth=1/cam.z;ctx.stroke();
+  ctx.fillStyle=connected?'#1a1a18':'#f2f2ee';ctx.fill();
+  ctx.strokeStyle=connected?'rgba(255,255,255,0.3)':'rgba(10,10,8,0.55)';
+  ctx.lineWidth=1.1/cam.z;ctx.stroke();
 }
 function pPos(n,side){const w=n.w||DW,h=n.h||DH;return side==='in'?{x:n.x,y:n.y+h/2}:{x:n.x+w,y:n.y+h/2};}
 function wrapTxt(ctx,text,maxW){
