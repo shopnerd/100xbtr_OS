@@ -1084,7 +1084,7 @@ async function alignNodesInGroups(dir,gs){
 // SIDEBAR
 let sidebarOpen=false;
 function toggleSidebar(){sidebarOpen=!sidebarOpen;document.getElementById('sidebar').classList.toggle('open',sidebarOpen);document.getElementById('sb-toggle').classList.toggle('open',sidebarOpen);document.getElementById('sb-toggle').textContent=sidebarOpen?'◀':'▶';}
-function showSbTab(id,el){document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('on'));document.getElementById('sbp-'+id).classList.add('on');el.classList.add('on');}
+function showSbTab(id,el){document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('on'));document.getElementById('sbp-'+id).classList.add('on');el.classList.add('on');if(mkCanvas)mkCanvas.style.pointerEvents=id==='markup'?'auto':'none';}
 let _spreadTimer=null;
 function onSpreadSlider(v){spreadGap=parseInt(v);document.getElementById('spread-val').textContent=v+' px';clearTimeout(_spreadTimer);_spreadTimer=setTimeout(()=>repelGroupsOnly(),300);}
 function onNWSlider(v){DW=parseInt(v);document.getElementById('nw-val').textContent=v+' px wide';nodes.forEach(n=>{if(!n._customW)n.w=DW;});}
@@ -1303,9 +1303,9 @@ function initMarkup(){
   mkCanvas.addEventListener('mouseleave',mkUp);
   // restore from localStorage
   try{const saved=localStorage.getItem('100xbtr_markup');if(saved){const img=new Image();img.onload=()=>mkCtx.drawImage(img,0,0);img.src=saved;}}catch(e){}
-  // sync display with markupVisible and activate pen tool by default
+  // sync display with markupVisible; pointer-events enabled only when Markup tab is active
   mkCanvas.style.display=markupVisible?'block':'none';
-  mkTool='pen';mkCanvas.style.pointerEvents='auto';
+  mkTool='pen';mkCanvas.style.pointerEvents='none';
 }
 function syncMkSize(){
   if(!mkCanvas)return;
