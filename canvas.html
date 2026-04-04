@@ -1656,10 +1656,14 @@ function mkDown(e){
 }
 function mkMove(e){
   if(!mkDrawing)return;
-  const pt=mkPt(e);
+  let pt=mkPt(e);
   const cur=mkStrokes[mkStrokes.length-1];if(!cur)return;
+  // Shift+circle → constrain to perfect circle
+  if(cur.tool==='circle'&&e.shiftKey&&cur.pts.length>=1){
+    const s=cur.pts[0],dx=pt.x-s.x,dy=pt.y-s.y,d=Math.min(Math.abs(dx),Math.abs(dy));
+    pt={x:s.x+Math.sign(dx)*d,y:s.y+Math.sign(dy)*d};
+  }
   cur.pts.push(pt);
-  // live draw
   redrawMarkup();
 }
 function mkUp(){
