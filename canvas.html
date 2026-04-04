@@ -543,17 +543,14 @@ function drawNodes(){
     const r=3.5/cam.z;
     const pad=10/cam.z;
     // paint explicit glow rect BEHIND node (no canvas shadow — unreliable cross-browser)
-    if(isSel){
+    if(isSel||isNeighbor){
       ctx.beginPath();rrect(ctx,n.x-pad,n.y-pad,w+pad*2,h+pad*2,r+pad);
       ctx.fillStyle='rgba(201,107,58,0.22)';ctx.fill();
-    } else if(isNeighbor){
-      ctx.beginPath();rrect(ctx,n.x-pad*0.6,n.y-pad*0.6,w+pad*1.2,h+pad*1.2,r+pad*0.6);
-      ctx.fillStyle='rgba(201,107,58,0.10)';ctx.fill();
     }
     // body
-    ctx.fillStyle=isSel?'#c0c0bc':isNeighbor?'#858582':'#6e6e6a';
-    ctx.strokeStyle=isSel?'#C96B3A':isNeighbor?'rgba(201,107,58,0.55)':'#929290';
-    ctx.lineWidth=(isSel?2:0.8)/cam.z;
+    ctx.fillStyle=isSel||isNeighbor?'#c0c0bc':'#6e6e6a';
+    ctx.strokeStyle=isSel||isNeighbor?'#C96B3A':'#929290';
+    ctx.lineWidth=(isSel||isNeighbor?2:0.8)/cam.z;
     rrect(ctx,n.x,n.y,w,h,r);ctx.fill();ctx.stroke();
     // left color stripe
     ctx.fillStyle=color;rrectL(ctx,n.x,n.y,5/cam.z,h,r);ctx.fill();
@@ -569,7 +566,7 @@ function drawNodes(){
     }
     // label
     const fs=10/cam.z;ctx.font=`${fs}px 'SF Mono',monospace`;
-    ctx.fillStyle=isSel?'#1e1e1c':'#f0f0e8';ctx.textBaseline='middle';ctx.textAlign='left';
+    ctx.fillStyle=(isSel||isNeighbor)?'#1e1e1c':'#f0f0e8';ctx.textBaseline='middle';ctx.textAlign='left';
     const lines=wrapTxt(ctx,n.label||'',tw-6/cam.z);
     const lh=fs*1.38,th=lines.length*lh;const sy=n.y+h/2-th/2;
     lines.forEach((l,i)=>ctx.fillText(l,tx+4/cam.z,sy+i*lh+lh/2));
