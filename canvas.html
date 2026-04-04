@@ -1220,19 +1220,28 @@ async function newCanvas(){if(!confirm('Clear canvas?'))return;await sb.from('ca
 const _ac={};let _acn=0;
 function _sa(acts){const id=_acn++;_ac[id]=acts;return id;}
 function toggleClaude(){claudeOn=!claudeOn;document.getElementById('clt').classList.toggle('on',claudeOn);document.getElementById('cp').classList.toggle('open',claudeOn);if(claudeOn)analyzeCanvas();}
-async function callClaude(messages,maxTokens=1600){
+async function callClaude(messages,maxTokens=1600,_attempt=0){
   const res=await fetch('/.netlify/functions/claude',{
     method:'POST',
     headers:{'Content-Type':'application/json','Accept':'application/json'},
     body:JSON.stringify({messages,max_tokens:maxTokens})
   });
-  if(!res.ok){const t=await res.text();throw new Error('Claude API error: '+res.status+' '+t.substring(0,200));}
+  if(!res.ok){const t=await res.text();throw new Error('Claude API error: '+res.status+' '+t.substring(0,120));}
   const data=await res.json();
-  // handle both direct content array and nested response
+  // Anthropic returns HTTP 200 even for API-level errors
+  if(data.type==='error'){
+    const errType=data.error?.type||'';
+    const errMsg=data.error?.message||'API error';
+    if((errType==='overloaded_error'||errType==='api_error')&&_attempt<2){
+      await new Promise(r=>setTimeout(r,2000*(1+_attempt)));
+      return callClaude(messages,maxTokens,_attempt+1);
+    }
+    throw new Error(errType==='overloaded_error'?'Anthropic API is overloaded — try again in a moment':errMsg);
+  }
   if(data.content?.[0]?.text)return data.content[0].text;
   if(data.text)return data.text;
   if(typeof data==='string')return data;
-  throw new Error('Unexpected response shape: '+JSON.stringify(data).substring(0,200));
+  throw new Error('Unexpected response: '+JSON.stringify(data).substring(0,120));
 }
 
 function extractJSON(text){
