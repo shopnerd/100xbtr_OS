@@ -280,8 +280,13 @@ textarea.nei{line-height:1.4;}
               <button class="mk-tool-btn on" id="mkt-pen" onclick="setMkTool('pen',this)">✏ Pen</button>
               <button class="mk-tool-btn" id="mkt-line" onclick="setMkTool('line',this)">╱ Line</button>
               <button class="mk-tool-btn" id="mkt-rect" onclick="setMkTool('rect',this)">▭ Rect</button>
+              <button class="mk-tool-btn" id="mkt-circle" onclick="setMkTool('circle',this)">○ Circle</button>
               <button class="mk-tool-btn" id="mkt-text" onclick="setMkTool('text',this)">T Text</button>
               <button class="mk-tool-btn" id="mkt-erase" onclick="setMkTool('erase',this)">⌫ Erase</button>
+            </div>
+            <div style="display:flex;gap:3px;margin-top:4px;">
+              <button class="mk-tool-btn on" id="mkt-stroke" onclick="setMkFill(false,this)">◻ Stroke</button>
+              <button class="mk-tool-btn" id="mkt-fill" onclick="setMkFill(true,this)">■ Fill</button>
             </div>
           </div>
           <!-- Color -->
@@ -1568,7 +1573,7 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 
 // ── MARKUP LAYER ────────────────────────────────────────────────────────────
 let mkCanvas=null,mkCtx=null;
-let mkTool='pen',mkColor='#e05050',mkSize=3;
+let mkTool='pen',mkColor='#e05050',mkSize=3,mkFill=false;
 let mkDrawing=false,mkLast=null,mkLineStart=null;
 let layerLocked={canvas:false,markup:false};
 let markupVisible=true;
@@ -1622,7 +1627,13 @@ function drawStroke(s){
     const y=Math.min(s.pts[0].y,s.pts[s.pts.length-1].y);
     const w=Math.abs(s.pts[s.pts.length-1].x-s.pts[0].x);
     const h=Math.abs(s.pts[s.pts.length-1].y-s.pts[0].y);
-    mkCtx.strokeRect(x,y,w,h);
+    if(s.fill){mkCtx.fillStyle=s.color;mkCtx.globalAlpha=0.85;mkCtx.fillRect(x,y,w,h);}else{mkCtx.strokeRect(x,y,w,h);}
+  } else if(s.tool==='circle'&&s.pts.length>=2){
+    const dx=s.pts[s.pts.length-1].x-s.pts[0].x,dy=s.pts[s.pts.length-1].y-s.pts[0].y;
+    const rx=Math.abs(dx)/2,ry=Math.abs(dy)/2;
+    const cx=s.pts[0].x+dx/2,cy=s.pts[0].y+dy/2;
+    mkCtx.beginPath();mkCtx.ellipse(cx,cy,Math.max(rx,0.1),Math.max(ry,0.1),0,0,Math.PI*2);
+    if(s.fill){mkCtx.fillStyle=s.color;mkCtx.globalAlpha=0.85;mkCtx.fill();}else{mkCtx.stroke();}
   } else if(s.tool==='text'&&s.text){
     mkCtx.font=`${s.size*4+10}px 'SF Mono',monospace`;mkCtx.fillStyle=s.color;mkCtx.globalAlpha=0.85;
     mkCtx.fillText(s.text,s.pts[0].x,s.pts[0].y);
@@ -1641,7 +1652,7 @@ function mkDown(e){
     mkStrokes.push(s);drawStroke(s);saveMk();
     mkDrawing=false;return;
   }
-  mkStrokes.push({tool:mkTool,color:mkColor,size:mkSize,pts:[pt]});
+  mkStrokes.push({tool:mkTool,color:mkColor,size:mkSize,fill:mkFill,pts:[pt]});
 }
 function mkMove(e){
   if(!mkDrawing)return;
@@ -1659,10 +1670,15 @@ function saveMk(){
 }
 function setMkTool(t,el){
   mkTool=t;
-  document.querySelectorAll('.mk-tool-btn').forEach(b=>b.classList.remove('on'));
+  // only remove 'on' from tool buttons, not the stroke/fill toggle
+  document.querySelectorAll('.mk-tool-btn:not(#mkt-stroke):not(#mkt-fill)').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
-  // enable/disable mkCanvas pointer events
-  mkCanvas.style.pointerEvents=(t==='pen'||t==='erase'||t==='line'||t==='rect'||t==='text')?'auto':'none';
+  mkCanvas.style.pointerEvents=(t==='pen'||t==='erase'||t==='line'||t==='rect'||t==='circle'||t==='text')?'auto':'none';
+}
+function setMkFill(fill,el){
+  mkFill=fill;
+  document.getElementById('mkt-stroke').classList.toggle('on',!fill);
+  document.getElementById('mkt-fill').classList.toggle('on',fill);
 }
 function setMkColor(c,el){
   mkColor=c;
