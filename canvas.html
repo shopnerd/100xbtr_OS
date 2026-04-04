@@ -564,16 +564,16 @@ function drawNodes(){
         tx=n.x+sz+10/cam.z;tw=w-sz-14/cam.z;
       } else if(!img){const i=new Image();i.crossOrigin='anonymous';i.src=n.img_url;imgCache[n.img_url]=i;}
     }
-    // label
-    const fs=10/cam.z;ctx.font=`${fs}px 'SF Mono',monospace`;
+    // label — font scales with node size, not locked to screen pixels
+    const fs=Math.min(h*0.22,w*0.075);ctx.font=`${fs}px 'SF Mono',monospace`;
     ctx.fillStyle=(isSel||isNeighbor)?'#1e1e1c':'#f0f0e8';ctx.textBaseline='middle';ctx.textAlign='left';
     const lines=wrapTxt(ctx,n.label||'',tw-6/cam.z);
     const lh=fs*1.38,th=lines.length*lh;const sy=n.y+h/2-th/2;
     lines.forEach((l,i)=>ctx.fillText(l,tx+4/cam.z,sy+i*lh+lh/2));
-    ctx.font=`${7.5/cam.z}px 'SF Mono',monospace`;
+    const fsm=fs*0.75;ctx.font=`${fsm}px 'SF Mono',monospace`;
     ctx.fillStyle=color+'99';ctx.textBaseline='bottom';ctx.fillText(n.type,n.x+7/cam.z,n.y+h-2/cam.z);
     ctx.textAlign='right';ctx.fillStyle='#888882';ctx.fillText(n.author||'',n.x+w-5/cam.z,n.y+h-2/cam.z);
-    if(n.url){ctx.fillStyle='#378ADD88';ctx.font=`${8/cam.z}px monospace`;ctx.textAlign='right';ctx.textBaseline='top';ctx.fillText('↗',n.x+w-4/cam.z,n.y+2/cam.z);}
+    if(n.url){ctx.fillStyle='#378ADD88';ctx.font=`${fs*0.8}px monospace`;ctx.textAlign='right';ctx.textBaseline='top';ctx.fillText('↗',n.x+w-4/cam.z,n.y+2/cam.z);}
     // ports — drawn last so they sit on top; white=open, black=wired
     const pr=(PR+1)/cam.z;
     drawPort(pPos(n,'in'),pr,connIn.has(n.id));
