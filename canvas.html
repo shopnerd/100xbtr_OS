@@ -359,6 +359,7 @@ const PR=5.5;
 
 let user=null,who='';
 let nodes=[],links=[],groups=[];
+let portLeft=new Set(),portRight=new Set(); // populated each frame by drawLinks
 let selNode=null,selGE=null,selGColor=null;
 let linkFrom=null,linkFromSide='out',claudeOn=false;
 let clipboard=null; // {nodes:[...snapshots], links:[...]}
@@ -500,10 +501,15 @@ function drawGroups(){
 }
 
 function drawLinks(){
+  portLeft=new Set();portRight=new Set();
   links.forEach(l=>{
     const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
     if(!s||!t)return;
-    const sp=pPos(s,'out'),tp=pPos(t,'in');
+    // use nearest ports: compare horizontal centers to avoid long reverse routes
+    const sCX=s.x+(s.w||DW)/2,tCX=t.x+(t.w||DW)/2;
+    let sp,tp;
+    if(sCX<=tCX){sp=pPos(s,'out');tp=pPos(t,'in');portRight.add(s.id);portLeft.add(t.id);}
+    else{sp=pPos(s,'in');tp=pPos(t,'out');portLeft.add(s.id);portRight.add(t.id);}
     const cpx=sp.x+(tp.x-sp.x)*0.5;
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.bezierCurveTo(cpx,sp.y,cpx,tp.y,tp.x,tp.y);
     const cl=l.claude;
@@ -520,8 +526,7 @@ function drawLinks(){
 }
 
 function drawNodes(){
-  const connIn=new Set(links.map(l=>l.target?.id||l.target));
-  const connOut=new Set(links.map(l=>l.source?.id||l.source));
+  // portLeft/portRight populated each frame by drawLinks (called first)
   // neighbors of selected nodes/groups get secondary highlight
   const selIds=new Set(selected.nodes);
   selected.groups.forEach(gid=>nigByGid(gid).forEach(n=>selIds.add(n.id)));
@@ -576,8 +581,8 @@ function drawNodes(){
     if(n.url){ctx.fillStyle='#378ADD88';ctx.font=`${fs*0.8}px monospace`;ctx.textAlign='right';ctx.textBaseline='top';ctx.fillText('↗',n.x+w-4/cam.z,n.y+2/cam.z);}
     // ports — drawn last so they sit on top; white=open, black=wired
     const pr=(PR+1)/cam.z;
-    drawPort(pPos(n,'in'),pr,connIn.has(n.id));
-    drawPort(pPos(n,'out'),pr,connOut.has(n.id));
+    drawPort(pPos(n,'in'),pr,portLeft.has(n.id));
+    drawPort(pPos(n,'out'),pr,portRight.has(n.id));
   });
 }
 
