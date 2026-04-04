@@ -199,14 +199,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
   <!-- OVERVIEW -->
   <div class="view on" id="v-home">
+    <!-- S1: Status -->
     <div class="grid3">
       <div class="metric"><div class="metric-label">Status</div><div class="metric-val">Pre-Lunch</div><div class="metric-sub">formation pending</div></div>
       <div class="metric"><div class="metric-label">Open decisions</div><div class="metric-val" id="open-count">—</div><div class="metric-sub">before first build</div></div>
       <div class="metric"><div class="metric-label">First prototype</div><div class="metric-val">~6 mo</div><div class="metric-sub">listenable, not for sale</div></div>
     </div>
+    <!-- S2: Identity -->
     <div class="grid2">
-      <div class="card" id="mission-card"><div class="loading">Loading...</div></div>
-      <div class="card" id="northstar-card"><div class="loading">Loading...</div></div>
+      <div class="card" id="ov-mission"><div class="loading">Loading...</div></div>
+      <div class="card" id="ov-vision"><div class="loading">Loading...</div></div>
+    </div>
+    <!-- S3: Strategy -->
+    <div class="grid2">
+      <div class="card" id="ov-northstar"><div class="loading">Loading...</div></div>
+      <div class="card" id="ov-positioning"><div class="loading">Loading...</div></div>
+    </div>
+    <!-- S4: Narrative -->
+    <div class="card" id="ov-story"><div class="loading">Loading...</div></div>
+    <!-- S5: Product -->
+    <div class="grid2">
+      <div class="card" id="ov-what"><div class="loading">Loading...</div></div>
+      <div class="card" id="ov-who"><div class="loading">Loading...</div></div>
+    </div>
+    <!-- S6: Team -->
+    <div class="grid3">
+      <div class="card" id="ov-will"><div class="loading">Loading...</div></div>
+      <div class="card" id="ov-brendan"><div class="loading">Loading...</div></div>
+      <div class="card" id="ov-nishant"><div class="loading">Loading...</div></div>
     </div>
   </div>
 
@@ -546,8 +566,7 @@ async function loadFields(){
   if(error||!data)return;
   fc={};
   data.forEach(f=>fc[f.id]=f);
-  renderMission(data);
-  renderNorthStar(data);
+  renderOverview();
   renderTeam(data.filter(f=>f.section==='team'));
   renderBuild(data.filter(f=>f.section==='build'));
   renderAssets(data.filter(f=>f.section==='assets'));
@@ -555,10 +574,72 @@ async function loadFields(){
   renderRoadmap(data.filter(f=>f.section==='roadmap'));
 }
 
-function ef(id,style){
+function renderOverview(){
+  // field config: id → {el, eyebrow, style, fallback, label, minHeight?}
+  const cards=[
+    {id:'overview_mission', el:'ov-mission', eyebrow:'The Mission',
+     style:'font-size:13px;line-height:1.8;color:var(--tx);',
+     label:'Mission',
+     fallback:'Make horn loudspeakers that are genuinely, obsessively better — in sound, in craft, in design. Objects worth keeping for a lifetime.'},
+    {id:'overview_vision', el:'ov-vision', eyebrow:'Vision',
+     style:'font-size:13px;line-height:1.8;color:var(--tx);',
+     label:'Vision',
+     fallback:"A future where the best room to listen to music isn't a recording studio — it's someone's living room, with speakers built by hand that will outlast everyone who touches them."},
+    {id:'overview_north_star', el:'ov-northstar', eyebrow:'North Star',
+     style:'font-size:13px;line-height:1.8;color:var(--tx);',
+     label:'North Star',
+     fallback:"Ojas — Devon Turnbull. Maker-artist cult following → Klipsch collab → $8,498/pair sold out. That's the trajectory. Our edge: CNC + cabinetry + EE + 30yr design credibility."},
+    {id:'overview_positioning', el:'ov-positioning', eyebrow:'Brand Positioning',
+     style:'font-size:13px;line-height:1.8;color:var(--tx);',
+     label:'Brand Positioning',
+     fallback:"For serious listeners who have outgrown mass-market hi-fi and can't afford six-figure statement systems — 100xbtr makes horn loudspeakers that deliver genuinely high-efficiency, point-source sound in cabinets built with the same obsession as the acoustics. Unlike boutique brands that make you choose between engineering and craft, we have both in-house."},
+    {id:'overview_story', el:'ov-story', eyebrow:'Founder Story',
+     style:'font-size:13px;line-height:1.8;color:var(--tx);white-space:pre-wrap;',
+     label:'Founder Story', minHeight:'140px',
+     fallback:"Three people who shouldn't exist as a company but do. Will has spent 30 years making things — furniture, art, collaborative projects — with an instinct for when an object is right and when it isn't. Brendan runs a cabinetry shop and has been building things with Will for years; he's the one who can actually make the cabinet. Nishant spent his graduate engineering degree obsessing over horn speaker acoustics and arrived with the technical depth the other two didn't have. None of them set out to start a speaker company. They set out to build the speaker they wanted to own.\n\nThe name comes from a furniture business Will and Brendan ran together. It was always a sincere statement and a knowing joke at the same time. That's still true."},
+    {id:'overview_what_we_make', el:'ov-what', eyebrow:'What We Make',
+     style:'font-size:13px;line-height:1.8;color:var(--tx);',
+     label:'What We Make',
+     fallback:'Horn-loaded loudspeakers, floor-standing and bookshelf, built in small batches. High efficiency. Point-source imaging. Real wood cabinets CNC-milled and hand-finished. Target: $1,500–$8,500/pair depending on configuration. First prototype: a listenable proof-of-concept. Not for sale. For proving the concept to ourselves.'},
+    {id:'overview_who_its_for', el:'ov-who', eyebrow:"Who It's For",
+     style:'font-size:13px;line-height:1.8;color:var(--tx);',
+     label:"Who It's For",
+     fallback:"The listener who has already spent years chasing the right sound and knows what they're looking for. Probably owns a turntable. Has read too many forum threads. Lives in a real room, not an anechoic chamber. Values the object as much as the measurement. Willing to wait for something made correctly rather than buy something made quickly."},
+    {id:'overview_will', el:'ov-will', eyebrow:'Will — Design & Vision',
+     style:'font-size:13px;line-height:1.8;color:var(--tx);',
+     label:'Will bio', equity:'34%',
+     fallback:'30 years of design experience. CNC mill. Aesthetic instinct. The person who knows when something is right. Co-founder of Art Club 2000. Prior furniture business with Brendan.'},
+    {id:'overview_brendan', el:'ov-brendan', eyebrow:'Brendan — Craft & Build',
+     style:'font-size:13px;line-height:1.8;color:var(--tx);',
+     label:'Brendan bio', equity:'34%',
+     fallback:"Master woodworker. Cabinetry shop owner. The person who can actually build it. Hi-fi enthusiast. Longtime collaborator. The hands of the operation."},
+    {id:'overview_nishant', el:'ov-nishant', eyebrow:'Nishant — Engineering',
+     style:'font-size:13px;line-height:1.8;color:var(--tx);',
+     label:'Nishant bio', equity:'32%',
+     fallback:'Masters in electrical engineering. Horn speaker research. Crossover design. Driver selection. Acoustic measurement. The person who makes it sound right.'},
+  ];
+  cards.forEach(cfg=>{
+    const el=document.getElementById(cfg.el);
+    if(!el)return;
+    const opts=cfg.minHeight?{minHeight:cfg.minHeight}:{};
+    const equity=cfg.equity?`<div style="font-size:11px;color:var(--tx3);margin-top:8px;">Equity: ${cfg.equity}</div>`:'';
+    el.innerHTML=`<div class="eyebrow">${cfg.eyebrow}</div>${ef(cfg.id,cfg.style,opts)}${equity}`;
+    if(!fc[cfg.id]?.value){
+      fc[cfg.id]={id:cfg.id,value:cfg.fallback,updated_by:null,updated_at:null};
+      sb.from('editable_fields').insert({id:cfg.id,label:cfg.label,value:cfg.fallback,section:'overview'});
+      const fd=document.getElementById('fd-'+cfg.id);
+      if(fd)fd.textContent=cfg.fallback;
+      const em=document.getElementById('em-'+cfg.id);
+      if(em)em.textContent='click to edit';
+    }
+  });
+}
+
+function ef(id,style,opts={}){
   const f=fc[id]||{id,value:'',updated_by:null,updated_at:null};
   const meta=f.updated_by?`${f.updated_by} · ${fmtD(f.updated_at)}`:'click to edit';
-  return `<div class="ew" id="ew-${id}" onclick="startEdit('${id}')">
+  const mh=opts.minHeight?` data-min-height="${opts.minHeight}"`:'';
+  return `<div class="ew"${mh} id="ew-${id}" onclick="startEdit('${id}')">
     <div style="${style||'font-size:13px;color:var(--tx2);line-height:1.6;'}" id="fd-${id}">${f.value||'<span style="color:var(--tx3);">click to add...</span>'}</div>
     <div class="em" id="em-${id}">${meta}</div>
     <div id="ec-${id}" style="display:none;"></div>
@@ -712,13 +793,14 @@ function startEdit(id){
   const ec=document.getElementById('ec-'+id);
   if(!ec||ec.style.display==='block')return;
   const cur=(fc[id]&&fc[id].value)||'';
+  const ew=document.getElementById('ew-'+id);
+  const minH=(ew&&ew.dataset.minHeight)||'56px';
   ec.style.display='block';
-  ec.innerHTML=`<textarea class="edit-area" id="ta-${id}">${cur}</textarea>
+  ec.innerHTML=`<textarea class="edit-area" id="ta-${id}" style="min-height:${minH}">${cur}</textarea>
     <div class="edit-actions">
       <button class="btn-save" onclick="saveField('${id}');event.stopPropagation();">Save</button>
       <button class="btn-cancel" onclick="cancelEdit('${id}');event.stopPropagation();">Cancel</button>
     </div>`;
-  const ew=document.getElementById('ew-'+id);
   if(ew)ew.onclick=null;
   setTimeout(()=>{const ta=document.getElementById('ta-'+id);if(ta)ta.focus();},50);
 }
