@@ -7,9 +7,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
+::-webkit-scrollbar{width:20px;}
+::-webkit-scrollbar-track{background:#c4c4c0;}
+::-webkit-scrollbar-thumb{background:#929290;border-radius:10px;border:5px solid #c4c4c0;}
+::-webkit-scrollbar-thumb:hover{background:#6a6a66;}
+html{scrollbar-color:#929290 #c4c4c0;scrollbar-width:auto;}
 :root{
   --tx:#1a1a18;--tx2:#5a5a56;--tx3:#9a9a94;
-  --bg:#ffffff;--bg2:#f7f6f2;--bg3:#f0efe9;
+  --bg:#ffffff;--bg2:#deded9;--bg3:#d4d4cf;
   --br:rgba(0,0,0,0.09);--br2:rgba(0,0,0,0.16);
   --green:#1D9E75;--green-l:#E1F5EE;--green-d:#085041;
   --warn-l:#FAEEDA;--warn-d:#633806;
@@ -43,7 +48,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .view{display:none;}.view.on{display:block;}
 .eyebrow{font-size:10px;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;}
 .sec-title{font-size:16px;font-weight:500;margin-bottom:1rem;}
-.card{background:var(--bg);border:0.5px solid var(--br);border-radius:var(--r-lg);padding:1rem 1.25rem;margin-bottom:1rem;}
+.card{background:#e8e8e4;border:0.5px solid var(--br);border-radius:var(--r-lg);padding:1rem 1.25rem;margin-bottom:1rem;}
 .metric{background:var(--bg2);border-radius:var(--r-md);padding:0.85rem 1rem;}
 .metric-label{font-size:11px;color:var(--tx3);margin-bottom:3px;}
 .metric-val{font-size:20px;font-weight:500;}
