@@ -324,7 +324,7 @@ const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-auth',persis
 
 let user=null,who='';
 const NAMES={'zolaray25@gmail.com':'Will','fraektaard@gmail.com':'Brendan','nishbphoto@gmail.com':'Nishant'};
-const C={'Will':'#378ADD','Brendan':'#1D9E75','Nishant':'#EF9F27'};
+const C={'Will':'#C83C3C','Brendan':'#C87820','Nishant':'#A89010'};
 const gc=a=>C[a]||'#888780';
 const fmtDT=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
 const fmtD=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
@@ -350,10 +350,10 @@ const DCQ=[
   {id:'bq4',question:'How long to a simulation we can validate before cutting wood?',category:'build'},
 ];
 const DL=[
-  {text:'Company direction agreed: horn loudspeakers, high-end to boutique, part-time to start, build-to-sell in 5–10 years.',author:'Will',color:'#378ADD'},
-  {text:'Brand name confirmed: 100xbtr. A genuine value statement and a knowing joke about audiophile culture.',author:'Will',color:'#378ADD'},
-  {text:'North star set: Ojas (Devon Turnbull). Maker-artist → Klipsch collab → $8,498/pair sold out.',author:'Will',color:'#378ADD'},
-  {text:'100xbtr_sound OS launched. All three founders have access.',author:'Will',color:'#1D9E75'},
+  {text:'Company direction agreed: horn loudspeakers, high-end to boutique, part-time to start, build-to-sell in 5–10 years.',author:'Will',color:'#C83C3C'},
+  {text:'Brand name confirmed: 100xbtr. A genuine value statement and a knowing joke about audiophile culture.',author:'Will',color:'#C83C3C'},
+  {text:'North star set: Ojas (Devon Turnbull). Maker-artist → Klipsch collab → $8,498/pair sold out.',author:'Will',color:'#C83C3C'},
+  {text:'100xbtr_sound OS launched. All three founders have access.',author:'Will',color:'#C83C3C'},
 ];
 
 async function signInGoogle(){
@@ -604,9 +604,9 @@ function renderNorthStar(data){
 
 function renderTeam(data){
   const members=[
-    {id:'will-brings',name:'Will Rollins',av:'av-w',ini:'WR',pct:'34%',clr:'#378ADD',w:100},
-    {id:'brendan-brings',name:'Brendan',av:'av-b',ini:'BR',pct:'34%',clr:'#1D9E75',w:100},
-    {id:'nishant-brings',name:'Nishant',av:'av-n',ini:'NM',pct:'32%',clr:'#EF9F27',w:94},
+    {id:'will-brings',name:'Will Rollins',av:'av-w',ini:'WR',pct:'34%',clr:'#C83C3C',w:100},
+    {id:'brendan-brings',name:'Brendan',av:'av-b',ini:'BR',pct:'34%',clr:'#C87820',w:100},
+    {id:'nishant-brings',name:'Nishant',av:'av-n',ini:'NM',pct:'32%',clr:'#A89010',w:94},
   ];
   const el=document.getElementById('team-card');
   if(!el)return;
