@@ -313,6 +313,7 @@ textarea.nei{line-height:1.4;}
           </div>
           <!-- Actions -->
           <div style="display:flex;flex-direction:column;gap:3px;">
+            <button class="sb-action-btn" onclick="undoMarkup()">↩  Undo stroke</button>
             <button class="sb-action-btn" onclick="clearMarkup()">✕  Clear markup</button>
           </div>
           <div style="font-size:9px;color:var(--tx3);line-height:1.6;">Markup is a freehand layer on top of the canvas. Lock a layer to prevent edits. Markup is stored locally.</div>
@@ -890,7 +891,7 @@ function onKey(e){
   if(e.key==='Escape'){linkFrom=null;closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};}
   if((e.key==='Delete'||e.key==='Backspace')&&!drag.on)delSel();
   if((e.ctrlKey||e.metaKey)&&e.key==='a'){e.preventDefault();selAll();}
-  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();if(mkCanvas&&mkCanvas.style.pointerEvents==='auto')undoMarkup();else undo();}
   if((e.ctrlKey||e.metaKey)&&e.key==='c'){e.preventDefault();copySelected();}
   if((e.ctrlKey||e.metaKey)&&e.key==='v'){e.preventDefault();if(clipboard?.nodes?.length){_skipImgPaste=true;setTimeout(()=>_skipImgPaste=false,80);}pasteClipboard();}
 }
@@ -1694,6 +1695,10 @@ function setMkColor(c,el){
   mkColor=c;
   document.querySelectorAll('.mk-color').forEach(b=>b.classList.remove('sel'));
   el.classList.add('sel');
+}
+function undoMarkup(){
+  if(!mkStrokes.length){toast('Nothing to undo');return;}
+  mkStrokes.pop();redrawMarkup();saveMk();toast('Markup undone');
 }
 function clearMarkup(){
   if(!confirm('Clear all markup?'))return;
