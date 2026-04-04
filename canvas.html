@@ -212,7 +212,7 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
         <div class="sb-layout-panel">
           <div>
             <div class="sb-label">Group spacing</div>
-            <input type="range" class="sb-slider" id="spread-slider" min="40" max="300" value="80" oninput="onSpreadSlider(this.value)">
+            <input type="range" class="sb-slider" id="spread-slider" min="10" max="800" value="80" oninput="onSpreadSlider(this.value)">
             <div class="sb-slider-val" id="spread-val">80 px</div>
           </div>
           <div>
@@ -481,7 +481,7 @@ function drawLinks(){
     const cpx=sp.x+(tp.x-sp.x)*0.5;
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.bezierCurveTo(cpx,sp.y,cpx,tp.y,tp.x,tp.y);
     const cl=l.claude;
-    const isSel=selected.nodes.includes(s.id)||selected.nodes.includes(t.id);
+    const isSel=selected.nodes.includes(s.id)||selected.nodes.includes(t.id)||(s.group_id&&selected.groups.includes(s.group_id))||(t.group_id&&selected.groups.includes(t.group_id));
     ctx.strokeStyle=isSel?'rgba(232,130,12,0.95)':cl?'rgba(209,117,11,0.55)':'rgba(151,151,142,0.8)';
     ctx.lineWidth=(isSel?2:cl?1.8:1.2)/cam.z;ctx.setLineDash(cl&&!isSel?[5,3]:[]);ctx.stroke();ctx.setLineDash([]);
     // arrow
@@ -629,15 +629,14 @@ function onDown(e){
     const ws=document.getElementById('win-sel');ws.style.display='block';ws.style.left=cx+'px';ws.style.top=cy+'px';ws.style.width='0';ws.style.height='0';
     drag={on:true,winSel:true,ox:cx,oy:cy};return;
   }
+  // Port hit — checked before hNode so edge-port clicks work outside strict node bounds
+  const portN=nodes.slice().reverse().find(n=>hPort(n,wx,wy));
+  if(portN&&!linkFrom){linkFrom=portN;toast('Click another node to connect');return;}
   const n=hNode(wx,wy);
   if(n){
-    const portSide=hPort(n,wx,wy);
-    if(portSide||e.shiftKey||linkFrom){
-      if(!linkFrom){linkFrom=n;toast('Click another node to connect');}
-      else{if(linkFrom.id!==n.id)addLink(linkFrom.id,n.id);linkFrom=null;}
-      return;
-    }
+    if(linkFrom){if(linkFrom.id!==n.id)addLink(linkFrom.id,n.id);linkFrom=null;return;}
     if(hNR(n,wx,wy)){drag={on:true,resize:n,ox:wx,oy:wy,sw:n.w||DW,sh:n.h||DH};canvas.style.cursor='se-resize';return;}
+    if(e.shiftKey){if(selected.nodes.includes(n.id))selected.nodes=selected.nodes.filter(id=>id!==n.id);else selected.nodes=[...selected.nodes,n.id];return;}
     if(!selected.nodes.includes(n.id)){selected={nodes:[n.id],groups:[]};}
     const prevGids=[...new Set(selected.nodes.map(id=>nById(id)?.group_id).filter(Boolean))];
     drag={on:true,node:n,ox:wx-n.x,oy:wy-n.y,prevGids,
@@ -961,6 +960,12 @@ async function repelGroupsOnly(){
   // capture node offsets BEFORE repel
   const offsets=new Map();
   groups.forEach(g=>{nigByGid(g.id).forEach(n=>offsets.set(n.id,{dx:n.x-g.x,dy:n.y-g.y}));});
+  // gravity toward centroid so reducing slider actually pulls groups back in
+  if(groups.length>1){
+    const gcx=groups.reduce((s,g)=>s+g.x+g.w/2,0)/groups.length;
+    const gcy=groups.reduce((s,g)=>s+g.y+g.h/2,0)/groups.length;
+    groups.forEach(g=>{g.x+=(gcx-(g.x+g.w/2))*0.5;g.y+=(gcy-(g.y+g.h/2))*0.5;});
+  }
   // repel groups vs groups
   repelGroupList(groups,spreadGap);
   // move grouped nodes with their groups
