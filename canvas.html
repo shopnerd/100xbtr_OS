@@ -175,7 +175,6 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
     <span class="tb-hint">right-click to add · alt+drag to select · ctrl+a all · click port to wire · dbl-click to edit · space+drag to pan</span>
     <div class="tb-right">
       <div class="ctw"><span>Claude</span><div class="tt" id="clt" onclick="toggleClaude()"><div class="tth"></div></div></div>
-      <button class="tb-btn accent" onclick="runLayout()">⟳ Layout</button>
       <div class="tb-sep"></div>
       <div class="tb-user"><span class="live-dot"></span><span id="ued">...</span></div>
       <button class="tb-so" onclick="signOut()">sign out</button>
@@ -224,9 +223,19 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
           <div style="display:flex;flex-direction:column;gap:3px;">
             <button class="sb-action-btn" onclick="runLayout()">⟳  Auto layout</button>
             <button class="sb-action-btn" onclick="repairGroups()">⊞  Repair groups</button>
-            <button class="sb-action-btn" onclick="repelGroupsOnly()">⤢  Spread apart</button>
             <button class="sb-action-btn" onclick="gridLayoutAllGroups()">⬡  Grid-arrange groups</button>
-            <button class="sb-action-btn" onclick="autoAssociate()">⬡  Auto-associate nodes</button>
+            <button class="sb-action-btn" onclick="autoAssociate()">⬡  Group ungrouped nodes</button>
+          </div>
+          <div style="margin-top:8px;">
+            <div class="sb-label">Smart reorganize</div>
+            <textarea id="reorg-input" placeholder="e.g. by phase, by person, by topic, by priority..." style="width:100%;height:46px;font-size:9px;font-family:inherit;background:var(--chrome2);color:var(--tx);border:1px solid var(--border);border-radius:var(--r);padding:4px 6px;resize:none;box-sizing:border-box;margin-top:3px;"></textarea>
+            <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px;">
+              <button class="mk-tool-btn" onclick="setReorgPreset('organize by team member — Will (design/CNC), Brendan (cabinetry), Nishant (EE/horn)')">By person</button>
+              <button class="mk-tool-btn" onclick="setReorgPreset('organize by project phase or timeline')">By phase</button>
+              <button class="mk-tool-btn" onclick="setReorgPreset('organize by topic or theme')">By topic</button>
+              <button class="mk-tool-btn" onclick="setReorgPreset('organize by priority or urgency')">By priority</button>
+            </div>
+            <button class="sb-action-btn" style="margin-top:4px;" onclick="smartReorg()">⟳  Reorganize ↵</button>
           </div>
         </div>
       </div>
@@ -391,7 +400,7 @@ function initCanvas(){
   requestAnimationFrame(loop);
 }
 function resize(){const w=document.getElementById('canvas-wrap');canvas.width=w.clientWidth;canvas.height=w.clientHeight;if(mkCanvas){mkCanvas.width=w.clientWidth;mkCanvas.height=w.clientHeight;redrawMarkup();}}
-function loop(){draw();requestAnimationFrame(loop);}
+function loop(){draw();if(mkCanvas&&mkStrokes.length)redrawMarkup();requestAnimationFrame(loop);}
 
 // DRAW
 function draw(){
@@ -622,7 +631,7 @@ function onDown(e){
   const n=hNode(wx,wy);
   if(n){
     const portSide=hPort(n,wx,wy);
-    if(portSide||e.shiftKey){
+    if(portSide||e.shiftKey||linkFrom){
       if(!linkFrom){linkFrom=n;toast('Click another node to connect');}
       else{if(linkFrom.id!==n.id)addLink(linkFrom.id,n.id);linkFrom=null;}
       return;
@@ -1014,6 +1023,38 @@ Suggest which group each ungrouped node should join, or propose new groups. Resp
     toast(`Auto-associated ${data.assignments.length} nodes`);
   }catch(e){toast('Auto-associate failed: '+e.message);}
 }
+async function smartReorg(){
+  const directive=document.getElementById('reorg-input').value.trim();
+  if(!directive){toast('Describe how to reorganize first');return;}
+  toast('Claude is reorganizing...');
+  const{nl,ll,gl}=cCtx();
+  const prompt=`You are reorganizing a visual canvas for 100xbtr_sound (Will: design/CNC, Brendan: cabinetry, Nishant: EE/horn design).
+Current nodes:\n${nl||'(none)'}\nCurrent groups:\n${gl||'(none)'}\nCurrent links:\n${ll||'(none)'}
+Directive: "${directive}"
+Respond ONLY with valid JSON, no markdown:
+{"response":"brief message","actions":[
+  {"type":"create_group","label":"Group Name","color":"#378ADD","description":"why"},
+  {"type":"move_to_group","label":"exact node label","group":"exact group label","description":"why"},
+  {"type":"create_link","from":"source label","to":"target label","description":"why"}
+]}
+Prefer moving nodes into existing groups before creating new ones. Only include actions that make meaningful changes.`;
+  try{
+    const text=await callClaude([{role:'user',content:prompt}],4000);
+    const parsed=extractJSON(text);
+    if(parsed?.actions){
+      const body=document.getElementById('cpb');
+      const allId=_sa(parsed.actions);
+      let ah=`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${parsed.response||'Here is the proposed reorganization.'}</div></div>`;
+      ah+='<div class="cps"><div class="cpst">Proposed reorganization</div>';
+      parsed.actions.forEach(a=>{const id=_sa(a);ah+=`<div class="cpac"><div class="cpact">${aLabel(a)}</div><div class="cpacb">${a.description||''}</div><button class="cpado" onclick="execA(_ac[${id}])">Do it</button><button class="cpadx" onclick="this.parentElement.remove()">Skip</button></div>`;});
+      ah+=`<button class="cpsend" style="margin-top:4px;" onclick="execAll(_ac[${allId}])">Do all ↵</button></div>`;
+      body.innerHTML=ah;
+      if(!claudeOn)toggleClaude();
+    } else toast('Could not parse reorganization response');
+  }catch(e){toast('Reorganize failed: '+e.message);}
+}
+function setReorgPreset(text){document.getElementById('reorg-input').value=text;}
+
 // LAYOUT
 async function runLayout(){
   if(!nodes.length){toast('No nodes');return;}if(simRunning)return;simRunning=true;toast('Arranging...');
@@ -1173,7 +1214,7 @@ Max 3 gaps, 3 suggestions, 6 actions.`;
     else body.innerHTML='<div class="cplo">Could not parse response. Raw: '+text.substring(0,300)+'</div>';
   }catch(e){body.innerHTML=`<div class="cplo">Error: ${e.message}</div>`;}
 }
-function aLabel(a){if(a.type==='create_group')return`Create group "${a.label}"`;if(a.type==='create_node')return`Add node "${a.label}"`;if(a.type==='create_link')return`Connect "${a.from}" → "${a.to}"`;return'Action';}
+function aLabel(a){if(a.type==='create_group')return`Create group "${a.label}"`;if(a.type==='create_node')return`Add node "${a.label}"`;if(a.type==='create_link')return`Connect "${a.from}" → "${a.to}"`;if(a.type==='move_to_group')return`Move "${a.label}" → "${a.group}"`;return'Action';}
 function renderAnalysis(data){
   const body=document.getElementById('cpb');let html='';
   if(data.reading)html+=`<div class="cps"><div class="cpst">Reading</div><div class="cpr">${data.reading}</div></div>`;
@@ -1215,11 +1256,17 @@ async function execA(a){
   } else if(a.type==='create_link'){
     const src=nodes.find(n=>n.label===a.from),tgt=nodes.find(n=>n.label===a.to);
     if(src&&tgt)await addLink(src.id,tgt.id);else toast('Nodes not found');
+  } else if(a.type==='move_to_group'){
+    const n=nodes.find(x=>x.label===a.label);
+    const g=a.group?groups.find(gg=>gg.label.toLowerCase().includes(a.group.toLowerCase())):null;
+    if(n&&g){n.group_id=g.id;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({group_id:g.id}).eq('id',n.id);const m=nigByGid(g.id);sizeGAN(g,m);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);toast(`Moved "${n.label}" → "${g.label}"`);}
+    else toast(`Could not move "${a.label||'node'}"`);
   }
 }
 async function execAll(actions){
   for(const a of actions.filter(x=>x.type==='create_group'))await execA(a);
   for(const a of actions.filter(x=>x.type==='create_node'))await execA(a);
+  for(const a of actions.filter(x=>x.type==='move_to_group'))await execA(a);
   for(const a of actions.filter(x=>x.type==='create_link'))await execA(a);
   await repairGroups();await runLayout();toast(`Done — ${actions.length} actions`);if(claudeOn)setTimeout(analyzeCanvas,600);
 }
@@ -1301,8 +1348,8 @@ function initMarkup(){
   mkCanvas.addEventListener('mousemove',mkMove);
   mkCanvas.addEventListener('mouseup',mkUp);
   mkCanvas.addEventListener('mouseleave',mkUp);
-  // restore from localStorage
-  try{const saved=localStorage.getItem('100xbtr_markup');if(saved){const img=new Image();img.onload=()=>mkCtx.drawImage(img,0,0);img.src=saved;}}catch(e){}
+  // restore from localStorage (new: JSON strokes array; old: PNG data URL)
+  try{const saved=localStorage.getItem('100xbtr_markup');if(saved){try{const p=JSON.parse(saved);if(Array.isArray(p)){mkStrokes=p;redrawMarkup();}}catch(e){const img=new Image();img.onload=()=>mkCtx.drawImage(img,0,0);img.src=saved;}}}catch(e){}
   // sync display with markupVisible; pointer-events enabled only when Markup tab is active
   mkCanvas.style.display=markupVisible?'block':'none';
   mkTool='pen';mkCanvas.style.pointerEvents='none';
@@ -1315,8 +1362,13 @@ function syncMkSize(){
 }
 function redrawMarkup(){
   if(!mkCtx)return;
-  mkCtx.clearRect(0,0,mkCanvas.width,mkCanvas.height);
+  const W=mkCanvas.width,H=mkCanvas.height;
+  mkCtx.clearRect(0,0,W,H);
+  mkCtx.save();
+  mkCtx.translate(W/2+cam.x,H/2+cam.y);
+  mkCtx.scale(cam.z,cam.z);
   mkStrokes.forEach(s=>drawStroke(s));
+  mkCtx.restore();
 }
 function drawStroke(s){
   if(!mkCtx||!s.pts.length)return;
@@ -1342,7 +1394,7 @@ function drawStroke(s){
   }
   mkCtx.restore();
 }
-function mkPt(e){const r=mkCanvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+function mkPt(e){const r=mkCanvas.getBoundingClientRect();const sx=e.clientX-r.left,sy=e.clientY-r.top;const W=mkCanvas.width,H=mkCanvas.height;return{x:(sx-W/2-cam.x)/cam.z,y:(sy-H/2-cam.y)/cam.z};}
 function mkDown(e){
   if(layerLocked.markup||!markupVisible)return;
   if(layerLocked.canvas)e.stopPropagation(); // eat canvas events when canvas locked
@@ -1368,7 +1420,7 @@ function mkUp(){
   if(!mkDrawing)return;mkDrawing=false;saveMk();
 }
 function saveMk(){
-  try{localStorage.setItem('100xbtr_markup',mkCanvas.toDataURL());}catch(e){}
+  try{localStorage.setItem('100xbtr_markup',JSON.stringify(mkStrokes));}catch(e){}
 }
 function setMkTool(t,el){
   mkTool=t;
