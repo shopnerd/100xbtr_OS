@@ -474,18 +474,18 @@ function drawGroups(){
     // header bar
     ctx.beginPath();
     ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-    ctx.lineTo(x+w,y+GH/cam.z);ctx.lineTo(x,y+GH/cam.z);ctx.lineTo(x,y+r);
+    ctx.lineTo(x+w,y+GH);ctx.lineTo(x,y+GH);ctx.lineTo(x,y+r);
     ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
     ctx.fillStyle=color+'55';ctx.fill();
     // grip dots in header
     for(let i=0;i<3;i++){
-      ctx.beginPath();ctx.arc(x+w/2+(i-1)*5/cam.z,y+GH/cam.z/2,1.2/cam.z,0,Math.PI*2);
+      ctx.beginPath();ctx.arc(x+w/2+(i-1)*5/cam.z,y+GH/2,1.2/cam.z,0,Math.PI*2);
       ctx.fillStyle=color+'aa';ctx.fill();
     }
     // label in header
     const gfs=Math.min(GH*0.6,w*0.055);ctx.font=`500 ${gfs}px 'SF Mono',monospace`;
     ctx.fillStyle='#1a1a18';ctx.textBaseline='middle';ctx.textAlign='left';
-    ctx.fillText(g.label||'Group',x+8/cam.z,y+GH/cam.z/2);
+    ctx.fillText(g.label||'Group',x+8/cam.z,y+GH/2);
     // bottom full-width resize bar
     const bh=6/cam.z;
     ctx.fillStyle=color+'44';
@@ -613,7 +613,7 @@ function wp(e){
 }
 function hNode(wx,wy){return[...nodes].reverse().find(n=>{const w=n.w||DW,h=n.h||DH;return wx>=n.x&&wx<=n.x+w&&wy>=n.y&&wy<=n.y+h;});}
 function hGroup(wx,wy){return[...groups].reverse().find(g=>wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+g.h);}
-function hGroupHeader(g,wx,wy){return wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+GH/cam.z;}
+function hGroupHeader(g,wx,wy){return wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+GH;}
 function hNR(n,wx,wy){const w=n.w||DW,h=n.h||DH;return wx>=n.x+w-14&&wy>=n.y+h-14;}
 function hGR(g,wx,wy){return wx>=g.x+g.w-16&&wy>=g.y+g.h-16;}
 function hGBottom(g,wx,wy){const bz=10/cam.z;return wx>=g.x&&wx<=g.x+g.w&&wy>=g.y+g.h-bz&&wy<=g.y+g.h+4;}
