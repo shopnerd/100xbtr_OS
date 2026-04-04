@@ -460,10 +460,16 @@ function drawGroups(){
     const r=5/cam.z;
     const x=g.x,y=g.y,w=g.w,h=g.h;
     ctx.save();
+    // glow rect behind group (same treatment as selected nodes)
+    if(isSel){
+      const pad=10/cam.z;
+      ctx.beginPath();rrect(ctx,x-pad,y-pad,w+pad*2,h+pad*2,r+pad);
+      ctx.fillStyle='rgba(201,107,58,0.22)';ctx.fill();
+    }
     // body
     rrect(ctx,x,y,w,h,r);
-    ctx.fillStyle=color+'18';ctx.fill();
-    ctx.strokeStyle=isSel?color+'cc':color+'44';
+    ctx.fillStyle=isSel?color+'28':color+'18';ctx.fill();
+    ctx.strokeStyle=isSel?'#C96B3A':color+'44';
     ctx.lineWidth=(isSel?2:1)/cam.z;ctx.stroke();
     // header bar
     ctx.beginPath();
