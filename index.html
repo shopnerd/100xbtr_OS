@@ -907,13 +907,13 @@ document.addEventListener('wheel',e=>{
   e.preventDefault();
 },{passive:false});
 // CUSTOM SCROLLBAR — drag thumb to scroll, drag left edge to resize width
-let cScrollW=Math.min(Math.max(parseInt(localStorage.getItem('cScrollW'))||20,8),120);
+let cScrollW=Math.max(parseInt(localStorage.getItem('cScrollW'))||20,8);
 function initCustomScroll(){
   const track=document.getElementById('cscroll');
   const thumb=document.getElementById('cscroll-thumb');
   const rzHandle=document.getElementById('cscroll-resize');
   function applyW(w){
-    cScrollW=Math.min(Math.max(w,8),120);
+    cScrollW=Math.min(Math.max(w,8),window.innerWidth);
     track.style.width=cScrollW+'px';
   }
   applyW(cScrollW);
