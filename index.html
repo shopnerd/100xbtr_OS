@@ -7,11 +7,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-::-webkit-scrollbar{width:20px;}
-::-webkit-scrollbar-track{background:#c4c4c0;}
-::-webkit-scrollbar-thumb{background:#929290;border-radius:10px;border:5px solid #c4c4c0;}
-::-webkit-scrollbar-thumb:hover{background:#6a6a66;}
-html{scrollbar-color:#929290 #c4c4c0;scrollbar-width:auto;}
+::-webkit-scrollbar{width:0;}
+html{overflow-y:scroll;scrollbar-width:none;}
+#cscroll{position:fixed;right:0;top:0;height:100vh;width:20px;background:#c4c4c0;z-index:500;user-select:none;}
+#cscroll-resize{position:absolute;left:0;top:0;width:5px;height:100%;cursor:col-resize;background:transparent;transition:background 0.15s;}
+#cscroll-resize:hover{background:rgba(201,107,58,0.25);}
+#cscroll-thumb{position:absolute;left:3px;right:3px;background:#929290;border-radius:6px;cursor:grab;min-height:28px;transition:background 0.15s;}
+#cscroll-thumb:hover{background:#6a6a66;}
+#cscroll-thumb:active{cursor:grabbing;background:#4a4a48;}
 :root{
   --tx:#1a1a18;--tx2:#5a5a56;--tx3:#9a9a94;
   --bg:#ffffff;--bg2:#deded9;--bg3:#d4d4cf;
@@ -902,6 +905,62 @@ document.addEventListener('wheel',e=>{
   document.body.style.backgroundSize=sz+'px '+sz+'px';
   e.preventDefault();
 },{passive:false});
+// CUSTOM SCROLLBAR — drag thumb to scroll, drag left edge to resize width
+let cScrollW=Math.min(Math.max(parseInt(localStorage.getItem('cScrollW'))||20,8),120);
+function initCustomScroll(){
+  const track=document.getElementById('cscroll');
+  const thumb=document.getElementById('cscroll-thumb');
+  const rzHandle=document.getElementById('cscroll-resize');
+  function applyW(w){
+    cScrollW=Math.min(Math.max(w,8),120);
+    track.style.width=cScrollW+'px';
+  }
+  applyW(cScrollW);
+  function updateThumb(){
+    const dh=document.documentElement.scrollHeight,vh=window.innerHeight;
+    if(dh<=vh){thumb.style.display='none';return;}
+    thumb.style.display='block';
+    const th=Math.max(28,(vh/dh)*vh);
+    const tt=(window.scrollY/(dh-vh))*(vh-th);
+    thumb.style.height=th+'px';thumb.style.top=tt+'px';
+  }
+  window.addEventListener('scroll',updateThumb);
+  window.addEventListener('resize',updateThumb);
+  updateThumb();
+  // thumb drag → scroll page
+  let tDrag=false,tStartY=0,tStartSY=0;
+  thumb.addEventListener('mousedown',e=>{
+    tDrag=true;tStartY=e.clientY;tStartSY=window.scrollY;
+    document.body.style.userSelect='none';e.preventDefault();
+  });
+  // track click → jump to position
+  track.addEventListener('click',e=>{
+    if(e.target===thumb||e.target===rzHandle)return;
+    const dh=document.documentElement.scrollHeight,vh=window.innerHeight;
+    window.scrollTo({top:(e.clientY/vh)*(dh-vh),behavior:'smooth'});
+  });
+  // resize handle drag → change scrollbar width
+  let rDrag=false;
+  rzHandle.addEventListener('mousedown',e=>{
+    rDrag=true;document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';e.preventDefault();e.stopPropagation();
+  });
+  document.addEventListener('mousemove',e=>{
+    if(tDrag){
+      const dh=document.documentElement.scrollHeight,vh=window.innerHeight;
+      const th=Math.max(28,(vh/dh)*vh);
+      const dy=e.clientY-tStartY;
+      window.scrollTo({top:tStartSY+dy*((dh-vh)/(vh-th))});
+    }
+    if(rDrag)applyW(window.innerWidth-e.clientX);
+  });
+  document.addEventListener('mouseup',()=>{
+    if(tDrag){tDrag=false;document.body.style.userSelect='';}
+    if(rDrag){rDrag=false;document.body.style.cursor='';document.body.style.userSelect='';localStorage.setItem('cScrollW',cScrollW);}
+  });
+}
+initCustomScroll();
 </script>
+<div id="cscroll"><div id="cscroll-resize"></div><div id="cscroll-thumb"></div></div>
 </body>
 </html>
