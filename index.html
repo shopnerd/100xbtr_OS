@@ -888,6 +888,16 @@ function recalc(){
 }
 
 recalc();
+
+// Grid zoom on scroll wheel — use scrollbar to scroll the page
+let gridZ=1;
+document.addEventListener('wheel',e=>{
+  gridZ*=e.deltaY<0?1.08:1/1.08;
+  gridZ=Math.min(Math.max(gridZ,0.2),8);
+  const sz=Math.round(32*gridZ);
+  document.body.style.backgroundSize=sz+'px '+sz+'px';
+  e.preventDefault();
+},{passive:false});
 </script>
 </body>
 </html>
