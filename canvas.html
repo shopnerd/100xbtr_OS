@@ -463,7 +463,7 @@ function drawGrid(W,H){
   ctx.stroke();
 }
 
-const GH=12; // group header height in canvas units
+const GH=24; // group header height in canvas units
 const GPAD_BOTTOM=10; // min padding below nodes in group
 
 // GH-style group with header bar drag handle
@@ -497,7 +497,7 @@ function drawGroups(){
       ctx.fillStyle=color+'aa';ctx.fill();
     }
     // label in header
-    const gfs=Math.min(GH*0.6,w*0.055);ctx.font=`500 ${gfs}px 'SF Mono',monospace`;
+    const gfs=Math.min(GH*0.55,w*0.075);ctx.font=`500 ${gfs}px 'SF Mono',monospace`;
     ctx.fillStyle='#1a1a18';ctx.textBaseline='middle';ctx.textAlign='left';
     ctx.fillText(g.label||'Group',x+8/cam.z,y+GH/2);
     // bottom full-width resize bar
