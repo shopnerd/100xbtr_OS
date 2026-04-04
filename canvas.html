@@ -109,6 +109,10 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 .cpp{width:100%;font-size:10px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--tx);font-family:inherit;resize:none;height:80px;outline:none;}
 .cpp:focus{border-color:#C96B3A;}
 .cpsend{width:100%;margin-top:4px;padding:5px;border-radius:var(--r);border:none;background:#C96B3A;color:#fff;font-size:10px;cursor:pointer;font-family:inherit;}
+.cpbuild{width:100%;margin-top:3px;padding:4px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx2);font-size:9px;cursor:pointer;font-family:inherit;}
+.cpbuild:hover{background:var(--chrome2);color:var(--tx);}
+.cpphase{font-size:10px;color:var(--tx2);padding:5px 0;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.cpphase b{color:#C96B3A;}
 /* NODE EDIT */
 #ne{position:absolute;background:var(--chrome2);border:1px solid var(--border);border-radius:var(--r);padding:10px;width:210px;z-index:90;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.15);}
 .nel{font-size:9px;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
@@ -309,7 +313,8 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
       <div class="cpb" id="cpb"><div class="cplo">Click Analyze to read the canvas and surface gaps, patterns, and suggested connections.</div></div>
       <div class="cpf">
         <textarea class="cpp" id="cpp" placeholder="Tell me what to do — 'create a group called Horn Design with speaker nodes'..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askClaude();}"></textarea>
-        <button class="cpsend" onclick="askClaude()">Send ↵</button>
+        <button class="cpsend" id="cp-send" onclick="askClaude()">Send ↵</button>
+        <button class="cpbuild" id="cp-build" onclick="askClaudeBuild()" title="For large requests: runs 3 phases (groups → nodes → connections) to stay within token limits">⬡ Build in phases</button>
       </div>
     </div>
     <!-- NODE EDIT -->
@@ -1344,7 +1349,64 @@ Use "group" (the group label string) NOT "group_id". Otherwise respond with plai
       body.innerHTML+=ah+'</div>';
     } else {body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${text.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</div></div>`;}
     document.getElementById('cpp').value='';
-  }catch(e){body.innerHTML=prev+'<div class="cplo">Request failed.</div>';}
+  }catch(e){
+    const hint=e.message?.includes('504')||e.message?.includes('timeout')?'Request timed out — try "Build in phases" for large requests.':e.message?.includes('max_tokens')||e.message?.includes('truncat')?'Response too large — use "Build in phases" below.':'Error: '+e.message;
+    body.innerHTML=prev+`<div class="cplo">${hint}</div>`;
+  }
+}
+
+async function askClaudeBuild(){
+  const prompt=document.getElementById('cpp').value.trim();if(!prompt)return;
+  const body=document.getElementById('cpb');
+  const sendBtn=document.getElementById('cp-send'),buildBtn=document.getElementById('cp-build');
+  sendBtn.disabled=true;buildBtn.disabled=true;buildBtn.textContent='Building...';
+  document.getElementById('cpp').value='';
+  let totalActions=0;
+
+  const phasePrompt=(phase,extra)=>{
+    const{nl,ll,gl}=cCtx();
+    const base=`You are building a visual canvas for 100xbtr_sound (Will, Brendan, Nishant — boutique horn speakers).
+User request: "${prompt}"
+Current groups: ${gl||'(none)'}\nCurrent nodes: ${nl||'(none)'}
+${extra}
+Respond ONLY with valid JSON, no markdown fences:`;
+    if(phase==='groups')return base+`
+{"response":"brief message","actions":[{"type":"create_group","label":"Group Name","color":"#378ADD","description":"why"},...]}
+Create ALL groups needed. Groups only — no nodes or links.`;
+    if(phase==='nodes')return base+`
+{"response":"brief message","actions":[{"type":"create_node","label":"Label","nodeType":"idea","group":"Group Name","description":"why"},...]}
+Create ALL nodes. Valid nodeType: idea, reference, material, decision, question, anchor. Nodes only — no groups or links.`;
+    if(phase==='links')return base+`
+{"response":"brief message","actions":[{"type":"create_link","from":"source label","to":"target label","description":"why"},...]}
+Create ALL meaningful connections between existing nodes. Links only — no groups or nodes.`;
+  };
+
+  const runPhase=async(phase,label,extra='')=>{
+    body.innerHTML+=`<div class="cpphase"><b>Phase: ${label}</b> — thinking...</div>`;
+    body.scrollTop=body.scrollHeight;
+    const phaseEl=body.lastElementChild;
+    try{
+      const text=await callClaude([{role:'user',content:phasePrompt(phase,extra)}],6000);
+      const parsed=extractJSON(text);
+      if(parsed?.actions?.length){
+        const filtered=parsed.actions.filter(a=>
+          (phase==='groups'&&a.type==='create_group')||
+          (phase==='nodes'&&a.type==='create_node')||
+          (phase==='links'&&a.type==='create_link'));
+        for(const a of filtered)await execA(a);
+        totalActions+=filtered.length;
+        phaseEl.innerHTML=`<b>Phase: ${label}</b> — ${filtered.length} actions done`;
+      } else {phaseEl.innerHTML=`<b>Phase: ${label}</b> — nothing to do`;}
+    }catch(e){phaseEl.innerHTML=`<b>Phase: ${label}</b> — failed: ${e.message?.substring(0,80)}`;}
+  };
+
+  await runPhase('groups','Groups');
+  await runPhase('nodes','Nodes');
+  await runPhase('links','Connections');
+  await repairGroups();await runLayout();
+  body.innerHTML+=`<div class="cplo">Build complete — ${totalActions} actions executed.</div>`;
+  body.scrollTop=body.scrollHeight;
+  sendBtn.disabled=false;buildBtn.disabled=false;buildBtn.textContent='⬡ Build in phases';
 }
 
 // DB / RT
