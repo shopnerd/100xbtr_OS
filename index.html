@@ -898,8 +898,14 @@ function recalc(){
 recalc();
 
 // Grid zoom on scroll wheel — use scrollbar to scroll the page
+// Hovering over scrollbar: wheel scrolls page instead of zooming grid
 let gridZ=1;
 document.addEventListener('wheel',e=>{
+  if(e.target.closest('#cscroll')){
+    window.scrollBy({top:e.deltaY*2.5,behavior:'auto'});
+    e.preventDefault();
+    return;
+  }
   gridZ*=e.deltaY<0?1.08:1/1.08;
   gridZ=Math.min(Math.max(gridZ,0.2),8);
   const sz=Math.round(32*gridZ);
