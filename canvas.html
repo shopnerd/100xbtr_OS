@@ -429,7 +429,7 @@ function drawGrid(W,H){
   ctx.stroke();
 }
 
-const GH=24; // group header height in canvas units
+const GH=12; // group header height in canvas units
 const GPAD_BOTTOM=10; // min padding below nodes in group
 
 // GH-style group with header bar drag handle
@@ -481,14 +481,15 @@ function drawLinks(){
     const cpx=sp.x+(tp.x-sp.x)*0.5;
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.bezierCurveTo(cpx,sp.y,cpx,tp.y,tp.x,tp.y);
     const cl=l.claude;
-    ctx.strokeStyle=cl?'rgba(232,130,12,0.55)':'rgba(168,168,158,0.8)';
-    ctx.lineWidth=(cl?1.8:1.2)/cam.z;ctx.setLineDash(cl?[5,3]:[]);ctx.stroke();ctx.setLineDash([]);
+    const isSel=selected.nodes.includes(s.id)||selected.nodes.includes(t.id);
+    ctx.strokeStyle=isSel?'rgba(232,130,12,0.95)':cl?'rgba(209,117,11,0.55)':'rgba(151,151,142,0.8)';
+    ctx.lineWidth=(isSel?2:cl?1.8:1.2)/cam.z;ctx.setLineDash(cl&&!isSel?[5,3]:[]);ctx.stroke();ctx.setLineDash([]);
     // arrow
     const ang=Math.atan2(tp.y-sp.y,tp.x-sp.x),as=7/cam.z;
     ctx.beginPath();ctx.moveTo(tp.x,tp.y);
     ctx.lineTo(tp.x-as*Math.cos(ang-0.38),tp.y-as*Math.sin(ang-0.38));
     ctx.lineTo(tp.x-as*Math.cos(ang+0.38),tp.y-as*Math.sin(ang+0.38));
-    ctx.closePath();ctx.fillStyle=cl?'rgba(232,130,12,0.65)':'rgba(168,168,158,0.85)';ctx.fill();
+    ctx.closePath();ctx.fillStyle=isSel?'rgba(232,130,12,1.0)':cl?'rgba(209,117,11,0.65)':'rgba(151,151,142,0.85)';ctx.fill();
   });
 }
 
