@@ -1008,11 +1008,11 @@ function initCustomScroll(){
   applyW(cScrollW);
   function updateThumb(){
     const dh=document.documentElement.scrollHeight,vh=window.innerHeight;
+    const th=cScrollW; // fixed square thumb — same size on every page
     thumb.style.display='block';
-    if(dh<=vh){thumb.style.height=(vh-8)+'px';thumb.style.top='4px';return;}
-    const th=Math.max(28,(vh/dh)*vh);
-    const tt=(window.scrollY/(dh-vh))*(vh-th);
-    thumb.style.height=th+'px';thumb.style.top=tt+'px';
+    thumb.style.height=th+'px';
+    const tt=dh<=vh?0:(window.scrollY/(dh-vh))*(vh-th);
+    thumb.style.top=Math.max(0,Math.min(tt,vh-th))+'px';
   }
   window.addEventListener('scroll',updateThumb);
   window.addEventListener('resize',updateThumb);
