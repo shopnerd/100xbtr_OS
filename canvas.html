@@ -43,11 +43,12 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 #canvas-wrap{flex:1;position:relative;overflow:hidden;}
 #gh-canvas{position:absolute;top:0;left:0;cursor:default;}
 /* SIDEBAR */
-#sidebar{position:absolute;top:0;left:0;width:196px;height:100%;background:var(--chrome);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:80;transform:translateX(-196px);transition:transform 0.2s;}
+#sidebar{position:absolute;top:0;left:0;width:196px;height:100%;background:var(--chrome);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:80;transform:translateX(-100%);transition:transform 0.2s;}
 #sidebar.open{transform:translateX(0);}
 #sb-toggle{position:absolute;top:8px;left:0;width:18px;height:40px;background:var(--chrome);border:1px solid var(--border);border-left:none;border-radius:0 3px 3px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:81;transition:left 0.2s;font-size:9px;color:var(--tx3);}
-#sb-toggle.open{left:196px;}
 #sb-toggle:hover{background:var(--chrome2);color:var(--tx2);}
+#sb-resize{position:absolute;top:0;right:0;width:6px;height:100%;cursor:col-resize;z-index:82;background:transparent;}
+#sb-resize:hover{background:rgba(201,107,58,0.18);}
 .sb-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
 .sb-tab{flex:1;padding:6px 3px;font-size:9px;text-align:center;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;text-transform:uppercase;letter-spacing:0.05em;}
 .sb-tab.on{color:var(--tx);border-bottom-color:#C96B3A;}
@@ -202,6 +203,7 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
     <!-- SIDEBAR -->
     <div id="sb-toggle" onclick="toggleSidebar()">▶</div>
     <div id="sidebar">
+      <div id="sb-resize"></div>
       <div class="sb-tabs">
         <div class="sb-tab on" onclick="showSbTab('canvases',this)">Saved</div>
         <div class="sb-tab" onclick="showSbTab('layout',this)">Layout</div>
@@ -396,7 +398,7 @@ async function startApp(u){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('ued').textContent=u.email;
-  initCanvas();await loadAll();setupRT();await loadCanvasList();initMarkup();
+  initCanvas();await loadAll();setupRT();await loadCanvasList();initMarkup();initSidebarResize();
 }
 
 // CANVAS INIT
@@ -1224,7 +1226,53 @@ async function alignNodesInGroups(dir,gs){
 
 // SIDEBAR
 let sidebarOpen=false;
-function toggleSidebar(){sidebarOpen=!sidebarOpen;document.getElementById('sidebar').classList.toggle('open',sidebarOpen);document.getElementById('sb-toggle').classList.toggle('open',sidebarOpen);document.getElementById('sb-toggle').textContent=sidebarOpen?'◀':'▶';}
+const SB_MIN=160,SB_DEFAULT=196;
+let sbWidth=Math.max(SB_MIN,parseInt(localStorage.getItem('sbWidth'))||SB_DEFAULT);
+
+function applySbWidth(w,save){
+  w=Math.min(Math.max(w,SB_MIN),window.innerWidth);
+  sbWidth=w;
+  const sb=document.getElementById('sidebar');
+  const tg=document.getElementById('sb-toggle');
+  sb.style.width=w+'px';
+  if(sidebarOpen)tg.style.left=w+'px';
+  if(save)localStorage.setItem('sbWidth',w);
+}
+
+function toggleSidebar(){
+  sidebarOpen=!sidebarOpen;
+  const sb=document.getElementById('sidebar');
+  const tg=document.getElementById('sb-toggle');
+  sb.classList.toggle('open',sidebarOpen);
+  tg.classList.toggle('open',sidebarOpen);
+  tg.textContent=sidebarOpen?'◀':'▶';
+  tg.style.left=sidebarOpen?sbWidth+'px':'0px';
+}
+
+function initSidebarResize(){
+  applySbWidth(sbWidth);
+  const handle=document.getElementById('sb-resize');
+  const tg=document.getElementById('sb-toggle');
+  let dragging=false;
+  handle.addEventListener('mousedown',e=>{
+    dragging=true;e.preventDefault();
+    tg.style.transition='none';
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    applySbWidth(e.clientX);
+  });
+  document.addEventListener('mouseup',e=>{
+    if(!dragging)return;
+    dragging=false;
+    tg.style.transition='';
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+    localStorage.setItem('sbWidth',sbWidth);
+  });
+}
 function showSbTab(id,el){document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('on'));document.getElementById('sbp-'+id).classList.add('on');el.classList.add('on');if(mkCanvas)mkCanvas.style.pointerEvents=id==='markup'?'auto':'none';}
 let _spreadTimer=null;
 function onSpreadXSlider(v){spreadGapX=parseInt(v);document.getElementById('spread-x-val').textContent=v+' px';clearTimeout(_spreadTimer);_spreadTimer=setTimeout(()=>repelGroupsOnly(),300);}
