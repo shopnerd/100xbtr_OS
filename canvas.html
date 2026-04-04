@@ -33,13 +33,13 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 .tb-so:hover{color:var(--tx);}
 .ctw{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--tx2);}
 .tt{position:relative;width:26px;height:14px;background:var(--border);border-radius:7px;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
-.tt.on{background:#E8820C;}
+.tt.on{background:#C96B3A;}
 .tth{position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#fff;transition:transform 0.2s;}
 .tt.on .tth{transform:translateX(12px);}
 .tb-btn{font-size:10px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--tx2);cursor:pointer;font-family:inherit;}
 .tb-btn:hover{background:var(--border);color:var(--tx);}
-.tb-btn.accent{background:#E8820C;color:#fff;border-color:#E8820C;}
-.tb-btn.accent:hover{background:#cc7010;}
+.tb-btn.accent{background:#C96B3A;color:#fff;border-color:#C96B3A;}
+.tb-btn.accent:hover{background:#a85830;}
 #canvas-wrap{flex:1;position:relative;overflow:hidden;}
 #gh-canvas{position:absolute;top:0;left:0;cursor:default;}
 /* SIDEBAR */
@@ -50,7 +50,7 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 #sb-toggle:hover{background:var(--chrome2);color:var(--tx2);}
 .sb-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
 .sb-tab{flex:1;padding:6px 3px;font-size:9px;text-align:center;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;text-transform:uppercase;letter-spacing:0.05em;}
-.sb-tab.on{color:var(--tx);border-bottom-color:#E8820C;}
+.sb-tab.on{color:var(--tx);border-bottom-color:#C96B3A;}
 .sb-tab:hover{color:var(--tx2);}
 .sb-panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
 .sb-panel.on{display:flex;}
@@ -66,20 +66,25 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 .sb-del:hover{color:#e05050;border-color:#e05050;}
 .sb-save-new{padding:6px;border-top:1px solid var(--border);flex-shrink:0;}
 .sb-save-input{width:100%;font-size:10px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--tx);font-family:inherit;outline:none;margin-bottom:4px;}
-.sb-save-input:focus{border-color:#E8820C;}
-.sb-save-btn{width:100%;padding:4px;border-radius:var(--r);border:none;background:#E8820C;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
+.sb-save-input:focus{border-color:#C96B3A;}
+.sb-save-btn{width:100%;padding:4px;border-radius:var(--r);border:none;background:#C96B3A;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
 .sb-empty{font-size:10px;color:var(--tx3);text-align:center;padding:20px 8px;line-height:1.6;}
 .sb-layout-panel{padding:8px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;}
 .sb-label{font-size:9px;color:var(--tx2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;}
-.sb-slider{width:100%;accent-color:#E8820C;cursor:pointer;}
+.sb-slider{width:100%;accent-color:#C96B3A;cursor:pointer;}
 .sb-slider-val{font-size:9px;color:var(--tx3);margin-top:2px;}
 .sb-action-btn{width:100%;padding:4px 8px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx2);font-size:9px;cursor:pointer;font-family:inherit;text-align:left;}
 .sb-action-btn:hover{background:var(--chrome2);color:var(--tx);}
+#reorg-btn{background:#C96B3A;color:#fff;border-color:#C96B3A;position:relative;overflow:hidden;}
+#reorg-btn:hover:not(:disabled){background:#a85830;border-color:#a85830;}
+#reorg-btn:disabled{cursor:wait;opacity:0.85;}
+#reorg-btn.loading::after{content:'';position:absolute;left:-100%;top:0;height:100%;width:100%;background:rgba(255,255,255,0.22);animation:reorgBar 1.6s ease-in-out infinite;}
+@keyframes reorgBar{0%{left:-100%;}100%{left:100%;}}
 /* CLAUDE PANEL */
 #cp{position:absolute;top:0;right:0;width:280px;height:100%;background:var(--chrome);border-left:1px solid var(--border);display:none;flex-direction:column;z-index:80;}
 #cp.open{display:flex;}
 .cph{padding:7px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px;flex-shrink:0;}
-.cpd{width:6px;height:6px;border-radius:50%;background:#E8820C;}
+.cpd{width:6px;height:6px;border-radius:50%;background:#C96B3A;}
 .cpt{font-size:10px;font-weight:500;flex:1;color:var(--tx);}
 .cpa{padding:2px 7px;font-size:9px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--tx2);cursor:pointer;font-family:inherit;}
 .cpa:hover{background:var(--chrome2);}
@@ -89,32 +94,32 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 .cpr{font-size:10px;color:var(--tx);line-height:1.7;background:var(--chrome2);border:1px solid var(--border);border-radius:var(--r);padding:6px 8px;}
 .cpg{background:var(--chrome2);border:1px solid var(--border);border-radius:var(--r);padding:6px 8px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:flex-start;gap:7px;}
 .cpgq{font-size:10px;color:var(--tx);line-height:1.5;flex:1;}
-.cpga{font-size:9px;padding:2px 6px;border:1px solid #E8820C;color:#E8820C;border-radius:var(--r);background:transparent;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:inherit;}
-.cpga:hover{background:#E8820C;color:#fff;}
+.cpga{font-size:9px;padding:2px 6px;border:1px solid #C96B3A;color:#C96B3A;border-radius:var(--r);background:transparent;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:inherit;}
+.cpga:hover{background:#C96B3A;color:#fff;}
 .cpco{background:var(--chrome2);border:1px solid var(--border);border-radius:var(--r);padding:5px 8px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;gap:7px;font-size:10px;color:var(--tx2);}
 .cpcl{font-size:9px;padding:2px 6px;border:1px solid var(--border);border-radius:var(--r);background:transparent;cursor:pointer;color:var(--tx2);font-family:inherit;}
 .cpcl:hover{background:var(--border);}
-.cpac{background:var(--chrome2);border:1px solid #E8820C55;border-radius:var(--r);padding:6px 8px;margin-bottom:4px;}
-.cpact{font-size:10px;font-weight:500;color:#E8820C;margin-bottom:3px;}
+.cpac{background:var(--chrome2);border:1px solid #C96B3A55;border-radius:var(--r);padding:6px 8px;margin-bottom:4px;}
+.cpact{font-size:10px;font-weight:500;color:#C96B3A;margin-bottom:3px;}
 .cpacb{font-size:9px;color:var(--tx2);line-height:1.5;margin-bottom:4px;}
-.cpado{padding:2px 7px;font-size:9px;border:none;border-radius:var(--r);background:#E8820C;color:#fff;cursor:pointer;margin-right:3px;font-family:inherit;}
+.cpado{padding:2px 7px;font-size:9px;border:none;border-radius:var(--r);background:#C96B3A;color:#fff;cursor:pointer;margin-right:3px;font-family:inherit;}
 .cpadx{padding:2px 7px;font-size:9px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--tx3);cursor:pointer;font-family:inherit;}
 .cplo{font-size:10px;color:var(--tx3);font-style:italic;padding:6px 0;}
 .cpf{padding:8px;border-top:1px solid var(--border);flex-shrink:0;}
 .cpp{width:100%;font-size:10px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--tx);font-family:inherit;resize:none;height:80px;outline:none;}
-.cpp:focus{border-color:#E8820C;}
-.cpsend{width:100%;margin-top:4px;padding:5px;border-radius:var(--r);border:none;background:#E8820C;color:#fff;font-size:10px;cursor:pointer;font-family:inherit;}
+.cpp:focus{border-color:#C96B3A;}
+.cpsend{width:100%;margin-top:4px;padding:5px;border-radius:var(--r);border:none;background:#C96B3A;color:#fff;font-size:10px;cursor:pointer;font-family:inherit;}
 /* NODE EDIT */
 #ne{position:absolute;background:var(--chrome2);border:1px solid var(--border);border-radius:var(--r);padding:10px;width:210px;z-index:90;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.15);}
 .nel{font-size:9px;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
 .nei{width:100%;font-size:10px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--tx);font-family:inherit;outline:none;margin-bottom:4px;}
-.nei:focus{border-color:#E8820C;}
+.nei:focus{border-color:#C96B3A;}
 .nerow{display:flex;gap:4px;margin-bottom:4px;align-items:center;}
 .nety{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:5px;}
 .nety button{font-size:9px;padding:2px 5px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx2);cursor:pointer;font-family:inherit;}
 .nety button.on{color:#fff;}
 .nea{display:flex;gap:3px;}
-.nesv{flex:1;padding:4px;border-radius:var(--r);border:none;background:#E8820C;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
+.nesv{flex:1;padding:4px;border-radius:var(--r);border:none;background:#C96B3A;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
 .nedl{padding:4px 7px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx3);font-size:9px;cursor:pointer;font-family:inherit;}
 .ne-img-btn{font-size:9px;padding:2px 6px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--tx2);cursor:pointer;font-family:inherit;}
 /* GROUP EDIT */
@@ -125,7 +130,7 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 .ge-color{width:18px;height:18px;border-radius:3px;cursor:pointer;border:2px solid transparent;}
 .ge-color.sel{border-color:#333;}
 .gea{display:flex;gap:4px;}
-.gesv{flex:1;padding:3px;border-radius:var(--r);border:none;background:#E8820C;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
+.gesv{flex:1;padding:3px;border-radius:var(--r);border:none;background:#C96B3A;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
 .gedl{padding:3px 7px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx3);font-size:9px;cursor:pointer;font-family:inherit;}
 /* CTX MENU */
 #ctx{position:absolute;background:var(--chrome2);border:1px solid var(--border);border-radius:var(--r);padding:3px 0;z-index:150;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.15);min-width:170px;}
@@ -141,12 +146,12 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 #input-bar{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);width:min(500px,82vw);background:var(--chrome);border:1px solid var(--border);border-radius:var(--r);padding:5px 9px;display:flex;gap:6px;align-items:center;box-shadow:0 2px 12px rgba(0,0,0,0.12);z-index:50;}
 #node-input{flex:1;border:none;outline:none;font-size:10px;background:transparent;color:var(--tx);font-family:inherit;}
 #node-input::placeholder{color:var(--tx3);}
-.ib-add{padding:3px 9px;border-radius:var(--r);border:none;background:#E8820C;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
+.ib-add{padding:3px 9px;border-radius:var(--r);border:none;background:#C96B3A;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
 .ib-img{padding:3px 7px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx2);font-size:9px;cursor:pointer;font-family:inherit;}
 #img-upload,#ne-img-upload{display:none;}
 /* MARKUP LAYER */
 .mk-tool-btn{font-size:9px;padding:2px 6px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx2);cursor:pointer;font-family:inherit;}
-.mk-tool-btn.on{background:#E8820C;color:#fff;border-color:#E8820C;}
+.mk-tool-btn.on{background:#C96B3A;color:#fff;border-color:#C96B3A;}
 .mk-tool-btn:hover:not(.on){background:var(--chrome2);}
 .mk-color{width:18px;height:18px;border-radius:3px;cursor:pointer;border:2px solid transparent;flex-shrink:0;}
 .mk-color.sel{border-color:#333;transform:scale(1.15);}
@@ -238,7 +243,7 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
               <button class="mk-tool-btn" onclick="setReorgPreset('organize by topic or theme')">By topic</button>
               <button class="mk-tool-btn" onclick="setReorgPreset('organize by priority or urgency')">By priority</button>
             </div>
-            <button class="sb-action-btn" style="margin-top:4px;" onclick="smartReorg()">⟳  Reorganize ↵</button>
+            <button class="sb-action-btn" id="reorg-btn" style="margin-top:4px;" onclick="smartReorg()">⟳  Reorganize</button>
           </div>
         </div>
       </div>
@@ -277,7 +282,7 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
             <div class="sb-label">Color</div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;">
               <div class="mk-color sel" style="background:#e05050;" onclick="setMkColor('#e05050',this)"></div>
-              <div class="mk-color" style="background:#E8820C;" onclick="setMkColor('#E8820C',this)"></div>
+              <div class="mk-color" style="background:#C96B3A;" onclick="setMkColor('#C96B3A',this)"></div>
               <div class="mk-color" style="background:#378ADD;" onclick="setMkColor('#378ADD',this)"></div>
               <div class="mk-color" style="background:#1D9E75;" onclick="setMkColor('#1D9E75',this)"></div>
               <div class="mk-color" style="background:#7F77DD;" onclick="setMkColor('#7F77DD',this)"></div>
@@ -339,8 +344,8 @@ const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 const ALLOWED=['zolaray25@gmail.com','fraektaard@gmail.com','nishbphoto@gmail.com'];
 const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-auth',persistSession:true,detectSessionInUrl:true}});
 
-const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#E8820C',anchor:'#666660'};
-const GC=['#378ADD','#1D9E75','#BA7517','#D85A30','#7F77DD','#E8820C','#666660','#2D7D46','#8E44AD','#C0392B'];
+const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#C96B3A',anchor:'#666660'};
+const GC=['#378ADD','#1D9E75','#BA7517','#D85A30','#7F77DD','#C96B3A','#666660','#2D7D46','#8E44AD','#C0392B'];
 const TYPES=Object.keys(TC);
 let DW=180,DH=54;
 const PR=5.5;
@@ -714,7 +719,13 @@ async function onUp(e){
   } else if(d.node&&mMoved){
     // push undo before saving
     const snap=d.preDragPos;
-    pushUndo(async()=>{for(const{id,x,y}of snap){const nd=nById(id);if(!nd)continue;nd.x=x;nd.y=y;_tw('canvas_nodes',id);await sb.from('canvas_nodes').update({x:Math.round(x),y:Math.round(y)}).eq('id',id);}toast('Move undone');});
+    pushUndo(async()=>{
+      for(const{id,x,y}of snap){const nd=nById(id);if(!nd)continue;nd.x=x;nd.y=y;_tw('canvas_nodes',id);await sb.from('canvas_nodes').update({x:Math.round(x),y:Math.round(y)}).eq('id',id);}
+      // resize any affected groups so their box snaps back
+      const affGids=new Set(snap.map(({id})=>nById(id)?.group_id).filter(Boolean));
+      for(const gid of affGids){const g=groups.find(x=>x.id===gid);if(!g)continue;const m=nigByGid(gid);sizeGAN(g,m);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
+      toast('Move undone');
+    });
     _tw('canvas_nodes','*');
     const oldGids=new Set(d.mn.map(({n})=>n.group_id).filter(Boolean));
     for(const{n}of d.mn){const gid=getGid(n);n.group_id=gid;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y),group_id:gid||null}).eq('id',n.id);}
@@ -1060,7 +1071,8 @@ Suggest which group each ungrouped node should join, or propose new groups. Resp
 async function smartReorg(){
   const directive=document.getElementById('reorg-input').value.trim();
   if(!directive){toast('Describe how to reorganize first');return;}
-  toast('Claude is reorganizing...');
+  const btn=document.getElementById('reorg-btn');
+  btn.disabled=true;btn.classList.add('loading');btn.textContent='Thinking...';
   const{nl,ll,gl}=cCtx();
   const prompt=`You are reorganizing a visual canvas for 100xbtr_sound (Will: design/CNC, Brendan: cabinetry, Nishant: EE/horn design).
 Current nodes:\n${nl||'(none)'}\nCurrent groups:\n${gl||'(none)'}\nCurrent links:\n${ll||'(none)'}
@@ -1086,6 +1098,7 @@ Prefer moving nodes into existing groups before creating new ones. Only include 
       if(!claudeOn)toggleClaude();
     } else toast('Could not parse reorganization response');
   }catch(e){toast('Reorganize failed: '+e.message);}
+  finally{btn.disabled=false;btn.classList.remove('loading');btn.textContent='⟳  Reorganize';}
 }
 function setReorgPreset(text){document.getElementById('reorg-input').value=text;}
 
