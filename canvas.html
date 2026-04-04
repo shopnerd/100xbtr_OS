@@ -144,6 +144,13 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 .ib-add{padding:3px 9px;border-radius:var(--r);border:none;background:#E8820C;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
 .ib-img{padding:3px 7px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx2);font-size:9px;cursor:pointer;font-family:inherit;}
 #img-upload,#ne-img-upload{display:none;}
+/* MARKUP LAYER */
+.mk-tool-btn{font-size:9px;padding:2px 6px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx2);cursor:pointer;font-family:inherit;}
+.mk-tool-btn.on{background:#E8820C;color:#fff;border-color:#E8820C;}
+.mk-tool-btn:hover:not(.on){background:var(--chrome2);}
+.mk-color{width:18px;height:18px;border-radius:3px;cursor:pointer;border:2px solid transparent;flex-shrink:0;}
+.mk-color.sel{border-color:#333;transform:scale(1.15);}
+.mk-lock-btn,.mk-vis-btn{font-size:12px;background:none;border:none;cursor:pointer;padding:0 2px;line-height:1;}
 </style>
 </head>
 <body>
@@ -176,6 +183,7 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
   </div>
   <div id="canvas-wrap">
     <canvas id="gh-canvas"></canvas>
+    <canvas id="mk-canvas" style="position:absolute;top:0;left:0;pointer-events:none;display:none;"></canvas>
     <div id="win-sel"></div>
     <div id="input-bar">
       <input id="node-input" placeholder="Type a thought and press Enter..." onkeydown="if(event.key==='Enter')quickAdd()">
@@ -189,6 +197,7 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
       <div class="sb-tabs">
         <div class="sb-tab on" onclick="showSbTab('canvases',this)">Saved</div>
         <div class="sb-tab" onclick="showSbTab('layout',this)">Layout</div>
+        <div class="sb-tab" onclick="showSbTab('markup',this)">Markup</div>
       </div>
       <div class="sb-panel on" id="sbp-canvases">
         <div class="sb-list" id="sb-list"><div class="sb-empty">No saved canvases.</div></div>
@@ -196,8 +205,8 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
           <input class="sb-save-input" id="sb-name-input" placeholder="Canvas name..." onkeydown="if(event.key==='Enter')saveCanvas()">
           <button class="sb-save-btn" onclick="saveCanvas()">Save current canvas</button>
         </div>
-        <div style="padding:4px 6px;border-top:1px solid #111110;">
-          <button class="sb-save-btn" onclick="newCanvas()" style="background:#2a2a28;color:#888880;border:1px solid #333330;">+ New blank canvas</button>
+        <div style="padding:4px 6px;border-top:1px solid var(--border);">
+          <button class="sb-save-btn" onclick="newCanvas()" style="background:var(--chrome2);color:var(--tx2);border:1px solid var(--border);">+ New blank canvas</button>
         </div>
       </div>
       <div class="sb-panel" id="sbp-layout">
@@ -215,9 +224,65 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
           <div style="display:flex;flex-direction:column;gap:3px;">
             <button class="sb-action-btn" onclick="runLayout()">⟳  Auto layout</button>
             <button class="sb-action-btn" onclick="repairGroups()">⊞  Repair groups</button>
-            <button class="sb-action-btn" onclick="repelGroupsOnly()">⤢  Spread groups</button>
-            <button class="sb-action-btn" onclick="gridLayoutAllGroups()">⬡  Grid-arrange all groups</button>
+            <button class="sb-action-btn" onclick="repelGroupsOnly()">⤢  Spread apart</button>
+            <button class="sb-action-btn" onclick="gridLayoutAllGroups()">⬡  Grid-arrange groups</button>
+            <button class="sb-action-btn" onclick="autoAssociate()">⬡  Auto-associate nodes</button>
           </div>
+        </div>
+      </div>
+      <div class="sb-panel" id="sbp-markup">
+        <div class="sb-layout-panel">
+          <!-- Layer locks -->
+          <div>
+            <div class="sb-label">Layers</div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">
+                <span style="font-size:10px;color:var(--tx);">Canvas</span>
+                <button class="mk-lock-btn" id="lock-canvas" onclick="toggleLayerLock('canvas')" title="Lock canvas layer">🔓</button>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">
+                <span style="font-size:10px;color:var(--tx);">Markup</span>
+                <div style="display:flex;gap:4px;align-items:center;">
+                  <button class="mk-lock-btn" id="lock-markup" onclick="toggleLayerLock('markup')" title="Lock markup layer">🔓</button>
+                  <button class="mk-vis-btn" id="vis-markup" onclick="toggleMarkupVisible()" title="Show/hide markup">👁</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Drawing tools -->
+          <div>
+            <div class="sb-label">Draw tool</div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap;">
+              <button class="mk-tool-btn on" id="mkt-pen" onclick="setMkTool('pen',this)">✏ Pen</button>
+              <button class="mk-tool-btn" id="mkt-line" onclick="setMkTool('line',this)">╱ Line</button>
+              <button class="mk-tool-btn" id="mkt-rect" onclick="setMkTool('rect',this)">▭ Rect</button>
+              <button class="mk-tool-btn" id="mkt-text" onclick="setMkTool('text',this)">T Text</button>
+              <button class="mk-tool-btn" id="mkt-erase" onclick="setMkTool('erase',this)">⌫ Erase</button>
+            </div>
+          </div>
+          <!-- Color -->
+          <div>
+            <div class="sb-label">Color</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              <div class="mk-color sel" style="background:#e05050;" onclick="setMkColor('#e05050',this)"></div>
+              <div class="mk-color" style="background:#E8820C;" onclick="setMkColor('#E8820C',this)"></div>
+              <div class="mk-color" style="background:#378ADD;" onclick="setMkColor('#378ADD',this)"></div>
+              <div class="mk-color" style="background:#1D9E75;" onclick="setMkColor('#1D9E75',this)"></div>
+              <div class="mk-color" style="background:#7F77DD;" onclick="setMkColor('#7F77DD',this)"></div>
+              <div class="mk-color" style="background:#2a2a28;" onclick="setMkColor('#2a2a28',this)"></div>
+              <div class="mk-color" style="background:#fff;border:1px solid var(--border);" onclick="setMkColor('#fff',this)"></div>
+            </div>
+          </div>
+          <!-- Size -->
+          <div>
+            <div class="sb-label">Brush size</div>
+            <input type="range" class="sb-slider" min="1" max="20" value="3" oninput="mkSize=parseInt(this.value)">
+          </div>
+          <!-- Actions -->
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <button class="sb-action-btn" onclick="clearMarkup()">✕  Clear markup</button>
+          </div>
+          <div style="font-size:9px;color:var(--tx3);line-height:1.6;">Markup is a freehand layer on top of the canvas. Lock a layer to prevent edits. Markup is stored locally.</div>
         </div>
       </div>
     </div>
@@ -304,7 +369,7 @@ async function startApp(u){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('ued').textContent=u.email;
-  initCanvas();await loadAll();setupRT();await loadCanvasList();
+  initCanvas();await loadAll();setupRT();await loadCanvasList();initMarkup();
 }
 
 // CANVAS INIT
@@ -325,7 +390,7 @@ function initCanvas(){
   canvas.addEventListener('touchend',onTE);
   requestAnimationFrame(loop);
 }
-function resize(){const w=document.getElementById('canvas-wrap');canvas.width=w.clientWidth;canvas.height=w.clientHeight;}
+function resize(){const w=document.getElementById('canvas-wrap');canvas.width=w.clientWidth;canvas.height=w.clientHeight;if(mkCanvas){mkCanvas.width=w.clientWidth;mkCanvas.height=w.clientHeight;redrawMarkup();}}
 function loop(){draw();requestAnimationFrame(loop);}
 
 // DRAW
@@ -356,6 +421,7 @@ function drawGrid(W,H){
 }
 
 const GH=24; // group header height in canvas units
+const GPAD_BOTTOM=10; // min padding below nodes in group
 
 // GH-style group with header bar drag handle
 function drawGroups(){
@@ -376,7 +442,7 @@ function drawGroups(){
     ctx.lineTo(x+w,y+GH/cam.z);ctx.lineTo(x,y+GH/cam.z);ctx.lineTo(x,y+r);
     ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
     ctx.fillStyle=color+'55';ctx.fill();
-    // grip dots
+    // grip dots in header
     for(let i=0;i<3;i++){
       ctx.beginPath();ctx.arc(x+w/2+(i-1)*5/cam.z,y+GH/cam.z/2,1.2/cam.z,0,Math.PI*2);
       ctx.fillStyle=color+'aa';ctx.fill();
@@ -385,10 +451,15 @@ function drawGroups(){
     ctx.font=`500 ${10/cam.z}px 'SF Mono',monospace`;
     ctx.fillStyle=color+'ee';ctx.textBaseline='middle';ctx.textAlign='left';
     ctx.fillText(g.label||'Group',x+8/cam.z,y+GH/cam.z/2);
-    // bottom-left resize handle
-    const hs=8/cam.z;
-    ctx.fillStyle=color+'66';
-    ctx.beginPath();ctx.moveTo(x,y+h-hs*2);ctx.lineTo(x,y+h);ctx.lineTo(x+hs*2,y+h);ctx.closePath();ctx.fill();
+    // bottom full-width resize bar
+    const bh=6/cam.z;
+    ctx.fillStyle=color+'44';
+    ctx.fillRect(x,y+h-bh,w,bh);
+    // grip dots on bottom bar
+    for(let i=0;i<5;i++){
+      ctx.beginPath();ctx.arc(x+w/2+(i-2)*6/cam.z,y+h-bh/2,1/cam.z,0,Math.PI*2);
+      ctx.fillStyle=color+'88';ctx.fill();
+    }
     ctx.restore();
   });
 }
@@ -496,8 +567,14 @@ function hGroup(wx,wy){return[...groups].reverse().find(g=>wx>=g.x&&wx<=g.x+g.w&
 function hGroupHeader(g,wx,wy){return wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+GH/cam.z;}
 function hNR(n,wx,wy){const w=n.w||DW,h=n.h||DH;return wx>=n.x+w-14&&wy>=n.y+h-14;}
 function hGR(g,wx,wy){return wx>=g.x+g.w-16&&wy>=g.y+g.h-16;}
-function hGBL(g,wx,wy){return wx>=g.x-4&&wx<=g.x+16&&wy>=g.y+g.h-16&&wy<=g.y+g.h+4;}
-function hPort(n,wx,wy,side){const p=pPos(n,side);return Math.hypot(wx-p.x,wy-p.y)<(PR+8)/cam.z;}
+function hGBottom(g,wx,wy){const bz=10/cam.z;return wx>=g.x&&wx<=g.x+g.w&&wy>=g.y+g.h-bz&&wy<=g.y+g.h+4;}
+function hPort(n,wx,wy){
+  // check either port — return 'in' or 'out' or null
+  const pr=(PR+8)/cam.z;
+  if(Math.hypot(wx-pPos(n,'in').x,wy-pPos(n,'in').y)<pr)return 'in';
+  if(Math.hypot(wx-pPos(n,'out').x,wy-pPos(n,'out').y)<pr)return 'out';
+  return null;
+}
 
 // TOUCH
 let _pt={},_pd0=0,_pi=false;
@@ -544,7 +621,8 @@ function onDown(e){
   }
   const n=hNode(wx,wy);
   if(n){
-    if(hPort(n,wx,wy,'out')||hPort(n,wx,wy,'in')||e.shiftKey){
+    const portSide=hPort(n,wx,wy);
+    if(portSide||e.shiftKey){
       if(!linkFrom){linkFrom=n;toast('Click another node to connect');}
       else{if(linkFrom.id!==n.id)addLink(linkFrom.id,n.id);linkFrom=null;}
       return;
@@ -558,17 +636,15 @@ function onDown(e){
   }
   const g=hGroup(wx,wy);
   if(g){
+    if(hGBottom(g,wx,wy)){drag={on:true,rg:g,ox:wx,oy:wy,sw:g.w,sh:g.h};canvas.style.cursor='s-resize';return;}
     if(hGR(g,wx,wy)){drag={on:true,rg:g,ox:wx,oy:wy,sw:g.w,sh:g.h};canvas.style.cursor='se-resize';return;}
-    if(hGBL(g,wx,wy)){drag={on:true,rgbl:g,ox:wx,oy:wy,sx:g.x,sy:g.y,sw:g.w,sh:g.h};canvas.style.cursor='sw-resize';return;}
     if(hGroupHeader(g,wx,wy)){
-      // drag by header
       if(e.shiftKey){selected.groups=selected.groups.includes(g.id)?selected.groups.filter(id=>id!==g.id):[...selected.groups,g.id];return;}
       if(!selected.groups.includes(g.id)){selected={nodes:[],groups:[g.id]};}
       const members=nigByGid(g.id).map(n=>({n,dx:n.x-g.x,dy:n.y-g.y}));
       drag={on:true,group:g,ox:wx-g.x,oy:wy-g.y,members};
       canvas.style.cursor='grabbing';return;
     }
-    // click inside body but not header — fall through to empty canvas (pan)
   }
   linkFrom=null;closeNE();closeGE();selected={nodes:[],groups:[]};
   drag={on:true,pan:true,ox:cx,oy:cy,camX:cam.x,camY:cam.y};
@@ -597,10 +673,6 @@ function onMove(e){
   }
   else if(drag.resize){drag.resize.w=Math.max(100,drag.sw+(wx-drag.ox));drag.resize.h=Math.max(40,drag.sh+(wy-drag.oy));}
   else if(drag.rg){drag.rg.w=Math.max(120,drag.sw+(wx-drag.ox));drag.rg.h=Math.max(80,drag.sh+(wy-drag.oy));}
-  else if(drag.rgbl){
-    const dw=drag.ox-wx;const dh=wy-drag.oy;
-    drag.rgbl.x=drag.sx-dw;drag.rgbl.w=Math.max(120,drag.sw+dw);drag.rgbl.h=Math.max(80,drag.sh+dh);
-  }
 }
 
 async function onUp(e){
@@ -636,8 +708,7 @@ async function onUp(e){
       }));
     }
   } else if(drag.resize){const n=drag.resize;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({w:Math.round(n.w),h:Math.round(n.h)}).eq('id',n.id);}
-  else if(drag.rg){const g=drag.rg;_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
-  else if(drag.rgbl){const g=drag.rgbl;_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
+  else if(drag.rg){const g=drag.rg;_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
   drag={on:false};
 }
 
@@ -654,6 +725,12 @@ function onRC(e){
   menu.innerHTML='';
   if(n){
     ci(menu,'Edit node','',()=>openNE(n,cx,cy));
+    ci(menu,'Disconnect all wires','',async()=>{
+      _tw('canvas_links','*');
+      await sb.from('canvas_links').delete().or(`source.eq.${n.id},target.eq.${n.id}`);
+      links=links.filter(l=>(l.source?.id||l.source)!==n.id&&(l.target?.id||l.target)!==n.id);
+      toast('Disconnected');
+    });
     // if multiple selected, offer group operations
     if(selected.nodes.length>1){
       cs(menu);
@@ -870,18 +947,73 @@ function repelGroupList(glist,gap){
   }
 }
 async function repelGroupsOnly(){
-  // capture node offsets relative to their groups BEFORE repel
+  const NPAD=20;
+  // capture node offsets BEFORE repel
   const offsets=new Map();
   groups.forEach(g=>{nigByGid(g.id).forEach(n=>offsets.set(n.id,{dx:n.x-g.x,dy:n.y-g.y}));});
+  // repel groups vs groups
   repelGroupList(groups,spreadGap);
-  // move nodes with groups using captured offsets
-  groups.forEach(g=>{nigByGid(g.id).forEach(n=>{const o=offsets.get(n.id)||{dx:0,dy:0};n.x=g.x+o.dx;n.y=g.y+o.dy;});});
+  // move grouped nodes with their groups
+  groups.forEach(g=>{nigByGid(g.id).forEach(n=>{const o=offsets.get(n.id)||{dx:NPAD,dy:GH+NPAD};n.x=g.x+o.dx;n.y=g.y+o.dy;});});
+  // also repel ungrouped nodes away from groups and each other
+  const ug=nodes.filter(n=>!n.group_id);
+  if(ug.length){
+    let moved=true;let it=0;
+    while(moved&&it<30){moved=false;it++;
+      // push ungrouped away from groups
+      for(const n of ug){
+        for(const g of groups){
+          const nw=n.w||DW,nh=n.h||DH;
+          const ox=(nw/2+g.w/2+spreadGap)-(Math.abs(n.x+nw/2-(g.x+g.w/2)));
+          const oy=(nh/2+g.h/2+spreadGap)-(Math.abs(n.y+nh/2-(g.y+g.h/2)));
+          if(ox>0&&oy>0){moved=true;
+            if(ox<oy){if(n.x+nw/2<g.x+g.w/2)n.x-=ox/2+1;else n.x+=ox/2+1;}
+            else{if(n.y+nh/2<g.y+g.h/2)n.y-=oy/2+1;else n.y+=oy/2+1;}
+          }
+        }
+      }
+      // push ungrouped away from each other
+      repelNodes(ug);
+    }
+  }
   await Promise.all(groups.map(g=>{_tw('canvas_groups',g.id);return sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y)}).eq('id',g.id);}));
-  await Promise.all(nodes.filter(n=>n.group_id).map(n=>{_tw('canvas_nodes',n.id);return sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}));
-  toast('Groups spread');
+  await Promise.all(nodes.map(n=>{_tw('canvas_nodes',n.id);return sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}));
+  toast('Spread done');
 }
 
-async function gridLayoutAllGroups(){for(const g of groups)await gridLayoutGroup(g);toast('All groups grid-arranged');}
+async function autoAssociate(){
+  const ug=nodes.filter(n=>!n.group_id);
+  if(!ug.length){toast('No ungrouped nodes to associate');return;}
+  toast('Asking Claude to associate nodes...');
+  const nl=ug.map(n=>`id:"${n.id}" label:"${n.label}" type:${n.type}`).join('\n');
+  const gl=groups.map(g=>`id:"${g.id}" label:"${g.label}"`).join('\n');
+  const prompt=`You have ungrouped canvas nodes and existing groups for a boutique horn speaker company (100xbtr_sound).
+Ungrouped nodes:\n${nl}\nExisting groups:\n${gl||'(none)'}
+Suggest which group each ungrouped node should join, or propose new groups. Respond ONLY with JSON, no markdown:
+{"assignments":[{"nodeId":"id","groupId":"existing-group-id-or-null","newGroupLabel":"only if new group needed"}]}`;
+  try{
+    const text=await callClaude([{role:'user',content:prompt}],800);
+    const data=extractJSON(text);
+    if(!data?.assignments){toast('Could not parse response');return;}
+    for(const a of data.assignments){
+      const n=nById(a.nodeId);if(!n)continue;
+      let gid=a.groupId;
+      if(!gid&&a.newGroupLabel){
+        // create new group
+        const ng={id:'g-'+Date.now()+Math.random().toString(36).slice(2),label:a.newGroupLabel,color:GC[groups.length%GC.length],x:n.x-20,y:n.y-GH-10,w:DW+40,h:DH+GH+30};
+        _tw('canvas_groups',ng.id);await sb.from('canvas_groups').insert(ng);groups.push(ng);gid=ng.id;
+      }
+      if(gid&&groups.find(g=>g.id===gid)){
+        n.group_id=gid;_tw('canvas_nodes',n.id);
+        await sb.from('canvas_nodes').update({group_id:gid}).eq('id',n.id);
+        const g=groups.find(x=>x.id===gid);const m=nigByGid(gid);
+        sizeGAN(g,m);_tw('canvas_groups',gid);
+        await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',gid);
+      }
+    }
+    toast(`Auto-associated ${data.assignments.length} nodes`);
+  }catch(e){toast('Auto-associate failed: '+e.message);}
+}
 async function alignG(g,dir){await alignNodesInGroups(dir,[g]);}
 async function alignNodesInGroups(dir,gs){
   const tgt=gs||groups;
@@ -948,12 +1080,27 @@ async function gridLayoutGroup(g){
   for(const n of gn){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}
   toast('Nodes grid-arranged');
 }
+async function gridLayoutAllGroups(){for(const g of groups)await gridLayoutGroup(g);toast('All groups grid-arranged');}
+async function alignG(g,dir){await alignNodesInGroups(dir,[g]);}
+async function alignNodesInGroups(dir,gs){
+  const tgt=gs||groups;
+  for(const g of tgt){
+    const gn=nigByGid(g.id);if(gn.length<2)continue;
+    const NPAD=20,NH=DH;const cols=Math.max(1,Math.ceil(Math.sqrt(gn.length)));
+    const totalW=cols*(DW+NPAD)-NPAD;
+    let sx;if(dir==='left')sx=g.x+NPAD;else if(dir==='right')sx=g.x+g.w-NPAD-totalW;else sx=g.x+g.w/2-totalW/2;
+    gn.forEach((n,i)=>{n.x=sx+(i%cols)*(DW+NPAD);n.y=g.y+GH+NPAD+Math.floor(i/cols)*(NH+NPAD);});
+    sizeGAN(g,nigByGid(g.id));_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
+    for(const n of gn){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}
+  }
+  toast('Aligned');
+}
 
 // SIDEBAR
 let sidebarOpen=false;
 function toggleSidebar(){sidebarOpen=!sidebarOpen;document.getElementById('sidebar').classList.toggle('open',sidebarOpen);document.getElementById('sb-toggle').classList.toggle('open',sidebarOpen);document.getElementById('sb-toggle').textContent=sidebarOpen?'◀':'▶';}
 function showSbTab(id,el){document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('on'));document.getElementById('sbp-'+id).classList.add('on');el.classList.add('on');}
-function onSpreadSlider(v){spreadGap=parseInt(v);document.getElementById('spread-val').textContent=v+' px';}
+function onSpreadSlider(v){spreadGap=parseInt(v);document.getElementById('spread-val').textContent=v+' px';repelGroupsOnly();}
 function onNWSlider(v){DW=parseInt(v);document.getElementById('nw-val').textContent=v+' px wide';nodes.forEach(n=>{if(!n._customW)n.w=DW;});}
 
 // SAVED CANVASES
@@ -1139,6 +1286,125 @@ function setupRT(){
 }
 let toastT=null;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.style.opacity='1';clearTimeout(toastT);toastT=setTimeout(()=>el.style.opacity='0',2400);}
+
+// ── MARKUP LAYER ────────────────────────────────────────────────────────────
+let mkCanvas=null,mkCtx=null;
+let mkTool='pen',mkColor='#e05050',mkSize=3;
+let mkDrawing=false,mkLast=null,mkLineStart=null;
+let layerLocked={canvas:false,markup:false};
+let markupVisible=true;
+let mkStrokes=[]; // [{tool,color,size,pts}] for undo / redraw
+
+function initMarkup(){
+  mkCanvas=document.getElementById('mk-canvas');
+  if(!mkCanvas)return;
+  mkCtx=mkCanvas.getContext('2d');
+  syncMkSize();
+  mkCanvas.addEventListener('mousedown',mkDown);
+  mkCanvas.addEventListener('mousemove',mkMove);
+  mkCanvas.addEventListener('mouseup',mkUp);
+  mkCanvas.addEventListener('mouseleave',mkUp);
+  // restore from localStorage
+  try{const saved=localStorage.getItem('100xbtr_markup');if(saved){const img=new Image();img.onload=()=>mkCtx.drawImage(img,0,0);img.src=saved;}}catch(e){}
+}
+function syncMkSize(){
+  if(!mkCanvas)return;
+  const w=document.getElementById('canvas-wrap');
+  mkCanvas.width=w.clientWidth;mkCanvas.height=w.clientHeight;
+  redrawMarkup();
+}
+function redrawMarkup(){
+  if(!mkCtx)return;
+  mkCtx.clearRect(0,0,mkCanvas.width,mkCanvas.height);
+  mkStrokes.forEach(s=>drawStroke(s));
+}
+function drawStroke(s){
+  if(!mkCtx||!s.pts.length)return;
+  mkCtx.save();
+  mkCtx.strokeStyle=s.color;mkCtx.lineWidth=s.size;
+  mkCtx.lineCap='round';mkCtx.lineJoin='round';
+  mkCtx.globalAlpha=0.85;
+  if(s.tool==='pen'||s.tool==='erase'){
+    if(s.tool==='erase'){mkCtx.globalCompositeOperation='destination-out';mkCtx.globalAlpha=1;}
+    mkCtx.beginPath();mkCtx.moveTo(s.pts[0].x,s.pts[0].y);
+    s.pts.slice(1).forEach(p=>mkCtx.lineTo(p.x,p.y));mkCtx.stroke();
+  } else if(s.tool==='line'&&s.pts.length>=2){
+    mkCtx.beginPath();mkCtx.moveTo(s.pts[0].x,s.pts[0].y);mkCtx.lineTo(s.pts[s.pts.length-1].x,s.pts[s.pts.length-1].y);mkCtx.stroke();
+  } else if(s.tool==='rect'&&s.pts.length>=2){
+    const x=Math.min(s.pts[0].x,s.pts[s.pts.length-1].x);
+    const y=Math.min(s.pts[0].y,s.pts[s.pts.length-1].y);
+    const w=Math.abs(s.pts[s.pts.length-1].x-s.pts[0].x);
+    const h=Math.abs(s.pts[s.pts.length-1].y-s.pts[0].y);
+    mkCtx.strokeRect(x,y,w,h);
+  } else if(s.tool==='text'&&s.text){
+    mkCtx.font=`${s.size*4+10}px 'SF Mono',monospace`;mkCtx.fillStyle=s.color;mkCtx.globalAlpha=0.85;
+    mkCtx.fillText(s.text,s.pts[0].x,s.pts[0].y);
+  }
+  mkCtx.restore();
+}
+function mkPt(e){const r=mkCanvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+function mkDown(e){
+  if(layerLocked.markup||!markupVisible)return;
+  if(layerLocked.canvas)e.stopPropagation(); // eat canvas events when canvas locked
+  mkDrawing=true;
+  const pt=mkPt(e);
+  if(mkTool==='text'){
+    const txt=prompt('Enter text:');if(!txt)return mkDrawing=false;
+    const s={tool:'text',color:mkColor,size:mkSize,pts:[pt],text:txt};
+    mkStrokes.push(s);drawStroke(s);saveMk();
+    mkDrawing=false;return;
+  }
+  mkStrokes.push({tool:mkTool,color:mkColor,size:mkSize,pts:[pt]});
+}
+function mkMove(e){
+  if(!mkDrawing)return;
+  const pt=mkPt(e);
+  const cur=mkStrokes[mkStrokes.length-1];if(!cur)return;
+  cur.pts.push(pt);
+  // live draw
+  redrawMarkup();
+}
+function mkUp(){
+  if(!mkDrawing)return;mkDrawing=false;saveMk();
+}
+function saveMk(){
+  try{localStorage.setItem('100xbtr_markup',mkCanvas.toDataURL());}catch(e){}
+}
+function setMkTool(t,el){
+  mkTool=t;
+  document.querySelectorAll('.mk-tool-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  // enable/disable mkCanvas pointer events
+  mkCanvas.style.pointerEvents=(t==='pen'||t==='erase'||t==='line'||t==='rect'||t==='text')?'auto':'none';
+}
+function setMkColor(c,el){
+  mkColor=c;
+  document.querySelectorAll('.mk-color').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function clearMarkup(){
+  if(!confirm('Clear all markup?'))return;
+  mkStrokes=[];redrawMarkup();try{localStorage.removeItem('100xbtr_markup');}catch(e){}
+  toast('Markup cleared');
+}
+function toggleMarkupVisible(){
+  markupVisible=!markupVisible;
+  mkCanvas.style.display=markupVisible?'block':'none';
+  document.getElementById('vis-markup').textContent=markupVisible?'👁':'🚫';
+  toast(markupVisible?'Markup visible':'Markup hidden');
+}
+function toggleLayerLock(layer){
+  layerLocked[layer]=!layerLocked[layer];
+  const btn=document.getElementById('lock-'+layer);
+  btn.textContent=layerLocked[layer]?'🔒':'🔓';
+  if(layer==='canvas'){
+    // lock canvas: prevent all canvas mouse events
+    canvas.style.pointerEvents=layerLocked.canvas?'none':'auto';
+    toast(layerLocked.canvas?'Canvas locked':'Canvas unlocked');
+  } else {
+    toast(layerLocked.markup?'Markup locked':'Markup unlocked');
+  }
+}
 </script>
 </body>
 </html>
