@@ -1180,7 +1180,7 @@ function renderAnalysis(data){
   if(data.actions?.length){
     html+='<div class="cps"><div class="cpst">Actions</div>';
     data.actions.forEach(a=>{html+=`<div class="cpac"><div class="cpact">${aLabel(a)}</div><div class="cpacb">${a.description||''}</div><button class="cpado" onclick='execA(${JSON.stringify(a)})'>Do it</button><button class="cpadx" onclick="this.parentElement.remove()">Skip</button></div>`;});
-    html+=`<button class="cpsend" style="margin-top:4px;" onclick="execAll(${JSON.stringify(data.actions)})">Do all ↵</button>`;
+    html+=`<button class="cpsend" style="margin-top:4px;" onclick='execAll(${JSON.stringify(data.actions)})'>Do all ↵</button>`;
     html+='</div>';
   }
   body.innerHTML=html||'<div class="cplo">Add more nodes for a meaningful analysis.</div>';
@@ -1241,7 +1241,7 @@ Use "group" (the group label string) NOT "group_id". Otherwise respond with plai
       body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${parsed.response||'Done.'}</div></div>`;
       let ah='<div class="cps"><div class="cpst">Proposed actions</div>';
       parsed.actions.forEach(a=>{ah+=`<div class="cpac"><div class="cpact">${aLabel(a)}</div><div class="cpacb">${a.description||''}</div><button class="cpado" onclick='execA(${JSON.stringify(a)})'>Do it</button><button class="cpadx" onclick="this.parentElement.remove()">Skip</button></div>`;});
-      ah+=`<button class="cpsend" style="margin-top:4px;" onclick="execAll(${JSON.stringify(parsed.actions)})">Do all ↵</button>`;
+      ah+=`<button class="cpsend" style="margin-top:4px;" onclick='execAll(${JSON.stringify(parsed.actions)})'>Do all ↵</button>`;
       body.innerHTML+=ah+'</div>';
     } else {body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${text.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</div></div>`;}
     document.getElementById('cpp').value='';
