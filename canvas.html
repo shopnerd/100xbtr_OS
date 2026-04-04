@@ -277,6 +277,7 @@ textarea.nei{line-height:1.4;}
           <div>
             <div class="sb-label">Draw tool</div>
             <div style="display:flex;gap:3px;flex-wrap:wrap;">
+              <button class="mk-tool-btn" id="mkt-sel" onclick="setMkTool('sel',this)">↖ Select</button>
               <button class="mk-tool-btn on" id="mkt-pen" onclick="setMkTool('pen',this)">✏ Pen</button>
               <button class="mk-tool-btn" id="mkt-line" onclick="setMkTool('line',this)">╱ Line</button>
               <button class="mk-tool-btn" id="mkt-rect" onclick="setMkTool('rect',this)">▭ Rect</button>
@@ -1579,6 +1580,7 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 // ── MARKUP LAYER ────────────────────────────────────────────────────────────
 let mkCanvas=null,mkCtx=null;
 let mkTool='pen',mkColor='#e05050',mkSize=3,mkFill=false,mkAlpha=0.85;
+let mkSelected=null,mkDragPt=null;
 let mkDrawing=false,mkLast=null,mkLineStart=null;
 let layerLocked={canvas:false,markup:false};
 let markupVisible=true;
@@ -1614,6 +1616,17 @@ function redrawMarkup(){
   mkCtx.translate(W/2+cam.x,H/2+cam.y);
   mkCtx.scale(cam.z,cam.z);
   mkStrokes.forEach(s=>drawStroke(s));
+  // draw selection highlight
+  if(mkTool==='sel'&&mkSelected!==null&&mkStrokes[mkSelected]){
+    const b=mkBBox(mkStrokes[mkSelected]);
+    const pad=12/cam.z;
+    mkCtx.save();
+    mkCtx.strokeStyle='#C96B3A';mkCtx.lineWidth=1.5/cam.z;
+    mkCtx.setLineDash([6/cam.z,4/cam.z]);
+    mkCtx.globalAlpha=1;
+    mkCtx.strokeRect(b.x0-pad,b.y0-pad,(b.x1-b.x0)+pad*2,(b.y1-b.y0)+pad*2);
+    mkCtx.restore();
+  }
   mkCtx.restore();
 }
 function drawStroke(s){
@@ -1648,33 +1661,64 @@ function drawStroke(s){
   mkCtx.restore();
 }
 function mkPt(e){const r=mkCanvas.getBoundingClientRect();const sx=e.clientX-r.left,sy=e.clientY-r.top;const W=mkCanvas.width,H=mkCanvas.height;return{x:(sx-W/2-cam.x)/cam.z,y:(sy-H/2-cam.y)/cam.z};}
+// hit-test a stroke at world point pt
+function mkDistSeg(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy;if(!l2)return Math.hypot(p.x-a.x,p.y-a.y);const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/l2));return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);}
+function hitMkStroke(s,pt){
+  const tol=(s.size/2+8)/cam.z;
+  if(s.tool==='pen'||s.tool==='erase'){for(let i=0;i<s.pts.length-1;i++)if(mkDistSeg(pt,s.pts[i],s.pts[i+1])<tol)return true;return false;}
+  if(s.tool==='line'&&s.pts.length>=2)return mkDistSeg(pt,s.pts[0],s.pts[s.pts.length-1])<tol;
+  if((s.tool==='rect'||s.tool==='circle')&&s.pts.length>=2){
+    const p=12/cam.z;
+    const x0=Math.min(s.pts[0].x,s.pts[s.pts.length-1].x)-p,x1=Math.max(s.pts[0].x,s.pts[s.pts.length-1].x)+p;
+    const y0=Math.min(s.pts[0].y,s.pts[s.pts.length-1].y)-p,y1=Math.max(s.pts[0].y,s.pts[s.pts.length-1].y)+p;
+    return pt.x>=x0&&pt.x<=x1&&pt.y>=y0&&pt.y<=y1;
+  }
+  if(s.tool==='text'){const p=20/cam.z;return Math.abs(pt.x-s.pts[0].x)<p*4&&Math.abs(pt.y-s.pts[0].y)<p;}
+  return false;
+}
+function mkBBox(s){
+  const xs=s.pts.map(p=>p.x),ys=s.pts.map(p=>p.y);
+  return{x0:Math.min(...xs),y0:Math.min(...ys),x1:Math.max(...xs),y1:Math.max(...ys)};
+}
 function mkDown(e){
   if(layerLocked.markup||!markupVisible)return;
-  if(layerLocked.canvas)e.stopPropagation(); // eat canvas events when canvas locked
-  mkDrawing=true;
+  if(layerLocked.canvas)e.stopPropagation();
   const pt=mkPt(e);
+  if(mkTool==='sel'){
+    mkSelected=null;
+    for(let i=mkStrokes.length-1;i>=0;i--){if(hitMkStroke(mkStrokes[i],pt)){mkSelected=i;break;}}
+    mkDragPt=pt;mkDrawing=true;redrawMarkup();return;
+  }
+  mkDrawing=true;
   if(mkTool==='text'){
     const txt=prompt('Enter text:');if(!txt)return mkDrawing=false;
-    const s={tool:'text',color:mkColor,size:mkSize,pts:[pt],text:txt};
-    mkStrokes.push(s);drawStroke(s);saveMk();
-    mkDrawing=false;return;
+    const s={tool:'text',color:mkColor,size:mkSize,alpha:mkAlpha,pts:[pt],text:txt};
+    mkStrokes.push(s);drawStroke(s);saveMk();mkDrawing=false;return;
   }
   mkStrokes.push({tool:mkTool,color:mkColor,size:mkSize,fill:mkFill,alpha:mkAlpha,pts:[pt]});
 }
 function mkMove(e){
   if(!mkDrawing)return;
-  let pt=mkPt(e);
-  const cur=mkStrokes[mkStrokes.length-1];if(!cur)return;
-  // Shift+circle → constrain to perfect circle
-  if(cur.tool==='circle'&&e.shiftKey&&cur.pts.length>=1){
-    const s=cur.pts[0],dx=pt.x-s.x,dy=pt.y-s.y,d=Math.min(Math.abs(dx),Math.abs(dy));
-    pt={x:s.x+Math.sign(dx)*d,y:s.y+Math.sign(dy)*d};
+  const pt=mkPt(e);
+  if(mkTool==='sel'){
+    if(mkSelected===null||!mkDragPt)return;
+    const dx=pt.x-mkDragPt.x,dy=pt.y-mkDragPt.y;
+    mkStrokes[mkSelected].pts=mkStrokes[mkSelected].pts.map(p=>({x:p.x+dx,y:p.y+dy}));
+    mkDragPt=pt;redrawMarkup();return;
   }
-  cur.pts.push(pt);
-  redrawMarkup();
+  let pt2=pt;
+  const cur=mkStrokes[mkStrokes.length-1];if(!cur)return;
+  if(cur.tool==='circle'&&e.shiftKey&&cur.pts.length>=1){
+    const s=cur.pts[0],dx=pt2.x-s.x,dy=pt2.y-s.y,d=Math.min(Math.abs(dx),Math.abs(dy));
+    pt2={x:s.x+Math.sign(dx)*d,y:s.y+Math.sign(dy)*d};
+  }
+  cur.pts.push(pt2);redrawMarkup();
 }
 function mkUp(){
-  if(!mkDrawing)return;mkDrawing=false;saveMk();
+  if(!mkDrawing)return;mkDrawing=false;
+  if(mkTool==='sel'&&mkSelected!==null)saveMk();
+  else if(mkTool!=='sel')saveMk();
+  mkDragPt=null;
 }
 function saveMk(){
   try{localStorage.setItem('100xbtr_markup',JSON.stringify(mkStrokes));}catch(e){}
@@ -1684,7 +1728,8 @@ function setMkTool(t,el){
   // only remove 'on' from tool buttons, not the stroke/fill toggle
   document.querySelectorAll('.mk-tool-btn:not(#mkt-stroke):not(#mkt-fill)').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
-  mkCanvas.style.pointerEvents=(t==='pen'||t==='erase'||t==='line'||t==='rect'||t==='circle'||t==='text')?'auto':'none';
+  mkCanvas.style.pointerEvents=(t==='pen'||t==='erase'||t==='line'||t==='rect'||t==='circle'||t==='text'||t==='sel')?'auto':'none';
+  if(t!=='sel'){mkSelected=null;redrawMarkup();}
 }
 function setMkFill(fill,el){
   mkFill=fill;
