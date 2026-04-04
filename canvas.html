@@ -483,7 +483,7 @@ function drawGroups(){
       ctx.fillStyle=color+'aa';ctx.fill();
     }
     // label in header
-    ctx.font=`500 ${10/cam.z}px 'SF Mono',monospace`;
+    const gfs=Math.min(GH*0.6,w*0.055);ctx.font=`500 ${gfs}px 'SF Mono',monospace`;
     ctx.fillStyle='#1a1a18';ctx.textBaseline='middle';ctx.textAlign='left';
     ctx.fillText(g.label||'Group',x+8/cam.z,y+GH/cam.z/2);
     // bottom full-width resize bar
