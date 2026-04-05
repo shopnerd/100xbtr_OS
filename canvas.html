@@ -399,7 +399,7 @@ function _tw(table,id){_mw[table]?.add(id);setTimeout(()=>_mw[table]?.delete(id)
 // AUTH
 async function signInGoogle(){
   const e=document.getElementById('auth-err');e.style.display='none';
-  const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://sound.100xbtr.com/canvas.html'}});
+  const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/canvas.html'}});
   if(error){e.textContent=error.message;e.style.display='block';}
 }
 async function signOut(){await sb.auth.signOut();window.location.reload();}
@@ -436,6 +436,46 @@ function initCanvas(){
 function resize(){const w=document.getElementById('canvas-wrap');canvas.width=w.clientWidth;canvas.height=w.clientHeight;if(mkCanvas){mkCanvas.width=w.clientWidth;mkCanvas.height=w.clientHeight;redrawMarkup();}}
 function loop(){draw();if(mkCanvas&&mkStrokes.length)redrawMarkup();requestAnimationFrame(loop);}
 
+function drawLabelBubbles(){
+  if(!groups.length)return;
+  const W=canvas.width,H=canvas.height;
+  // Font grows as zoom decreases so bubbles stay readable when groups are tiny
+  const fsPx=Math.min(Math.max(12,11/cam.z),17);
+  ctx.save();
+  groups.forEach(g=>{
+    if(!g.label)return;
+    // world → screen: horizontal center, top edge of group
+    const sx=W/2+cam.x+(g.x+g.w/2)*cam.z;
+    const sy=H/2+cam.y+g.y*cam.z;
+    const ph=7,pv=4,br=5,tailH=6,tailW=7,gap=3;
+    const maxBw=g.w*cam.z;
+    // shrink font until text fits inside bubble
+    let fs=fsPx;
+    ctx.font=`500 ${fs}px 'SF Mono',monospace`;
+    while(fs>11&&ctx.measureText(g.label).width+ph*2>maxBw){
+      fs-=0.5;ctx.font=`500 ${fs}px 'SF Mono',monospace`;
+    }
+    const tw=ctx.measureText(g.label).width;
+    const bw=tw+ph*2,bh=fs+pv*2;
+    const rx=sx-bw/2,ry=sy-gap-tailH-bh;
+    // tail (no stroke — sits under rect)
+    ctx.beginPath();ctx.moveTo(sx-tailW/2,ry+bh);ctx.lineTo(sx,sy-gap);ctx.lineTo(sx+tailW/2,ry+bh);ctx.closePath();
+    ctx.fillStyle='#eeeeea';ctx.fill();
+    // rounded rect
+    ctx.beginPath();
+    ctx.moveTo(rx+br,ry);ctx.lineTo(rx+bw-br,ry);ctx.quadraticCurveTo(rx+bw,ry,rx+bw,ry+br);
+    ctx.lineTo(rx+bw,ry+bh-br);ctx.quadraticCurveTo(rx+bw,ry+bh,rx+bw-br,ry+bh);
+    ctx.lineTo(rx+br,ry+bh);ctx.quadraticCurveTo(rx,ry+bh,rx,ry+bh-br);
+    ctx.lineTo(rx,ry+br);ctx.quadraticCurveTo(rx,ry,rx+br,ry);ctx.closePath();
+    ctx.fillStyle='#eeeeea';ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=0.75;ctx.stroke();
+    // label text
+    ctx.fillStyle='#1a1a18';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(g.label,sx,ry+bh/2);
+  });
+  ctx.restore();
+}
+
 // DRAW
 function draw(){
   const W=canvas.width,H=canvas.height;
@@ -453,6 +493,7 @@ function draw(){
     ctx.strokeStyle='rgba(201,107,58,0.7)';ctx.lineWidth=1.5/cam.z;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
   }
   ctx.restore();
+  drawLabelBubbles();
 }
 
 function drawGrid(W,H){
@@ -524,17 +565,20 @@ function drawLinks(){
     if(sCX<=tCX){sp=pPos(s,'out');tp=pPos(t,'in');portRight.add(s.id);portLeft.add(t.id);}
     else{sp=pPos(s,'in');tp=pPos(t,'out');portLeft.add(s.id);portRight.add(t.id);}
     const cpx=sp.x+(tp.x-sp.x)*0.5;
-    ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.bezierCurveTo(cpx,sp.y,cpx,tp.y,tp.x,tp.y);
     const cl=l.claude;
     const isSel=selected.nodes.includes(s.id)||selected.nodes.includes(t.id)||(s.group_id&&selected.groups.includes(s.group_id))||(t.group_id&&selected.groups.includes(t.group_id));
-    ctx.strokeStyle=isSel?'rgba(201,107,58,0.95)':cl?'rgba(201,107,58,0.5)':'rgba(151,151,142,0.8)';
-    ctx.lineWidth=(isSel?2.2:cl?1.8:1.2)/cam.z;ctx.setLineDash(cl&&!isSel?[5,3]:[]);ctx.stroke();ctx.setLineDash([]);
+    const wColor=isSel?'rgba(201,107,58,0.95)':cl?'rgba(201,107,58,0.5)':'rgba(140,140,132,0.82)';
+    const lw=(isSel?1.6:cl?1.2:1.0)/cam.z;
+    ctx.strokeStyle=wColor;ctx.lineWidth=lw;
+    if(isSel)ctx.setLineDash([6/cam.z,4/cam.z]);
+    ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.bezierCurveTo(cpx,sp.y,cpx,tp.y,tp.x,tp.y);ctx.stroke();
+    if(isSel)ctx.setLineDash([]);
     // arrow
     const ang=Math.atan2(tp.y-sp.y,tp.x-sp.x),as=7/cam.z;
     ctx.beginPath();ctx.moveTo(tp.x,tp.y);
     ctx.lineTo(tp.x-as*Math.cos(ang-0.38),tp.y-as*Math.sin(ang-0.38));
     ctx.lineTo(tp.x-as*Math.cos(ang+0.38),tp.y-as*Math.sin(ang+0.38));
-    ctx.closePath();ctx.fillStyle=isSel?'rgba(201,107,58,1.0)':cl?'rgba(201,107,58,0.6)':'rgba(151,151,142,0.85)';ctx.fill();
+    ctx.closePath();ctx.fillStyle=isSel?'rgba(201,107,58,1.0)':cl?'rgba(201,107,58,0.6)':'rgba(140,140,132,0.9)';ctx.fill();
   });
 }
 
@@ -743,6 +787,7 @@ function onMove(e){
   }
   else if(drag.node){
     drag.mn.forEach(({n,ox,oy})=>{n.x=wx-ox;n.y=wy-oy;});
+    separateNodes(nodes,new Set(drag.mn.map(({n})=>n.id)));
     // live resize groups
     const liveGids=new Set([...drag.mn.map(({n})=>n.group_id).filter(Boolean),...(drag.prevGids||[])]);
     liveGids.forEach(gid=>{const g=groups.find(x=>x.id===gid);if(g)sizeGAN(g,nigByGid(gid));});
@@ -752,7 +797,16 @@ function onMove(e){
     drag.members?.forEach(({n,dx,dy})=>{n.x=drag.group.x+dx;n.y=drag.group.y+dy;});
   }
   else if(drag.resize){drag.resize.w=Math.max(100,drag.sw+(wx-drag.ox));drag.resize.h=Math.max(40,drag.sh+(wy-drag.oy));}
-  else if(drag.rg){drag.rg.w=Math.max(120,drag.sw+(wx-drag.ox));drag.rg.h=Math.max(80,drag.sh+(wy-drag.oy));}
+  else if(drag.rg){
+    const g=drag.rg;
+    g.w=Math.max(120,drag.sw+(wx-drag.ox));g.h=Math.max(80,drag.sh+(wy-drag.oy));
+    const pad=8,members=nigByGid(g.id);
+    members.forEach(n=>{
+      n.x=Math.min(n.x,g.x+g.w-(n.w||DW)-pad);
+      n.y=Math.min(n.y,g.y+g.h-(n.h||DH)-pad);
+    });
+    separateNodes(members);
+  }
 }
 
 async function onUp(e){
@@ -800,7 +854,11 @@ async function onUp(e){
       }));
     }
   } else if(d.resize){const n=d.resize;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({w:Math.round(n.w),h:Math.round(n.h)}).eq('id',n.id);}
-  else if(d.rg){const g=d.rg;_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
+  else if(d.rg){
+    const g=d.rg;_tw('canvas_groups',g.id);
+    await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
+    await Promise.all(nigByGid(g.id).map(n=>{_tw('canvas_nodes',n.id);return sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}));
+  }
 }
 
 function onWheel(e){
@@ -1032,6 +1090,32 @@ async function deleteGroup(){
 
 // GROUP UTILS
 function nigByGid(gid){return nodes.filter(n=>n.group_id===gid);}
+// Push overlapping nodes apart. fixedIds = Set of node IDs that cannot move.
+function separateNodes(scope,fixedIds=new Set()){
+  const GAP=4;
+  for(let iter=0;iter<12;iter++){
+    let any=false;
+    for(let i=0;i<scope.length;i++){
+      for(let j=i+1;j<scope.length;j++){
+        const a=scope[i],b=scope[j];
+        const aw=a.w||DW,ah=a.h||DH,bw=b.w||DW,bh=b.h||DH;
+        if(a.x+aw+GAP<=b.x||b.x+bw+GAP<=a.x||a.y+ah+GAP<=b.y||b.y+bh+GAP<=a.y)continue;
+        // overlap — resolve along axis of smallest penetration
+        const ol=[a.x+aw+GAP-b.x,b.x+bw+GAP-a.x,a.y+ah+GAP-b.y,b.y+bh+GAP-a.y];
+        const m=Math.min(...ol);
+        const aFix=fixedIds.has(a.id),bFix=fixedIds.has(b.id);
+        if(aFix&&bFix)continue;
+        const half=aFix?1:bFix?0:0.5;
+        if(m===ol[0]){if(!bFix)b.x+=m*(1-half);if(!aFix)a.x-=m*half;}
+        else if(m===ol[1]){if(!bFix)b.x-=m*(1-half);if(!aFix)a.x+=m*half;}
+        else if(m===ol[2]){if(!bFix)b.y+=m*(1-half);if(!aFix)a.y-=m*half;}
+        else{if(!bFix)b.y-=m*(1-half);if(!aFix)a.y+=m*half;}
+        any=true;
+      }
+    }
+    if(!any)break;
+  }
+}
 function nigByPos(g){return nodes.filter(n=>{const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;return cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h;});}
 function sizeGAN(g,members){
   if(!members||!members.length)return;
