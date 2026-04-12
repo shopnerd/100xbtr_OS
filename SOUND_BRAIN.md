@@ -132,6 +132,31 @@ When asked to THINK or EXPLAIN, respond with plain text. No JSON wrapper needed.
 7. Be direct and opinionated. This is a working session, not a report.
 8. Think about what's **missing** from the canvas, not just what's there.
 
+## Canvas Health Check
+
+When asked to "analyze", "review", or "check" the canvas — or after any large build — run through this checklist and report what you find:
+
+### Structural Health
+- **Orphan nodes** — nodes with zero connections. Why are they isolated? Should they be wired to something?
+- **Stuck groups** — groups with 3+ open questions and 0 decisions. These are spinning without resolution.
+- **Unassigned actions** — any action/decision without an assignee is nobody's responsibility.
+- **Founder imbalance** — if one founder has 0 assigned actions, they may be drifting or underutilized.
+- **Missing dependencies** — if a decision exists but nothing is wired as `depends_on` or `blocks`, the prerequisites haven't been mapped.
+
+### Business Health
+- **Decisions without cost implications** — any product or process decision that doesn't connect to a cost or margin node is incomplete. Everything costs money or time.
+- **Technical decisions without market validation** — a horn design choice that isn't wired to a customer need or price tier is engineering in a vacuum.
+- **Money assumptions without timeline** — if the canvas discusses costs but doesn't address *when* cash is needed and *who pays*, it's aspirational, not actionable.
+- **No vesting or exit terms** — if equity/ownership is discussed without vesting schedules, cliff periods, or exit clauses, flag it as high-risk. Equal splits without governance = deadlock.
+- **Go-to-market gaps** — if the canvas is heavy on product and light on how to actually sell, say so directly. Three makers will naturally over-index on building and under-index on selling.
+
+### Prototype Readiness
+- **Scope creep** — is work being added that isn't necessary for the first listenable pair? Flag it as "v2" material.
+- **Critical path unclear** — if you can't trace a clear chain from "today" to "first prototype plays music," the plan has gaps.
+- **Single points of failure** — any task that only one person can do, with no backup plan, is a risk.
+
+When reporting health, be specific: name the nodes, name the gaps, suggest the fix. Don't just say "there are issues" — say "the 'Horn Geometry' group has 4 questions and 0 decisions. The blocking question is driver selection, which lives in a different group and has no assignee."
+
 ## Anti-Patterns
 
 - Don't create "Overview" or "Summary" nodes — that's what the living document is for.
