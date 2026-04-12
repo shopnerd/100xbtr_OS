@@ -46,8 +46,23 @@ h2{font-size:14px;font-weight:600;color:var(--tx);margin:32px 0 16px;padding-bot
 .ref-url:hover{text-decoration:underline;}
 .broken-badge{color:var(--decision);font-size:10px;margin-left:4px;}
 /* Group section */
-.group-section{margin-bottom:24px;}
-.group-header{font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px;padding-left:8px;border-left:3px solid var(--tx3);}
+.group-section{margin-bottom:32px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;}
+.group-section .card{background:var(--bg3);}
+.group-header{font-size:14px;font-weight:600;color:var(--tx);margin-bottom:4px;}
+.group-stats{font-size:10px;color:var(--tx3);margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;}
+.group-stats span{display:inline-flex;align-items:center;gap:3px;}
+.group-stats .dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.group-subsection{margin-top:14px;}
+.group-subsection-label{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+/* Wire context */
+.wire-context{font-size:10px;color:var(--tx3);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);}
+.wire-context .wire-label{color:var(--tx2);margin-right:2px;}
+.wire-context .wire-item{display:inline;margin-right:8px;}
+.wire-context .wire-item a{color:var(--tx3);text-decoration:none;}
+.wire-context .wire-item a:hover{color:var(--accent);text-decoration:underline;}
+/* Progress bar */
+.progress-bar{height:3px;background:var(--bg);border-radius:2px;margin-top:8px;margin-bottom:4px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;background:var(--reference);transition:width 0.3s;}
 /* Activity */
 .activity-item{font-size:10px;color:var(--tx2);padding:6px 0;border-bottom:1px solid var(--border);}
 .activity-item .time{color:var(--tx3);margin-right:8px;}
@@ -102,7 +117,43 @@ function canvasLink(nodeId){
   return`<a class="see-on-canvas" href="canvas.html#highlight=${encodeURIComponent(nodeId)}">⤴ see on canvas</a>`;
 }
 
+function nodeById(id){return nodes.find(x=>x.id===id);}
+
+function getWireContext(n){
+  const ctx={supports:[],blocked_by:[],blocks:[],spawned:[],depends_on:[],depended_by:[]};
+  links.forEach(l=>{
+    const src=nodeById(l.source),tgt=nodeById(l.target);
+    if(!src||!tgt)return;
+    const lt=l.link_type||'related';
+    if(lt==='supports'&&tgt.id===n.id)ctx.supports.push(src);
+    if(lt==='blocks'&&tgt.id===n.id)ctx.blocked_by.push(src);
+    if(lt==='blocks'&&src.id===n.id)ctx.blocks.push(tgt);
+    if(lt==='spawned'&&src.id===n.id)ctx.spawned.push(tgt);
+    if(lt==='depends_on'&&src.id===n.id)ctx.depends_on.push(tgt);
+    if(lt==='depends_on'&&tgt.id===n.id)ctx.depended_by.push(src);
+  });
+  return ctx;
+}
+
+function renderWireContext(ctx){
+  const sections=[];
+  const renderItems=(label,items)=>{
+    if(!items.length)return;
+    const inner=items.map(n=>`<span class="wire-item"><a href="canvas.html#highlight=${encodeURIComponent(n.id)}">${esc(n.label)}</a></span>`).join('');
+    sections.push(`<span class="wire-label">${label}:</span> ${inner}`);
+  };
+  renderItems('Supported by',ctx.supports);
+  renderItems('Blocked by',ctx.blocked_by);
+  renderItems('Blocks',ctx.blocks);
+  renderItems('Spawned',ctx.spawned);
+  renderItems('Depends on',ctx.depends_on);
+  renderItems('Required by',ctx.depended_by);
+  if(!sections.length)return'';
+  return`<div class="wire-context">${sections.join('<br>')}</div>`;
+}
+
 function renderCard(n){
+  const ctx=getWireContext(n);
   let html=`<div class="card ${n.type}">`;
   html+=`<div class="card-label">${esc(n.label)}</div>`;
   if(n.description)html+=`<div class="card-desc">${esc(n.description)}</div>`;
@@ -113,8 +164,81 @@ function renderCard(n){
   if(n.assignee)html+=`<span>${esc(n.assignee)}</span>`;
   if(n.author)html+=`<span style="color:var(--tx3);">by ${esc(n.author)}</span>`;
   html+='</div>';
+  html+=renderWireContext(ctx);
   html+=canvasLink(n.id);
   html+='</div>';
+  return html;
+}
+
+function renderGroupSection(groupNodes,label,groupId){
+  const decisions=groupNodes.filter(n=>n.type==='decision');
+  const questions=groupNodes.filter(n=>n.type==='question');
+  const actions=groupNodes.filter(n=>n.status&&n.type!=='decision');
+  const ideas=groupNodes.filter(n=>n.type==='idea'||n.type==='material');
+  const refs=groupNodes.filter(n=>n.type==='reference');
+  const other=groupNodes.filter(n=>!['decision','question','idea','material','reference'].includes(n.type)&&!n.status);
+
+  // Stats
+  const total=groupNodes.length;
+  const doneCount=groupNodes.filter(n=>n.status==='done').length;
+  const ipCount=groupNodes.filter(n=>n.status==='in_progress').length;
+  const openQ=questions.length;
+  const blocked=groupNodes.filter(n=>{const ctx=getWireContext(n);return ctx.blocked_by.length>0;}).length;
+
+  let html=`<div class="group-section">`;
+  html+=`<div class="group-header">${esc(label)}</div>`;
+  html+=`<div class="group-stats">`;
+  html+=`<span>${total} node${total!==1?'s':''}</span>`;
+  if(decisions.length)html+=`<span><span class="dot" style="background:var(--decision);"></span>${decisions.length} decision${decisions.length!==1?'s':''}</span>`;
+  if(openQ)html+=`<span><span class="dot" style="background:var(--question);"></span>${openQ} open question${openQ!==1?'s':''}</span>`;
+  if(actions.length)html+=`<span><span class="dot" style="background:var(--action);"></span>${doneCount}/${actions.length} done</span>`;
+  if(blocked)html+=`<span style="color:var(--decision);">&#9888; ${blocked} blocked</span>`;
+  html+=`</div>`;
+
+  // Progress bar (based on actionable items: decisions + actions)
+  const actionable=decisions.length+actions.length;
+  if(actionable>0){
+    const pct=Math.round(((doneCount+decisions.filter(n=>n.status==='done').length)/actionable)*100);
+    html+=`<div class="progress-bar"><div class="progress-fill" style="width:${pct}%;"></div></div>`;
+  }
+
+  // Decisions first
+  if(decisions.length){
+    html+=`<div class="group-subsection"><div class="group-subsection-label">Decisions</div>`;
+    decisions.forEach(n=>{html+=renderCard(n);});
+    html+=`</div>`;
+  }
+  // Open questions
+  if(questions.length){
+    html+=`<div class="group-subsection"><div class="group-subsection-label">Open Questions</div>`;
+    questions.forEach(n=>{html+=renderCard(n);});
+    html+=`</div>`;
+  }
+  // Action items
+  if(actions.length){
+    const sorted=[...actions].sort((a,b)=>{const o={open:0,in_progress:1,done:2};return(o[a.status]||0)-(o[b.status]||0);});
+    html+=`<div class="group-subsection"><div class="group-subsection-label">Actions</div>`;
+    sorted.forEach(n=>{html+=renderCard(n);});
+    html+=`</div>`;
+  }
+  // Ideas & materials
+  if(ideas.length){
+    html+=`<div class="group-subsection"><div class="group-subsection-label">Ideas & Materials</div>`;
+    ideas.forEach(n=>{html+=renderCard(n);});
+    html+=`</div>`;
+  }
+  // References
+  if(refs.length){
+    html+=`<div class="group-subsection"><div class="group-subsection-label">References</div>`;
+    refs.forEach(n=>{html+=renderCard(n);});
+    html+=`</div>`;
+  }
+  // Other (images, anchors, etc.)
+  if(other.length){
+    other.forEach(n=>{html+=renderCard(n);});
+  }
+
+  html+=`</div>`;
   return html;
 }
 
@@ -123,57 +247,61 @@ function renderPage(){
   let html='';
 
   // Summary
-  const summaryEl=document.createElement('div');
   html+='<div id="doc-summary"></div>';
 
-  // Decisions
-  const decisions=nodes.filter(n=>n.type==='decision');
-  if(decisions.length){
-    html+='<h2>Decisions</h2>';
-    decisions.forEach(n=>{html+=renderCard(n);});
+  if(!nodes.length){
+    html+='<div class="empty">No nodes on the canvas yet. Open the canvas to start building.</div>';
+    content.innerHTML=html;
+    loadSummary();
+    return;
   }
 
-  // Open Questions
-  const questions=nodes.filter(n=>n.type==='question');
-  if(questions.length){
-    html+='<h2>Open Questions</h2>';
-    questions.forEach(n=>{html+=renderCard(n);});
-  }
-
-  // Action Items
-  const actions=nodes.filter(n=>n.status&&n.type!=='decision');
-  if(actions.length){
-    html+='<h2>Action Items</h2>';
-    const sorted=[...actions].sort((a,b)=>{const o={open:0,in_progress:1,done:2};return(o[a.status]||0)-(o[b.status]||0);});
-    sorted.forEach(n=>{html+=renderCard(n);});
-  }
-
-  // Ideas & Materials by group
-  const ideas=nodes.filter(n=>n.type==='idea'||n.type==='material');
-  if(ideas.length){
-    html+='<h2>Ideas & Materials</h2>';
-    const grouped={};const ungrouped=[];
-    ideas.forEach(n=>{
-      if(n.group_id){const g=groups.find(g=>g.id===n.group_id);const gl=g?g.label:'Ungrouped';(grouped[gl]=grouped[gl]||[]).push(n);}
-      else ungrouped.push(n);
-    });
-    Object.keys(grouped).sort().forEach(gl=>{
-      html+=`<div class="group-section"><div class="group-header">${esc(gl)}</div>`;
-      grouped[gl].forEach(n=>{html+=renderCard(n);});
-      html+='</div>';
-    });
-    if(ungrouped.length){
-      html+='<div class="group-section"><div class="group-header">Ungrouped</div>';
-      ungrouped.forEach(n=>{html+=renderCard(n);});
-      html+='</div>';
+  // Build group map
+  const groupMap={};
+  const ungrouped=[];
+  nodes.forEach(n=>{
+    if(n.group_id){
+      (groupMap[n.group_id]=groupMap[n.group_id]||[]).push(n);
+    } else {
+      ungrouped.push(n);
     }
+  });
+
+  // Render each group as a chapter
+  html+='<h2>Canvas</h2>';
+  groups.forEach(g=>{
+    const gNodes=groupMap[g.id]||[];
+    if(gNodes.length)html+=renderGroupSection(gNodes,g.label,g.id);
+  });
+
+  // Ungrouped nodes
+  if(ungrouped.length){
+    html+=renderGroupSection(ungrouped,'Ungrouped',null);
   }
 
-  // References
-  const refs=nodes.filter(n=>n.type==='reference');
-  if(refs.length){
-    html+='<h2>References</h2>';
-    refs.forEach(n=>{html+=renderCard(n);});
+  // Cross-group connections (links between nodes in different groups)
+  const crossLinks=links.filter(l=>{
+    const src=nodeById(l.source),tgt=nodeById(l.target);
+    if(!src||!tgt)return false;
+    return src.group_id!==tgt.group_id&&(l.link_type&&l.link_type!=='related');
+  });
+  if(crossLinks.length){
+    html+='<h2>Cross-Group Connections</h2>';
+    html+='<div style="font-size:11px;color:var(--tx2);">';
+    crossLinks.forEach(l=>{
+      const src=nodeById(l.source),tgt=nodeById(l.target);
+      if(!src||!tgt)return;
+      const srcG=groups.find(g=>g.id===src.group_id);
+      const tgtG=groups.find(g=>g.id===tgt.group_id);
+      const lt=l.link_type||'related';
+      html+=`<div style="padding:4px 0;border-bottom:1px solid var(--border);">`;
+      html+=`<a class="see-on-canvas" href="canvas.html#highlight=${encodeURIComponent(src.id)}" style="color:var(--tx);font-weight:600;">${esc(src.label)}</a>`;
+      html+=` <span style="color:var(--tx3);">${esc(lt)}</span> `;
+      html+=`<a class="see-on-canvas" href="canvas.html#highlight=${encodeURIComponent(tgt.id)}" style="color:var(--tx);font-weight:600;">${esc(tgt.label)}</a>`;
+      html+=`<span style="color:var(--tx3);font-size:9px;margin-left:8px;">${srcG?esc(srcG.label):'ungrouped'} → ${tgtG?esc(tgtG.label):'ungrouped'}</span>`;
+      html+=`</div>`;
+    });
+    html+='</div>';
   }
 
   // Activity Feed
@@ -189,11 +317,7 @@ function renderPage(){
     });
   }
 
-  if(!nodes.length)html='<div class="empty">No nodes on the canvas yet. Open the canvas to start building.</div>';
-
   content.innerHTML=html;
-
-  // Load and render summary separately
   loadSummary();
 }
 
