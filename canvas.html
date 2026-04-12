@@ -467,6 +467,7 @@ const WIRE_TYPES={
   related:{dash:[],endMarker:null,label:'Related'}
 };
 let wireFilterSet=new Set(LINK_TYPES);
+let wireDashOffset=0;
 
 const GC=['#378ADD','#1D9E75','#BA7517','#D85A30','#7F77DD','#C96B3A','#666660','#2D7D46','#8E44AD','#C0392B'];
 let DW=180,DH=54;
@@ -545,20 +546,26 @@ function initCanvas(){
 function resize(){const w=document.getElementById('canvas-wrap');canvas.width=w.clientWidth;canvas.height=w.clientHeight;if(mkCanvas){mkCanvas.width=w.clientWidth;mkCanvas.height=w.clientHeight;redrawMarkup();}}
 function loop(){draw();if(mkCanvas&&mkStrokes.length)redrawMarkup();requestAnimationFrame(loop);}
 
+let bubbleBounds=[];
+function hitBubble(sx,sy){
+  for(let i=bubbleBounds.length-1;i>=0;i--){
+    const b=bubbleBounds[i];
+    if(sx>=b.rx&&sx<=b.rx+b.bw&&sy>=b.ry&&sy<=b.ry+b.bh+b.tailH)return b.gid;
+  }
+  return null;
+}
 function drawLabelBubbles(){
+  bubbleBounds=[];
   if(!groups.length)return;
   const W=canvas.width,H=canvas.height;
-  // Font grows as zoom decreases so bubbles stay readable when groups are tiny
   const fsPx=Math.min(Math.max(12,11/cam.z),17);
   ctx.save();
   groups.forEach(g=>{
     if(!g.label)return;
-    // world → screen: horizontal center, top edge of group
     const sx=W/2+cam.x+(g.x+g.w/2)*cam.z;
     const sy=H/2+cam.y+g.y*cam.z;
     const ph=7,pv=4,br=5,tailH=6,tailW=7,gap=3;
     const maxBw=g.w*cam.z;
-    // shrink font until text fits inside bubble
     let fs=fsPx;
     ctx.font=`500 ${fs}px 'SF Mono',monospace`;
     while(fs>11&&ctx.measureText(g.label).width+ph*2>maxBw){
@@ -567,10 +574,9 @@ function drawLabelBubbles(){
     const tw=ctx.measureText(g.label).width;
     const bw=tw+ph*2,bh=fs+pv*2;
     const rx=sx-bw/2,ry=sy-gap-tailH-bh;
-    // tail (no stroke — sits under rect)
+    bubbleBounds.push({gid:g.id,rx,ry,bw,bh,tailH});
     ctx.beginPath();ctx.moveTo(sx-tailW/2,ry+bh);ctx.lineTo(sx,sy-gap);ctx.lineTo(sx+tailW/2,ry+bh);ctx.closePath();
     ctx.fillStyle='#eeeeea';ctx.fill();
-    // rounded rect
     ctx.beginPath();
     ctx.moveTo(rx+br,ry);ctx.lineTo(rx+bw-br,ry);ctx.quadraticCurveTo(rx+bw,ry,rx+bw,ry+br);
     ctx.lineTo(rx+bw,ry+bh-br);ctx.quadraticCurveTo(rx+bw,ry+bh,rx+bw-br,ry+bh);
@@ -578,7 +584,6 @@ function drawLabelBubbles(){
     ctx.lineTo(rx,ry+br);ctx.quadraticCurveTo(rx,ry,rx+br,ry);ctx.closePath();
     ctx.fillStyle='#eeeeea';ctx.fill();
     ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=0.75;ctx.stroke();
-    // label text
     ctx.fillStyle='#1a1a18';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(g.label,sx,ry+bh/2);
   });
@@ -593,6 +598,7 @@ function draw(){
   drawGrid(W,H);
   ctx.save();
   ctx.translate(W/2+cam.x,H/2+cam.y);ctx.scale(cam.z,cam.z);
+  wireDashOffset=(wireDashOffset+0.08)%120;
   drawGroups();drawLinks();drawNodes();
   if(linkFrom){
     const sp=pPos(linkFrom,linkFromSide);
@@ -624,17 +630,14 @@ function drawGroups(){
     const r=5/cam.z;
     const x=g.x,y=g.y,w=g.w,h=g.h;
     ctx.save();
-    // glow rect behind group (same treatment as selected nodes)
-    if(isSel){
-      const pad=10/cam.z;
-      ctx.beginPath();rrect(ctx,x-pad,y-pad,w+pad*2,h+pad*2,r+pad);
-      ctx.fillStyle='rgba(201,107,58,0.22)';ctx.fill();
-    }
+    // selection glow via shadow (matches think)
+    if(isSel){ctx.shadowColor='#C96B3A';ctx.shadowBlur=12/cam.z;}
     // body
     rrect(ctx,x,y,w,h,r);
     ctx.fillStyle=isSel?color+'28':color+'18';ctx.fill();
     ctx.strokeStyle=isSel?'#C96B3A':color+'44';
     ctx.lineWidth=(isSel?2:1)/cam.z;ctx.stroke();
+    if(isSel){ctx.shadowColor='transparent';ctx.shadowBlur=0;}
     // header bar
     ctx.beginPath();
     ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
@@ -690,8 +693,9 @@ function drawLinks(){
     const wt=WIRE_TYPES[lt];
     if(isSel)ctx.setLineDash([6/cam.z,4/cam.z]);
     else if(wt&&wt.dash.length>0)ctx.setLineDash(wt.dash.map(d=>d/cam.z));
+    if(isSel)ctx.lineDashOffset=-wireDashOffset/cam.z;
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.bezierCurveTo(cpx,sp.y,cpx,tp.y,tp.x,tp.y);ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.setLineDash([]);ctx.lineDashOffset=0;
     // link type label at midpoint
     if(lt&&lt!=='related'){
       const mx=(sp.x+tp.x)/2,my=(sp.y+tp.y)/2;
@@ -741,6 +745,9 @@ function drawNodes(){
     const isSel=selIds.has(n.id);
     const isNeighbor=!isSel&&selNeighbors.has(n.id);
     const color=TC[n.type]||'#666660';
+    const isAction=n.type==='action';
+    const isDone=(isAction||n.type==='decision')&&n.status==='done';
+    const isInProgress=isAction&&n.status==='in_progress';
     const w=n.w||DW,h=n.h||DH;
     const r=3.5/cam.z;
     const pad=10/cam.z;
@@ -749,6 +756,7 @@ function drawNodes(){
     const isSearchCore=searchActive?searchCoreIds.has(n.id):false;
     const searchDimmed=searchActive&&!isSearchMatch;
     if(searchDimmed)ctx.globalAlpha=0.12;
+    else if(isDone)ctx.globalAlpha=0.45;
     // Search-core glow
     if(isSearchCore){ctx.shadowColor='#C96B3A';ctx.shadowBlur=14/cam.z;}
     // paint explicit glow rect BEHIND node (no canvas shadow — unreliable cross-browser)
@@ -760,7 +768,9 @@ function drawNodes(){
     ctx.fillStyle=isSel||isNeighbor?'#c0c0bc':'#6e6e6a';
     ctx.strokeStyle=isSel||isNeighbor?'#C96B3A':'#929290';
     ctx.lineWidth=(isSel||isNeighbor?2:0.8)/cam.z;
+    if(isInProgress){ctx.setLineDash([6/cam.z,4/cam.z]);ctx.strokeStyle=color;ctx.lineWidth=2/cam.z;}
     rrect(ctx,n.x,n.y,w,h,r);ctx.fill();ctx.stroke();
+    if(isInProgress)ctx.setLineDash([]);
     // left color stripe
     ctx.fillStyle=color;rrectL(ctx,n.x,n.y,5/cam.z,h,r);ctx.fill();
     // image
@@ -775,7 +785,7 @@ function drawNodes(){
     }
     // label — font scales with node size, not locked to screen pixels
     const fs=Math.min(h*0.22,w*0.075);ctx.font=`${fs}px 'SF Mono',monospace`;
-    ctx.fillStyle=(isSel||isNeighbor)?'#1e1e1c':'#f0f0e8';ctx.textBaseline='middle';ctx.textAlign='left';
+    ctx.fillStyle=isDone?'#999990':(isSel||isNeighbor)?'#1e1e1c':'#f0f0e8';ctx.textBaseline='middle';ctx.textAlign='left';
     const lines=wrapTxt(ctx,n.label||'',tw-6/cam.z);
     const lh=fs*1.38,th=lines.length*lh;const sy=n.y+h/2-th/2;
     lines.forEach((l,i)=>ctx.fillText(l,tx+4/cam.z,sy+i*lh+lh/2));
@@ -792,7 +802,7 @@ function drawNodes(){
     drawPort(pPos(n,'in'),pr,portLeft.has(n.id));
     drawPort(pPos(n,'out'),pr,portRight.has(n.id));
     // Reset search state
-    if(searchDimmed||isSearchCore){ctx.globalAlpha=1;ctx.shadowColor='transparent';ctx.shadowBlur=0;}
+    if(searchDimmed||isDone||isSearchCore){ctx.globalAlpha=1;ctx.shadowColor='transparent';ctx.shadowBlur=0;}
   });
 }
 
@@ -922,6 +932,20 @@ function onDown(e){
       drag={on:true,group:g,ox:wx-g.x,oy:wy-g.y,members,preDragGroup,preDragMembers};
       canvas.style.cursor='grabbing';return;
     }
+  }
+  // Bubble label click = select + drag the group
+  const bubbleGid=hitBubble(cx,cy);
+  if(bubbleGid){
+    const bg=groups.find(gr=>gr.id===bubbleGid);
+    if(bg){
+      if(e.shiftKey){if(selected.groups.includes(bubbleGid))selected.groups=selected.groups.filter(id=>id!==bubbleGid);else selected.groups.push(bubbleGid);}
+      else if(!selected.groups.includes(bubbleGid)){selected={nodes:[],groups:[bubbleGid]};}
+      const members=nigByGid(bg.id).map(n=>({n,dx:n.x-bg.x,dy:n.y-bg.y}));
+      const preDragGroup={x:bg.x,y:bg.y};
+      const preDragMembers=members.map(({n})=>({id:n.id,x:n.x,y:n.y}));
+      drag={on:true,group:bg,ox:wp(e).wx-bg.x,oy:wp(e).wy-bg.y,members,preDragGroup,preDragMembers};
+    }
+    return;
   }
   linkFrom=null;closeNE();closeGE();selected={nodes:[],groups:[]};
   drag={on:true,pan:true,ox:cx,oy:cy,camX:cam.x,camY:cam.y};
@@ -1094,6 +1118,8 @@ function closeCtx(){document.getElementById('ctx').style.display='none';}
 function onDbl(e){
   const{wx,wy,cx,cy}=wp(e);
   const n=hNode(wx,wy);if(n){openNE(n,cx,cy);return;}
+  const bubbleGid=hitBubble(cx,cy);
+  if(bubbleGid){const bg=groups.find(gr=>gr.id===bubbleGid);if(bg)openGE(bg,cx,cy);return;}
   const g=hGroup(wx,wy);if(g){openGE(g,cx,cy);return;}
   addNA('idea',wx,wy);
 }
