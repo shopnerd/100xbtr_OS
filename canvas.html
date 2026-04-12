@@ -886,6 +886,7 @@ function wp(e){
   const r=canvas.getBoundingClientRect();const cx=e.clientX-r.left,cy=e.clientY-r.top;
   return{wx:(cx-canvas.width/2-cam.x)/cam.z,wy:(cy-canvas.height/2-cam.y)/cam.z,cx,cy};
 }
+function hitUrlIcon(wx,wy){const zone=16;for(let i=nodes.length-1;i>=0;i--){const n=nodes[i];if(!n.url)continue;const w=n.w||DW;if(wx>=n.x+w-zone&&wx<=n.x+w&&wy>=n.y&&wy<=n.y+zone)return n;}return null;}
 function hNode(wx,wy){return[...nodes].reverse().find(n=>{const w=n.w||DW,h=n.h||DH;return wx>=n.x&&wx<=n.x+w&&wy>=n.y&&wy<=n.y+h;});}
 function hGroup(wx,wy){return[...groups].reverse().find(g=>wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+g.h);}
 function hGroupHeader(g,wx,wy){return wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+GH;}
@@ -951,6 +952,9 @@ function onDown(e){
     linkFrom=null;return;
   }
   if(portN&&!linkFrom){linkFromSide=hPort(portN,wx,wy)||'out';linkFrom=portN;toast('Click another node to connect');return;}
+  // URL icon click — top-right corner of node
+  const urlHit=hitUrlIcon(wx,wy);
+  if(urlHit&&urlHit.url&&!linkFrom){window.open(urlHit.url,'_blank');return;}
   const n=hNode(wx,wy);
   if(n){
     if(linkFrom){if(linkFrom.id!==n.id){if(linkFromSide==='in')addLink(n.id,linkFrom.id);else addLink(linkFrom.id,n.id);}linkFrom=null;return;}
@@ -999,7 +1003,7 @@ function onMove(e){
   const r=canvas.getBoundingClientRect();const cx=e.clientX-r.left,cy=e.clientY-r.top;
   lm={x:cx,y:cy};if(Math.hypot(cx-mdPos.x,cy-mdPos.y)>4)mMoved=true;
   const wx=(cx-canvas.width/2-cam.x)/cam.z,wy=(cy-canvas.height/2-cam.y)/cam.z;
-  if(!drag.on)return;
+  if(!drag.on){canvas.style.cursor=hitUrlIcon(wx,wy)?'pointer':'default';return;}
   if(drag.pan){cam.x=drag.camX+(cx-drag.ox);cam.y=drag.camY+(cy-drag.oy);}
   else if(drag.winSel){
     const ws=document.getElementById('win-sel');
@@ -1094,6 +1098,7 @@ function onRC(e){
   const n=hNode(wx,wy);const g=hGroup(wx,wy);const menu=document.getElementById('ctx');
   menu.innerHTML='';
   if(n){
+    if(n.url)ci(menu,'Open URL ↗','',()=>window.open(n.url,'_blank'));
     ci(menu,'Edit node','',()=>openNE(n,cx,cy));
     ci(menu,'Disconnect all wires','',async()=>{
       _tw('canvas_links','*');
