@@ -1,11 +1,13 @@
-// Image search with three backends:
-//  1. Google Custom Search API (best coverage, requires API key)
-//  2. Pexels API                (free 200 req/hr, high-quality modern stock photos)
-//  3. Wikimedia Commons API     (free fallback — good for history, products, places)
+// Image search with four backends (auto-fallback chain):
+//  1. Brave Search API          (real web images, free 2000 req/mo)
+//  2. Google Custom Search API  (best coverage, requires API key — closed to new customers)
+//  3. Pexels API                (free 200 req/hr, high-quality modern stock photos)
+//  4. Wikimedia Commons API     (free fallback — good for history, products, places)
 //
-// POST { query: "horn loudspeakers", count: 6, source?: "auto"|"google"|"pexels"|"wikimedia" }
+// POST { query: "horn loudspeakers", count: 6, source?: "auto"|"brave"|"google"|"pexels"|"wikimedia" }
 //
 // Env vars (set in Netlify dashboard or local .env):
+//  BRAVE_API_KEY       - from https://brave.com/search/api/ (free tier)
 //  GOOGLE_CSE_API_KEY  - from https://console.cloud.google.com/apis/credentials
 //  GOOGLE_CSE_ID       - from https://programmablesearchengine.google.com/
 //  PEXELS_API_KEY      - from https://www.pexels.com/api/ (free account)
@@ -29,9 +31,11 @@ exports.handler = async (event) => {
     const { query, count = 6, source = 'auto', debug = false } = JSON.parse(event.body || '{}');
 
     if (debug) {
-      const key = process.env.GOOGLE_CSE_API_KEY || '';
+      const gkey = process.env.GOOGLE_CSE_API_KEY || '';
+      const bkey = process.env.BRAVE_API_KEY || '';
       return { statusCode: 200, headers, body: JSON.stringify({
-        GOOGLE_CSE_API_KEY_set: !!key, GOOGLE_CSE_API_KEY_len: key.length, GOOGLE_CSE_API_KEY_prefix: key.substring(0,8),
+        BRAVE_API_KEY_set: !!bkey, BRAVE_API_KEY_len: bkey.length,
+        GOOGLE_CSE_API_KEY_set: !!gkey, GOOGLE_CSE_API_KEY_len: gkey.length, GOOGLE_CSE_API_KEY_prefix: gkey.substring(0,8),
         GOOGLE_CSE_ID: process.env.GOOGLE_CSE_ID || '(not set)',
         PEXELS_API_KEY_set: !!process.env.PEXELS_API_KEY,
       }) };
@@ -42,6 +46,7 @@ exports.handler = async (event) => {
     }
 
     const limit = Math.min(Math.max(1, parseInt(count) || 6), 20);
+    const braveConfigured = !!process.env.BRAVE_API_KEY;
     const googleConfigured = !!(process.env.GOOGLE_CSE_API_KEY && process.env.GOOGLE_CSE_ID);
     const pexelsConfigured = !!process.env.PEXELS_API_KEY;
 
@@ -49,12 +54,21 @@ exports.handler = async (event) => {
     let usedSource = null;
     let error = null;
 
-    if ((source === 'auto' || source === 'google') && googleConfigured) {
+    if ((source === 'auto' || source === 'brave') && braveConfigured) {
+      try {
+        images = await searchBrave(query, limit);
+        if (images.length > 0) usedSource = 'brave';
+      } catch (e) {
+        error = 'brave: ' + e.message;
+      }
+    }
+
+    if (images.length === 0 && (source === 'auto' || source === 'google') && googleConfigured) {
       try {
         images = await searchGoogle(query, limit);
         if (images.length > 0) usedSource = 'google';
       } catch (e) {
-        error = 'google: ' + e.message;
+        error = (error ? error + '; ' : '') + 'google: ' + e.message;
       }
     }
 
@@ -89,6 +103,33 @@ exports.handler = async (event) => {
     };
   }
 };
+
+// ── BRAVE IMAGE SEARCH ────────────────────────────────────────
+async function searchBrave(query, limit) {
+  const key = process.env.BRAVE_API_KEY;
+  if (!key) throw new Error('BRAVE_API_KEY env var not set');
+  const url = `https://api.search.brave.com/res/v1/images/search?` + new URLSearchParams({
+    q: query, count: String(Math.min(limit, 100)), safesearch: 'strict',
+  });
+  const res = await fetch(url, {
+    headers: { 'X-Subscription-Token': key, 'Accept': 'application/json' },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`HTTP ${res.status}: ${text.substring(0, 300)}`);
+  }
+  const data = await res.json();
+  return (data.results || []).slice(0, limit).map(r => ({
+    thumbnail: r.thumbnail?.src || r.properties?.url || r.url,
+    url: r.properties?.url || r.url,
+    sourcePage: r.source || r.url,
+    title: (r.title || '').substring(0, 80),
+    description: (r.description || '').substring(0, 200),
+    artist: '',
+    width: r.properties?.width || r.width,
+    height: r.properties?.height || r.height,
+  }));
+}
 
 // ── GOOGLE CUSTOM SEARCH ───────────────────────────────────────
 async function searchGoogle(query, limit) {
