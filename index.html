@@ -1070,16 +1070,20 @@ function smoothScrollBy(dy){
 }
 document.addEventListener('wheel',e=>{
   if(e.target.closest('#cscroll')){smoothScrollBy(e.deltaY*0.5);e.preventDefault();return;}
-  const over=e.target;
-  const isGrid=over===document.body||over===document.getElementById('app')||(over.classList&&over.classList.contains('view'));
-  if(isGrid){
-    gridZ*=e.deltaY<0?1.08:1/1.08;
-    gridZ=Math.min(Math.max(gridZ,0.2),8);
-    document.body.style.backgroundSize=Math.round(32*gridZ)+'px '+Math.round(32*gridZ)+'px';
+  // Check if cursor is inside the content column (view bounding box + nav)
+  const activeView=document.querySelector('.view.on');
+  const nav=document.querySelector('.nav');
+  let inContent=false;
+  if(activeView){const r=activeView.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)inContent=true;}
+  if(!inContent&&nav){const r=nav.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)inContent=true;}
+  if(inContent){
+    smoothScrollBy(e.deltaY*0.5);
     e.preventDefault();return;
   }
-  // Smooth scroll over content instead of native jumps
-  smoothScrollBy(e.deltaY*0.5);
+  // Outside content column — zoom the grid
+  gridZ*=e.deltaY<0?1.08:1/1.08;
+  gridZ=Math.min(Math.max(gridZ,0.2),8);
+  document.body.style.backgroundSize=Math.round(32*gridZ)+'px '+Math.round(32*gridZ)+'px';
   e.preventDefault();
 },{passive:false});
 initSmoothScroll();
