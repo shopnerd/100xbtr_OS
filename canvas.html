@@ -1409,44 +1409,56 @@ function repelGroupList(glist,gapX,gapY){
   }
 }
 async function repelGroupsOnly(){
-  const NPAD=20;
-  // capture node offsets BEFORE repel
-  const offsets=new Map();
-  groups.forEach(g=>{nigByGid(g.id).forEach(n=>offsets.set(n.id,{dx:n.x-g.x,dy:n.y-g.y}));});
-  // gravity toward centroid so reducing slider actually pulls groups back in
-  if(groups.length>1){
-    const gcx=groups.reduce((s,g)=>s+g.x+g.w/2,0)/groups.length;
-    const gcy=groups.reduce((s,g)=>s+g.y+g.h/2,0)/groups.length;
-    groups.forEach(g=>{g.x+=(gcx-(g.x+g.w/2))*0.5;g.y+=(gcy-(g.y+g.h/2))*0.5;});
+  if(groups.length<1&&!nodes.length)return;
+  const gap=spreadGapX;
+  // Inner spacing scales with slider but less aggressively
+  const innerPad=Math.max(8,Math.round(gap*0.4));
+
+  // 1. Re-grid nodes INSIDE each group at the new inner spacing
+  for(const g of groups){
+    const mems=nigByGid(g.id);
+    if(!mems.length)continue;
+    mems.sort((a,b)=>(a.y-b.y)||(a.x-b.x));
+    const cols=Math.max(1,Math.ceil(Math.sqrt(mems.length)));
+    const startX=g.x+innerPad;
+    const startY=g.y+GH+innerPad;
+    mems.forEach((n,i)=>{
+      const col=i%cols,row=Math.floor(i/cols);
+      n.x=startX+col*((n.w||DW)+innerPad);
+      n.y=startY+row*((n.h||DH)+innerPad);
+    });
+    sizeGAN(g,mems);
   }
-  // repel groups vs groups
-  repelGroupList(groups,spreadGapX,spreadGapY);
-  // move grouped nodes with their groups
-  groups.forEach(g=>{nigByGid(g.id).forEach(n=>{const o=offsets.get(n.id)||{dx:NPAD,dy:GH+NPAD};n.x=g.x+o.dx;n.y=g.y+o.dy;});});
-  // also repel ungrouped nodes away from groups and each other
+
+  // 2. Re-layout groups in a grid with the slider gap
+  const sorted=[...groups].sort((a,b)=>(a.y-b.y)||(a.x-b.x));
+  const gCols=Math.max(1,Math.ceil(Math.sqrt(sorted.length)));
+  let cx=0,cy=0,rowH=0;
+  sorted.forEach((g,i)=>{
+    const col=i%gCols;
+    if(col===0&&i>0){cy+=rowH+gap;cx=0;rowH=0;}
+    const oldX=g.x,oldY=g.y;
+    g.x=cx;g.y=cy;
+    const dx=g.x-oldX,dy=g.y-oldY;
+    nigByGid(g.id).forEach(n=>{n.x+=dx;n.y+=dy;});
+    cx+=g.w+gap;
+    rowH=Math.max(rowH,g.h);
+  });
+
+  // 3. Spread ungrouped nodes below groups
   const ug=nodes.filter(n=>!n.group_id);
   if(ug.length){
-    let moved=true;let it=0;
-    while(moved&&it<30){moved=false;it++;
-      // push ungrouped away from groups
-      for(const n of ug){
-        for(const g of groups){
-          const nw=n.w||DW,nh=n.h||DH;
-          const ox=(nw/2+g.w/2+spreadGapX)-(Math.abs(n.x+nw/2-(g.x+g.w/2)));
-          const oy=(nh/2+g.h/2+spreadGapY)-(Math.abs(n.y+nh/2-(g.y+g.h/2)));
-          if(ox>0&&oy>0){moved=true;
-            if(ox<oy){if(n.x+nw/2<g.x+g.w/2)n.x-=ox/2+1;else n.x+=ox/2+1;}
-            else{if(n.y+nh/2<g.y+g.h/2)n.y-=oy/2+1;else n.y+=oy/2+1;}
-          }
-        }
-      }
-      // push ungrouped away from each other
-      repelNodes(ug);
-    }
+    const maxGroupY=groups.length?Math.max(...groups.map(g=>g.y+g.h))+gap:0;
+    const cols=Math.max(1,Math.ceil(Math.sqrt(ug.length)));
+    ug.forEach((n,i)=>{
+      n.x=(i%cols)*((n.w||DW)+gap);
+      n.y=maxGroupY+Math.floor(i/cols)*((n.h||DH)+gap);
+    });
   }
-  await Promise.all(groups.map(g=>{_tw('canvas_groups',g.id);return sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y)}).eq('id',g.id);}));
+
+  // 4. Save all
+  await Promise.all(groups.map(g=>{_tw('canvas_groups',g.id);return sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}));
   await Promise.all(nodes.map(n=>{_tw('canvas_nodes',n.id);return sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}));
-  toast('Spread done');
 }
 
 async function autoAssociate(){

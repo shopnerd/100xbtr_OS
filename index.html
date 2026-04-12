@@ -1042,8 +1042,7 @@ function recalc(){
 
 recalc();
 
-// Grid zoom on scroll wheel — use scrollbar to scroll the page
-// Hovering over scrollbar: wheel scrolls page instead of zooming grid
+// Grid zoom on scroll wheel — only when cursor is over the grid background (not content)
 let gridZ=1;
 document.addEventListener('wheel',e=>{
   if(e.target.closest('#cscroll')){
@@ -1051,6 +1050,10 @@ document.addEventListener('wheel',e=>{
     e.preventDefault();
     return;
   }
+  // Only zoom grid when cursor is directly over the body/app background, not over cards/nav/content
+  const over=e.target;
+  const isGrid=over===document.body||over===document.getElementById('app')||(over.classList&&over.classList.contains('view'));
+  if(!isGrid)return; // let normal scroll happen over content
   gridZ*=e.deltaY<0?1.08:1/1.08;
   gridZ=Math.min(Math.max(gridZ,0.2),8);
   const sz=Math.round(32*gridZ);
