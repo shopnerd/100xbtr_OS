@@ -1100,7 +1100,7 @@ function initCustomScroll(){
   document.addEventListener('mousemove',e=>{
     if(tDrag){
       const dh=document.documentElement.scrollHeight,vh=window.innerHeight;
-      const th=Math.max(28,(vh/dh)*vh);
+      const th=cScrollW; // match actual rendered thumb height (fixed square)
       const dy=e.clientY-tStartY;
       window.scrollTo({top:tStartSY+dy*((dh-vh)/(vh-th))});
     }
