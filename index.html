@@ -1045,15 +1045,12 @@ recalc();
 // Grid zoom on scroll wheel — only when cursor is over the grid background (not content)
 let gridZ=1;
 document.addEventListener('wheel',e=>{
-  if(e.target.closest('#cscroll')){
-    window.scrollBy({top:e.deltaY*2.5,behavior:'auto'});
-    e.preventDefault();
-    return;
-  }
+  // Over scrollbar or content: let native scroll handle it (consistent speed everywhere)
+  if(e.target.closest('#cscroll'))return;
   // Only zoom grid when cursor is directly over the body/app background, not over cards/nav/content
   const over=e.target;
   const isGrid=over===document.body||over===document.getElementById('app')||(over.classList&&over.classList.contains('view'));
-  if(!isGrid)return; // let normal scroll happen over content
+  if(!isGrid)return;
   gridZ*=e.deltaY<0?1.08:1/1.08;
   gridZ=Math.min(Math.max(gridZ,0.2),8);
   const sz=Math.round(32*gridZ);
