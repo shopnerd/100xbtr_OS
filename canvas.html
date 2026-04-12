@@ -59,6 +59,9 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 .sb-item{padding:6px 8px;border-radius:var(--r);cursor:pointer;margin-bottom:2px;border:1px solid transparent;}
 .sb-item:hover{background:var(--chrome2);border-color:var(--border);}
 .sb-item.active{background:#dceeff;border-color:#378ADD;}
+.sb-item.active .sb-name::after{content:' ● LIVE';font-size:8px;color:#378ADD;font-weight:700;letter-spacing:0.05em;}
+.sb-item.modified .sb-name::after{content:' ● MODIFIED';font-size:8px;color:#E8820C;font-weight:700;letter-spacing:0.05em;}
+.sb-item.unsaved{border-left:3px solid #E8820C;}
 .sb-name{font-size:11px;font-weight:500;color:var(--tx);margin-bottom:2px;}
 .sb-meta{font-size:9px;color:var(--tx3);}
 .sb-item-actions{display:none;gap:4px;margin-top:4px;}
@@ -170,6 +173,8 @@ textarea.nei{line-height:1.4;}
 .mk-color{width:18px;height:18px;border-radius:3px;cursor:pointer;border:2px solid transparent;flex-shrink:0;}
 .mk-color.sel{border-color:#333;transform:scale(1.15);}
 .mk-lock-btn,.mk-vis-btn{font-size:12px;background:none;border:none;cursor:pointer;padding:0 2px;line-height:1;}
+.tb-extents{font-size:14px;padding:2px 6px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:#6a6a66;cursor:pointer;font-family:inherit;line-height:1;transition:background 0.15s,color 0.15s;}
+.tb-extents:hover{background:var(--chrome);color:var(--tx);}
 .tb-search{display:flex;align-items:center;gap:4px;position:relative;}
 .tb-search-input{font-size:10px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--tx);font-family:inherit;width:160px;transition:width 0.2s,border-color 0.2s,background 0.2s;outline:none;}
 .tb-search-input:focus{outline:none;border-color:#C96B3A;width:260px;background-color:var(--chrome2);}
@@ -217,6 +222,7 @@ textarea.nei{line-height:1.4;}
         <input type="text" id="canvas-search-input" class="tb-search-input" placeholder="Search the canvas…" onkeydown="if(event.key==='Enter'){event.preventDefault();onSearchSubmit();}" onfocus="showSearchRecent()" onblur="setTimeout(hideSearchRecent,150)" />
         <div id="search-recent"></div>
       </div>
+      <button class="tb-extents" onclick="fitAll()" title="Zoom to fit all (E)">⊡</button>
       <div class="tb-sep"></div>
       <div class="ctw"><span>Claude</span><div class="tt" id="clt" onclick="toggleClaude()"><div class="tth"></div></div></div>
       <div class="tb-sep"></div>
@@ -237,6 +243,7 @@ textarea.nei{line-height:1.4;}
       <input id="node-input" placeholder="Type a thought and press Enter..." onkeydown="if(event.key==='Enter')quickAdd()">
       <button class="ib-img" onclick="document.getElementById('img-upload').click()">img</button>
       <input type="file" id="img-upload" accept="image/*" onchange="addImageFile(this)">
+      <button class="ib-img" onclick="addWebNode()">+web</button>
       <button class="ib-add" onclick="quickAdd()">Add</button>
     </div>
     <!-- SIDEBAR -->
@@ -476,6 +483,7 @@ const PR=5.5;
 let user=null,who='';
 const NAMES={'zolaray25@gmail.com':'Will','fraektaard@gmail.com':'Brendan','nishbphoto@gmail.com':'Nishant'};
 let nodes=[],links=[],groups=[];
+let _activeCanvasId=null,_activeCanvasName=null,_activeCanvasHash=null;
 let portLeft=new Set(),portRight=new Set(); // populated each frame by drawLinks
 let selNode=null,selGE=null,selGColor=null;
 let linkFrom=null,linkFromSide='out',claudeOn=false;
@@ -521,7 +529,7 @@ async function startApp(u){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('ued').textContent=u.email;
-  initCanvas();await loadAll();loadCache();loadSoundBrain();setupRT();await loadCanvasList();initMarkup();initSidebarResize();checkHashHighlight();loadCustomWireColors();initPaletteSelector();initWireLegend();loadClaudeChatHistory();
+  initCanvas();await loadAll();loadCache();loadSoundBrain();setupRT();await restoreActiveCanvas();await loadCanvasList();initMarkup();initSidebarResize();checkHashHighlight();loadCustomWireColors();initPaletteSelector();initWireLegend();loadClaudeChatHistory();
   window.addEventListener('hashchange',checkHashHighlight);
 }
 
@@ -1129,6 +1137,7 @@ function onKey(e){
   if(e.key===' '){spaceDown=true;canvas.style.cursor='grab';e.preventDefault();}
   if(e.key==='Escape'){linkFrom=null;closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};if(searchHighlight)clearSearchHighlight();}
   if((e.key==='Delete'||e.key==='Backspace')&&!drag.on)delSel();
+  if(e.key==='e'&&!e.ctrlKey&&!e.metaKey){fitAll();return;}
   if((e.ctrlKey||e.metaKey)&&e.key==='a'){e.preventDefault();selAll();}
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();if(mkCanvas&&mkCanvas.style.pointerEvents==='auto')undoMarkup();else undo();}
   if((e.ctrlKey||e.metaKey)&&e.key==='c'){e.preventDefault();copySelected();}
@@ -1197,6 +1206,16 @@ async function quickAdd(){
   nodes.push({id,label,type,url:isURL?text:'',img_url:'',author:who,x,y,w:DW,h:DH,group_id:null});
   pushUndo(async()=>{_tw('canvas_nodes',id);await sb.from('canvas_nodes').delete().eq('id',id);nodes=nodes.filter(n=>n.id!==id);links=links.filter(l=>(l.source?.id||l.source)!==id&&(l.target?.id||l.target)!==id);toast('Node creation undone');});
   if(isURL)fetchTitle(id,text);inp.value='';toast('Added');
+}
+async function addWebNode(){
+  const url=prompt('Enter URL:');if(!url)return;
+  const fullUrl=url.startsWith('http')?url:'https://'+url;
+  let label=fullUrl;try{label=new URL(fullUrl).hostname.replace('www.','');}catch(e){}
+  const id='n-'+Date.now();const x=(Math.random()-0.5)*300,y=(Math.random()-0.5)*200;
+  _tw('canvas_nodes',id);
+  await sb.from('canvas_nodes').insert({id,label,type:'reference',url:fullUrl,img_url:'',author:who,x:Math.round(x),y:Math.round(y),w:DW,h:DH,group_id:null});
+  nodes.push({id,label,type:'reference',url:fullUrl,img_url:'',author:who,x,y,w:DW,h:DH,group_id:null});
+  toast('Fetching metadata...');fetchTitle(id,fullUrl);
 }
 async function fetchTitle(id,url){
   try{
@@ -1850,11 +1869,23 @@ let _spreadTimer=null;
 function onSpreadSlider(v){spreadGapX=parseInt(v);spreadGapY=parseInt(v);document.getElementById('spread-val').textContent=v+' px';clearTimeout(_spreadTimer);_spreadTimer=setTimeout(()=>repelGroupsOnly(),300);}
 
 // SAVED CANVASES
+function _liveHash(){return nodes.length+'|'+groups.length+'|'+links.length;}
+async function restoreActiveCanvas(){
+  try{const{data}=await sb.from('canvas_config').select('value').eq('key','active_canvas').single();
+  if(data?.value){const v=JSON.parse(data.value);if(v.id){_activeCanvasId=v.id;_activeCanvasName=v.name||'';_activeCanvasHash=_liveHash();}}}catch(e){}
+}
 async function loadCanvasList(){
   const{data}=await sb.from('saved_canvases').select('*').order('updated_at',{ascending:false});
   const list=document.getElementById('sb-list');
   if(!data?.length){list.innerHTML='<div class="sb-empty">No saved canvases.</div>';return;}
-  list.innerHTML=data.map(c=>`<div class="sb-item"><div class="sb-name">${c.name}</div><div class="sb-meta">${c.node_count||0} nodes · ${new Date(c.updated_at).toLocaleDateString()}</div><div class="sb-item-actions"><button class="sb-del" onclick="loadCanvas('${c.id}')">Load</button><button class="sb-del" onclick="overwriteCanvas('${c.id}',${JSON.stringify(c.name)},${c.node_count||0})">Save</button><button class="sb-del" onclick="delCanvas('${c.id}')">Del</button></div></div>`).join('');
+  const modified=_activeCanvasId&&_activeCanvasHash&&_liveHash()!==_activeCanvasHash;
+  list.innerHTML=data.map(c=>{
+    const isActive=_activeCanvasId===c.id;
+    const cls='sb-item'+(isActive?(modified?' active modified':' active'):'');
+    return `<div class="${cls}"><div class="sb-name">${c.name}</div><div class="sb-meta">${c.node_count||0} nodes · ${new Date(c.updated_at).toLocaleDateString()}</div><div class="sb-item-actions"><button class="sb-del" onclick="loadCanvas('${c.id}')">Load</button><button class="sb-del" onclick="overwriteCanvas('${c.id}',${JSON.stringify(c.name)},${c.node_count||0})">Save</button><button class="sb-del" onclick="delCanvas('${c.id}')">Del</button></div></div>`;
+  }).join('');
+  // Show unsaved work indicator if no active canvas but nodes exist
+  if(!_activeCanvasId&&nodes.length){list.insertAdjacentHTML('afterbegin','<div class="sb-item unsaved"><div class="sb-name">Unsaved work on canvas</div><div class="sb-meta">'+nodes.length+' nodes · not yet saved</div></div>');}
 }
 async function overwriteCanvas(id,name,oldNodeCount){
   if(!confirm(`Overwrite "${name}" (${oldNodeCount} nodes) with current (${nodes.length} nodes)?`))return;
@@ -1862,16 +1893,23 @@ async function overwriteCanvas(id,name,oldNodeCount){
     snapshot:{nodes:nodes.map(n=>({...n})),links:links.map(l=>({...l})),groups:groups.map(g=>({...g}))},
     node_count:nodes.length,updated_at:new Date().toISOString(),author:who
   }).eq('id',id);
+  _activeCanvasId=id;_activeCanvasName=name;_activeCanvasHash=_liveHash();
+  await sb.from('canvas_config').upsert({key:'active_canvas',value:JSON.stringify({id,name,who,at:new Date().toISOString()}),updated_at:new Date().toISOString()});
   await loadCanvasList();toast('Canvas overwritten');
 }
 async function saveCanvas(){
   const name=document.getElementById('sb-name-input').value.trim();if(!name){toast('Enter a name');return;}
-  await sb.from('saved_canvases').insert({name,snapshot:{nodes:nodes.map(n=>({...n})),links:links.map(l=>({...l})),groups:groups.map(g=>({...g}))},node_count:nodes.length,author:who});
+  const id=crypto.randomUUID();
+  await sb.from('saved_canvases').insert({id,name,snapshot:{nodes:nodes.map(n=>({...n})),links:links.map(l=>({...l})),groups:groups.map(g=>({...g}))},node_count:nodes.length,author:who});
+  _activeCanvasId=id;_activeCanvasName=name;_activeCanvasHash=_liveHash();
+  await sb.from('canvas_config').upsert({key:'active_canvas',value:JSON.stringify({id,name,who,at:new Date().toISOString()}),updated_at:new Date().toISOString()});
   document.getElementById('sb-name-input').value='';await loadCanvasList();toast('Canvas saved');
 }
 async function loadCanvas(id){
-  if(!confirm('Load? Current canvas will be cleared.'))return;
-  const{data,error}=await sb.from('saved_canvases').select('snapshot').eq('id',id).single();
+  const modified=_activeCanvasId&&_activeCanvasHash&&_liveHash()!==_activeCanvasHash;
+  const msg=modified?'You have unsaved changes. Load anyway? Current canvas will be cleared.':'Load? Current canvas will be cleared.';
+  if(!confirm(msg))return;
+  const{data,error}=await sb.from('saved_canvases').select('snapshot,name').eq('id',id).single();
   if(error||!data?.snapshot){toast('Could not load canvas');return;}
   await sb.from('canvas_nodes').delete().neq('id','_');
   await sb.from('canvas_links').delete().neq('id','_');
@@ -1879,16 +1917,19 @@ async function loadCanvas(id){
   const snap=data.snapshot;
   const sn=snap.nodes||[];const sl=snap.links||[];const sg=snap.groups||[];
   // strip any client-only fields before reinserting
-  const cleanNode=n=>({id:n.id,label:n.label||'',type:n.type||'idea',url:n.url||'',img_url:n.img_url||'',author:n.author||'',x:Math.round(n.x||0),y:Math.round(n.y||0),w:n.w||DW,h:n.h||DH,group_id:n.group_id||null});
+  const cleanNode=n=>{const o={id:n.id,label:n.label||'',type:n.type||'idea',url:n.url||'',img_url:n.img_url||'',author:n.author||'',x:Math.round(n.x||0),y:Math.round(n.y||0),w:n.w||DW,h:n.h||DH,group_id:n.group_id||null};if(n.description)o.description=n.description;if(n.status)o.status=n.status;if(n.priority)o.priority=n.priority;if(n.assignee)o.assignee=n.assignee;if(n.due_date)o.due_date=n.due_date;if(n.sort_order)o.sort_order=n.sort_order;if(n.thumbnail_url)o.thumbnail_url=n.thumbnail_url;if(n.favicon_url)o.favicon_url=n.favicon_url;return o;};
   const cleanGroup=g=>({id:g.id,label:g.label||'Group',color:g.color||GC[0],x:Math.round(g.x||0),y:Math.round(g.y||0),w:Math.round(g.w||300),h:Math.round(g.h||200)});
-  const cleanLink=l=>({id:l.id,source:l.source?.id||l.source,target:l.target?.id||l.target,claude:l.claude||false,sport:l.sport||0,tport:l.tport||0});
+  const cleanLink=l=>{const o={id:l.id,source:l.source?.id||l.source,target:l.target?.id||l.target,claude:l.claude||false,sport:l.sport||0,tport:l.tport||0};if(l.link_type)o.link_type=l.link_type;if(l.label)o.label=l.label;return o;};
   if(sg.length)await sb.from('canvas_groups').insert(sg.map(cleanGroup));
   if(sn.length)await sb.from('canvas_nodes').insert(sn.map(cleanNode));
   if(sl.length){const validLinks=sl.filter(l=>{const s=l.source?.id||l.source;const t=l.target?.id||l.target;return sn.find(n=>n.id===s)&&sn.find(n=>n.id===t);});if(validLinks.length)await sb.from('canvas_links').insert(validLinks.map(cleanLink));}
-  await loadAll();toast('Canvas loaded ✓');
+  await loadAll();
+  _activeCanvasId=id;_activeCanvasName=data.name||'';_activeCanvasHash=_liveHash();
+  await sb.from('canvas_config').upsert({key:'active_canvas',value:JSON.stringify({id,name:data.name||'',who,at:new Date().toISOString()}),updated_at:new Date().toISOString()});
+  await loadCanvasList();toast('Canvas loaded ✓');
 }
-async function delCanvas(id){if(!confirm('Delete saved canvas?'))return;await sb.from('saved_canvases').delete().eq('id',id);await loadCanvasList();}
-async function newCanvas(){if(!confirm('Clear canvas?'))return;await sb.from('canvas_nodes').delete().neq('id','_');await sb.from('canvas_links').delete().neq('id','_');await sb.from('canvas_groups').delete().neq('id','_');nodes=[];links=[];groups=[];toast('Blank canvas');}
+async function delCanvas(id){if(!confirm('Delete saved canvas?'))return;await sb.from('saved_canvases').delete().eq('id',id);if(_activeCanvasId===id){_activeCanvasId=null;_activeCanvasName=null;_activeCanvasHash=null;}await loadCanvasList();}
+async function newCanvas(){const modified=_activeCanvasId&&_activeCanvasHash&&_liveHash()!==_activeCanvasHash;const msg=modified?'You have unsaved changes. Clear canvas anyway?':'Clear canvas?';if(!confirm(msg))return;await sb.from('canvas_nodes').delete().neq('id','_');await sb.from('canvas_links').delete().neq('id','_');await sb.from('canvas_groups').delete().neq('id','_');nodes=[];links=[];groups=[];_activeCanvasId=null;_activeCanvasName=null;_activeCanvasHash=null;await sb.from('canvas_config').upsert({key:'active_canvas',value:JSON.stringify({id:null,who,at:new Date().toISOString()}),updated_at:new Date().toISOString()});await loadCanvasList();toast('Blank canvas');}
 
 // CLAUDE
 // HOT CACHE — compressed semantic summary of canvas state
@@ -2099,6 +2140,24 @@ function resetClaudePanel(){
   window._lastClaudeUsage=null;
 }
 
+function fitAll(){
+  if(!nodes.length&&!groups.length)return;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const n of nodes){minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);maxX=Math.max(maxX,n.x+(n.w||DW));maxY=Math.max(maxY,n.y+(n.h||DH));}
+  for(const g of groups){minX=Math.min(minX,g.x);minY=Math.min(minY,g.y);maxX=Math.max(maxX,g.x+g.w);maxY=Math.max(maxY,g.y+g.h);}
+  if(!isFinite(minX))return;
+  const pad=80;
+  const contentW=(maxX-minX)+pad*2,contentH=(maxY-minY)+pad*2;
+  const W=canvas.width,H=canvas.height;
+  const z=Math.max(0.05,Math.min(1.0,Math.min(W/contentW,H/contentH)));
+  const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+  const targetX=-cx*z,targetY=-cy*z;
+  const startX=cam.x,startY=cam.y,startZ=cam.z;
+  const dX=targetX-startX,dY=targetY-startY,dZ=z-startZ;
+  const dur=350,t0=performance.now();
+  function step(t){const p=Math.min(1,(t-t0)/dur);const e=1-Math.pow(1-p,3);cam.x=startX+dX*e;cam.y=startY+dY*e;cam.z=startZ+dZ*e;draw();if(p<1)requestAnimationFrame(step);}
+  requestAnimationFrame(step);
+}
 function fitToNodeIds(nodeIdSet,animate){
   if(!nodeIdSet||nodeIdSet.size===0)return;
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
