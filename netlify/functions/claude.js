@@ -1,6 +1,16 @@
 exports.handler = async (event) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method not allowed' };
+    return { statusCode: 405, headers, body: 'Method not allowed' };
   }
 
   try {
@@ -14,20 +24,18 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: body.max_tokens || 1000,
+        max_tokens: body.max_tokens || 2000,
+        system: body.system || undefined,
         messages: body.messages,
       }),
     });
 
     const data = await response.json();
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    };
+    return { statusCode: 200, headers, body: JSON.stringify(data) };
   } catch (err) {
     return {
       statusCode: 500,
+      headers,
       body: JSON.stringify({ error: err.message }),
     };
   }

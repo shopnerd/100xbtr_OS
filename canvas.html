@@ -162,6 +162,26 @@ textarea.nei{line-height:1.4;}
 .mk-color{width:18px;height:18px;border-radius:3px;cursor:pointer;border:2px solid transparent;flex-shrink:0;}
 .mk-color.sel{border-color:#333;transform:scale(1.15);}
 .mk-lock-btn,.mk-vis-btn{font-size:12px;background:none;border:none;cursor:pointer;padding:0 2px;line-height:1;}
+.tb-search{display:flex;align-items:center;gap:4px;position:relative;}
+.tb-search-input{font-size:10px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--tx);font-family:inherit;width:160px;transition:width 0.2s,border-color 0.2s,background 0.2s;outline:none;}
+.tb-search-input:focus{outline:none;border-color:#C96B3A;width:260px;background-color:var(--chrome2);}
+.tb-search-input::placeholder{color:#a0a09a;}
+#search-recent{position:absolute;top:100%;left:0;margin-top:4px;min-width:260px;max-width:360px;background:var(--chrome2);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 4px 20px rgba(0,0,0,0.15);padding:4px 0;display:none;z-index:70;font-family:inherit;}
+#search-recent.on{display:block;}
+#search-recent .sr-hdr{font-size:9px;color:#a0a09a;padding:4px 10px;text-transform:uppercase;letter-spacing:0.5px;}
+#search-recent .sr-item{display:flex;align-items:center;justify-content:space-between;padding:5px 8px 5px 10px;font-size:10px;color:#6a6a66;cursor:pointer;transition:background 0.1s;}
+#search-recent .sr-item:hover{background:var(--chrome);color:var(--tx);}
+#search-recent .sr-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px;}
+#search-recent .sr-del{font-size:11px;color:#a0a09a;background:transparent;border:none;cursor:pointer;padding:0 4px;line-height:1;}
+#search-recent .sr-del:hover{color:#C96B3A;}
+#search-result-bar{position:absolute;top:46px;left:50%;transform:translateX(-50%);max-width:90vw;background:var(--chrome2);border:1px solid #C96B3A;border-radius:var(--r);padding:6px 10px 6px 14px;display:none;gap:10px;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:60;font-size:10px;color:var(--tx);font-family:inherit;}
+#search-result-bar.on{display:flex;}
+#search-result-bar .srb-stats{color:var(--tx);}
+#search-result-bar .srb-explain{color:#6a6a66;font-style:italic;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#search-result-bar .srb-clear{font-size:10px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:#6a6a66;cursor:pointer;font-family:inherit;}
+#search-result-bar .srb-clear:hover{background:var(--chrome);color:var(--tx);}
+.cpmsg{margin-bottom:10px;font-size:11px;line-height:1.7;color:var(--tx);background:var(--chrome2);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;}
+.cpmsg.user{background:rgba(55,138,221,0.12);border-color:rgba(55,138,221,0.25);}
 </style>
 </head>
 <body>
@@ -185,11 +205,21 @@ textarea.nei{line-height:1.4;}
     <div class="tb-sep"></div>
     <span class="tb-hint">right-click to add · alt+drag to select · ctrl+a all · click port to wire · dbl-click to edit · space+drag to pan</span>
     <div class="tb-right">
+      <div class="tb-search">
+        <input type="text" id="canvas-search-input" class="tb-search-input" placeholder="Search the canvas…" onkeydown="if(event.key==='Enter'){event.preventDefault();onSearchSubmit();}" onfocus="showSearchRecent()" onblur="setTimeout(hideSearchRecent,150)" />
+        <div id="search-recent"></div>
+      </div>
+      <div class="tb-sep"></div>
       <div class="ctw"><span>Claude</span><div class="tt" id="clt" onclick="toggleClaude()"><div class="tth"></div></div></div>
       <div class="tb-sep"></div>
       <div class="tb-user"><span class="live-dot"></span><span id="ued">...</span></div>
       <button class="tb-so" onclick="signOut()">sign out</button>
     </div>
+  </div>
+  <div id="search-result-bar">
+    <span class="srb-stats" id="srb-stats">0 nodes</span>
+    <span class="srb-explain" id="srb-explain"></span>
+    <button class="srb-clear" onclick="onSearchClear()" title="Clear search (Esc)">Clear</button>
   </div>
   <div id="canvas-wrap">
     <canvas id="gh-canvas"></canvas>
@@ -237,7 +267,9 @@ textarea.nei{line-height:1.4;}
           </div>
           <div style="display:flex;flex-direction:column;gap:3px;">
             <button class="sb-action-btn" onclick="runLayout()">⟳  Auto layout</button>
+            <button class="sb-action-btn" onclick="forceLayout()">◎  Force layout</button>
             <button class="sb-action-btn" onclick="repairGroups()">⊞  Repair groups</button>
+            <button class="sb-action-btn" onclick="validateCanvas()">✓  Validate canvas</button>
             <button class="sb-action-btn" onclick="gridLayoutAllGroups()">⬡  Grid-arrange groups</button>
             <button class="sb-action-btn" onclick="autoAssociate()">⬡  Group ungrouped nodes</button>
           </div>
@@ -323,7 +355,7 @@ textarea.nei{line-height:1.4;}
     </div>
     <!-- CLAUDE PANEL -->
     <div id="cp">
-      <div class="cph"><div class="cpd"></div><div class="cpt">Claude — canvas</div><button class="cpa" onclick="analyzeCanvas()">Analyze</button></div>
+      <div class="cph"><div class="cpd"></div><div class="cpt">Claude — canvas</div><button class="cpa" onclick="checkBrokenLinks()" title="Check all reference URLs for broken links">Check links</button><button class="cpa" onclick="regenerateSummary()" title="Generate executive summary of canvas state">Summary</button><button class="cpa" onclick="analyzeCanvas()">Analyze</button></div>
       <div class="cpb" id="cpb"><div class="cplo">Click Analyze to read the canvas and surface gaps, patterns, and suggested connections.</div></div>
       <div class="cpf">
         <textarea class="cpp" id="cpp" placeholder="Tell me what to do — 'create a group called Horn Design with speaker nodes'..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askClaude();}"></textarea>
@@ -335,6 +367,7 @@ textarea.nei{line-height:1.4;}
     <div id="ne">
       <div class="nel">Edit node</div>
       <textarea class="nei" id="nel-i" placeholder="Label… (Enter = new line, Ctrl+Enter = save)" rows="3"></textarea>
+      <textarea class="nei" id="ne-desc" placeholder="Description (optional)" rows="2" style="font-size:9px;"></textarea>
       <input class="nei" id="neu" placeholder="URL (optional)">
       <div class="nerow">
         <button class="ne-img-btn" onclick="document.getElementById('ne-img-upload').click()">+ image</button>
@@ -342,6 +375,19 @@ textarea.nei{line-height:1.4;}
         <span id="ne-img-status" style="font-size:9px;color:#555550;flex:1;"></span>
       </div>
       <div class="nety" id="nety"></div>
+      <div id="ne-status-row" style="display:none;margin-top:4px;">
+        <div style="font-size:8px;color:#888882;margin-bottom:2px;">Status</div>
+        <div id="ne-status" style="display:flex;gap:4px;"></div>
+      </div>
+      <div style="margin-top:4px;">
+        <div style="font-size:8px;color:#888882;margin-bottom:2px;">Assignee</div>
+        <select class="nei" id="ne-assignee" style="font-size:9px;padding:3px 4px;">
+          <option value="">None</option>
+          <option value="Will">Will</option>
+          <option value="Brendan">Brendan</option>
+          <option value="Nishant">Nishant</option>
+        </select>
+      </div>
       <div class="nea"><button class="nesv" onclick="saveNE()">Save</button><button class="nedl" onclick="deleteNode()">Delete</button></div>
     </div>
     <!-- GROUP EDIT -->
@@ -375,6 +421,8 @@ let nodes=[],links=[],groups=[];
 let portLeft=new Set(),portRight=new Set(); // populated each frame by drawLinks
 let selNode=null,selGE=null,selGColor=null;
 let linkFrom=null,linkFromSide='out',claudeOn=false;
+let _soundBrain=''; // loaded from SOUND_BRAIN.md on startup
+async function loadSoundBrain(){try{const r=await fetch('./SOUND_BRAIN.md');if(r.ok)_soundBrain=await r.text();}catch(_){}}
 let clipboard=null; // {nodes:[...snapshots], links:[...]}
 let _skipImgPaste=false;
 const undoStack=[];
@@ -392,6 +440,9 @@ let altDown=false,spaceDown=false;
 let winSelStart=null;
 let spreadGapX=80,spreadGapY=80;
 let simRunning=false;
+let searchHighlight=null;
+const RECENT_SEARCHES_KEY='sound-recent-searches';
+const MAX_RECENT_SEARCHES=8;
 
 const _mw={canvas_nodes:new Set(),canvas_groups:new Set(),canvas_links:new Set()};
 function _tw(table,id){_mw[table]?.add(id);setTimeout(()=>_mw[table]?.delete(id),3000);}
@@ -412,7 +463,8 @@ async function startApp(u){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('ued').textContent=u.email;
-  initCanvas();await loadAll();setupRT();await loadCanvasList();initMarkup();initSidebarResize();
+  initCanvas();await loadAll();loadCache();loadSoundBrain();setupRT();await loadCanvasList();initMarkup();initSidebarResize();checkHashHighlight();
+  window.addEventListener('hashchange',checkHashHighlight);
 }
 
 // CANVAS INIT
@@ -556,9 +608,13 @@ function drawGroups(){
 
 function drawLinks(){
   portLeft=new Set();portRight=new Set();
+  const searchActive=!!(searchHighlight&&searchHighlight.linkIds&&searchHighlight.linkIds.size>0);
   links.forEach(l=>{
     const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
     if(!s||!t)return;
+    // Search dim: links not in the highlight set draw at 10% opacity
+    const isSearchLink=searchActive?searchHighlight.linkIds.has(l.id):true;
+    if(searchActive&&!isSearchLink)ctx.globalAlpha=0.1;
     // use nearest ports: compare horizontal centers to avoid long reverse routes
     const sCX=s.x+(s.w||DW)/2,tCX=t.x+(t.w||DW)/2;
     let sp,tp;
@@ -573,12 +629,19 @@ function drawLinks(){
     if(isSel)ctx.setLineDash([6/cam.z,4/cam.z]);
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.bezierCurveTo(cpx,sp.y,cpx,tp.y,tp.x,tp.y);ctx.stroke();
     if(isSel)ctx.setLineDash([]);
+    // link type label at midpoint
+    if(l.link_type&&l.link_type!=='related'){
+      const mx=(sp.x+tp.x)/2,my=(sp.y+tp.y)/2;
+      ctx.font=`${8/cam.z}px 'SF Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='bottom';
+      ctx.fillStyle='rgba(140,140,132,0.7)';ctx.fillText(l.link_type,mx,my-3/cam.z);
+    }
     // arrow
     const ang=Math.atan2(tp.y-sp.y,tp.x-sp.x),as=7/cam.z;
     ctx.beginPath();ctx.moveTo(tp.x,tp.y);
     ctx.lineTo(tp.x-as*Math.cos(ang-0.38),tp.y-as*Math.sin(ang-0.38));
     ctx.lineTo(tp.x-as*Math.cos(ang+0.38),tp.y-as*Math.sin(ang+0.38));
     ctx.closePath();ctx.fillStyle=isSel?'rgba(201,107,58,1.0)':cl?'rgba(201,107,58,0.6)':'rgba(140,140,132,0.9)';ctx.fill();
+    if(searchActive&&!isSearchLink)ctx.globalAlpha=1;
   });
 }
 
@@ -595,6 +658,10 @@ function drawNodes(){
       if(t===id&&!selIds.has(s))selNeighbors.add(s);
     });
   });
+  // Search highlight state
+  const searchActive=!!(searchHighlight&&searchHighlight.nodeIds&&searchHighlight.nodeIds.size>0);
+  const searchNodeIds=searchActive?searchHighlight.nodeIds:null;
+  const searchCoreIds=searchActive?(searchHighlight.coreNodeIds||searchHighlight.nodeIds):null;
   // clear any stale canvas shadow state before drawing
   ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
   nodes.forEach(n=>{
@@ -604,6 +671,13 @@ function drawNodes(){
     const w=n.w||DW,h=n.h||DH;
     const r=3.5/cam.z;
     const pad=10/cam.z;
+    // Search dimming: non-matched nodes at ~12% opacity
+    const isSearchMatch=searchActive?searchNodeIds.has(n.id):true;
+    const isSearchCore=searchActive?searchCoreIds.has(n.id):false;
+    const searchDimmed=searchActive&&!isSearchMatch;
+    if(searchDimmed)ctx.globalAlpha=0.12;
+    // Search-core glow
+    if(isSearchCore){ctx.shadowColor='#C96B3A';ctx.shadowBlur=14/cam.z;}
     // paint explicit glow rect BEHIND node (no canvas shadow — unreliable cross-browser)
     if(isSel||isNeighbor){
       ctx.beginPath();rrect(ctx,n.x-pad,n.y-pad,w+pad*2,h+pad*2,r+pad);
@@ -638,8 +712,12 @@ function drawNodes(){
     if(n.url){ctx.fillStyle='#378ADD88';ctx.font=`${fs*0.8}px monospace`;ctx.textAlign='right';ctx.textBaseline='top';ctx.fillText('↗',n.x+w-4/cam.z,n.y+2/cam.z);}
     // ports — drawn last so they sit on top; white=open, black=wired
     const pr=(PR+1)/cam.z;
+    // Broken URL badge
+    if(n.url_broken===true){ctx.font=`${Math.max(12,h*0.28)/cam.z}px sans-serif`;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle='#D85A30';ctx.fillText('⚠',n.x+w-14/cam.z,n.y+1/cam.z);}
     drawPort(pPos(n,'in'),pr,portLeft.has(n.id));
     drawPort(pPos(n,'out'),pr,portRight.has(n.id));
+    // Reset search state
+    if(searchDimmed||isSearchCore){ctx.globalAlpha=1;ctx.shadowColor='transparent';ctx.shadowBlur=0;}
   });
 }
 
@@ -948,7 +1026,7 @@ function onKey(e){
   if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){if(e.key==='Escape')document.activeElement.blur();return;}
   if(e.key==='Alt')altDown=true;
   if(e.key===' '){spaceDown=true;canvas.style.cursor='grab';e.preventDefault();}
-  if(e.key==='Escape'){linkFrom=null;closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};}
+  if(e.key==='Escape'){linkFrom=null;closeNE();closeGE();closeCtx();selected={nodes:[],groups:[]};if(searchHighlight)clearSearchHighlight();}
   if((e.key==='Delete'||e.key==='Backspace')&&!drag.on)delSel();
   if((e.ctrlKey||e.metaKey)&&e.key==='a'){e.preventDefault();selAll();}
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();if(mkCanvas&&mkCanvas.style.pointerEvents==='auto')undoMarkup();else undo();}
@@ -999,6 +1077,7 @@ async function addNA(type,wx,wy){
   const id='n-'+Date.now();_tw('canvas_nodes',id);
   const node={id,label:type,type,url:'',img_url:'',author:who,x:Math.round(wx),y:Math.round(wy),w:DW,h:DH,group_id:null};
   await sb.from('canvas_nodes').insert(node);nodes.push({...node,x:wx,y:wy});
+  logActivity('node_create',type,id);
   pushUndo(async()=>{_tw('canvas_nodes',id);await sb.from('canvas_nodes').delete().eq('id',id);nodes=nodes.filter(n=>n.id!==id);links=links.filter(l=>(l.source?.id||l.source)!==id&&(l.target?.id||l.target)!==id);toast('Node creation undone');});
   toast('Added — dbl-click to edit');
 }
@@ -1019,8 +1098,15 @@ async function quickAdd(){
   if(isURL)fetchTitle(id,text);inp.value='';toast('Added');
 }
 async function fetchTitle(id,url){
-  try{const r=await fetch(`/.netlify/functions/fetch-title?url=${encodeURIComponent(url)}`);const d=await r.json();
-  if(d.title){_tw('canvas_nodes',id);await sb.from('canvas_nodes').update({label:d.title}).eq('id',id);const n=nById(id);if(n)n.label=d.title;}}catch(e){}
+  try{
+    const r=await fetch('/.netlify/functions/meta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const d=await r.json();
+    const update={};
+    if(d.title)update.label=d.title;
+    if(d.image)update.thumbnail_url=d.image;
+    if(d.favicon)update.favicon_url=d.favicon;
+    if(Object.keys(update).length){_tw('canvas_nodes',id);await sb.from('canvas_nodes').update(update).eq('id',id);const n=nById(id);if(n)Object.assign(n,update);}
+  }catch(e){}
 }
 async function addImageFile(input){
   const file=input.files?.[0];if(!file)return;
@@ -1031,11 +1117,12 @@ async function addImageFile(input){
     nodes.push({id,label:'image',type:'image',url:'',img_url:e.target.result,author:who,x,y,w:DW,h:DH,group_id:null});toast('Image added');
   };reader.readAsDataURL(file);try{input.value='';}catch(e){}
 }
-async function addLink(srcId,tgtId){
+async function addLink(srcId,tgtId,linkType){
   const ex=links.find(l=>{const s=l.source?.id||l.source,t=l.target?.id||l.target;return(s===srcId&&t===tgtId)||(s===tgtId&&t===srcId);});if(ex)return;
-  const id='l-'+Date.now();_tw('canvas_links',id);
-  await sb.from('canvas_links').insert({id,source:srcId,target:tgtId,claude:false,sport:0,tport:0});
-  links.push({id,source:srcId,target:tgtId,claude:false});
+  const id='l-'+Date.now();const lt=linkType||'related';_tw('canvas_links',id);
+  await sb.from('canvas_links').insert({id,source:srcId,target:tgtId,claude:false,sport:0,tport:0,link_type:lt});
+  links.push({id,source:srcId,target:tgtId,claude:false,link_type:lt});
+  logActivity('link_create',`${nById(srcId)?.label||srcId} → ${nById(tgtId)?.label||tgtId}`,null);
   pushUndo(async()=>{_tw('canvas_links',id);await sb.from('canvas_links').delete().eq('id',id);links=links.filter(l=>l.id!==id);toast('Wire undone');});
   toast('Connected');
 }
@@ -1045,28 +1132,53 @@ function openNE(node,cx,cy){
   selNode=node;neImgData=null;
   const ta=document.getElementById('nel-i');
   ta.value=node.label||'';
-  // Ctrl+Enter saves; plain Enter inserts newline (default textarea behaviour)
   ta.onkeydown=e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();saveNE();}};
+  document.getElementById('ne-desc').value=node.description||'';
   document.getElementById('neu').value=node.url||'';
   document.getElementById('ne-img-status').textContent=node.img_url?'Image set':'';
   document.getElementById('nety').innerHTML=TYPES.map(t=>`<button class="${node.type===t?'on':''}" style="${node.type===t?'background:'+TC[t]+';border-color:'+TC[t]+';color:#fff':''}" onclick="setNT('${t}')">${t}</button>`).join('');
+  document.getElementById('ne-assignee').value=node.assignee||'';
+  updateStatusRow(node.type,node.status);
   const p=document.getElementById('ne');const W=canvas.width,H=canvas.height;
-  let px=cx+14,py=cy;if(px+220>W)px=cx-234;if(py+220>H)py=H-230;
+  let px=cx+14,py=cy;if(px+220>W)px=cx-234;if(py+320>H)py=H-330;
   p.style.left=px+'px';p.style.top=py+'px';p.style.display='block';
   ta.focus();ta.select();
 }
+function updateStatusRow(type,status){
+  const row=document.getElementById('ne-status-row');
+  const isAction=type==='decision'||type==='action';
+  row.style.display=isAction?'block':'none';
+  if(!isAction)return;
+  const statuses=['open','in_progress','done'];
+  document.getElementById('ne-status').innerHTML=statuses.map(s=>{
+    const on=(status||'open')===s;
+    return`<button style="font-size:8px;padding:2px 6px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;background:${on?'#C96B3A':'transparent'};color:${on?'#fff':'var(--tx2)'};font-family:inherit;" onclick="setNStatus('${s}')">${s.replace('_',' ')}</button>`;
+  }).join('');
+}
 function closeNE(){document.getElementById('ne').style.display='none';}
-function setNT(t){if(!selNode)return;selNode.type=t;document.querySelectorAll('#nety button').forEach(b=>{const on=b.textContent===t;b.classList.toggle('on',on);b.style.background=on?TC[t]:'';b.style.borderColor=on?TC[t]:'';b.style.color=on?'#fff':'';});}
+function setNT(t){if(!selNode)return;const oldType=selNode.type;selNode.type=t;document.querySelectorAll('#nety button').forEach(b=>{const on=b.textContent===t;b.classList.toggle('on',on);b.style.background=on?TC[t]:'';b.style.borderColor=on?TC[t]:'';b.style.color=on?'#fff':'';});updateStatusRow(t,selNode.status);if(oldType!==t)logActivity('type_change',`${selNode.label}: ${oldType} → ${t}`,selNode.id);}
+function setNStatus(s){if(!selNode)return;selNode.status=s;updateStatusRow(selNode.type,s);}
 function neAddImage(input){const file=input.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{neImgData=e.target.result;document.getElementById('ne-img-status').textContent='Ready';};reader.readAsDataURL(file);}
 async function saveNE(){
-  if(!selNode)return;const update={label:document.getElementById('nel-i').value.trim(),url:document.getElementById('neu').value.trim(),type:selNode.type};
-  if(neImgData)update.img_url=neImgData;_tw('canvas_nodes',selNode.id);
-  await sb.from('canvas_nodes').update(update).eq('id',selNode.id);Object.assign(selNode,update);closeNE();selNode=null;neImgData=null;toast('Saved');
+  if(!selNode)return;
+  const update={
+    label:document.getElementById('nel-i').value.trim(),
+    description:document.getElementById('ne-desc').value.trim()||null,
+    url:document.getElementById('neu').value.trim(),
+    type:selNode.type,
+    status:selNode.status||null,
+    assignee:document.getElementById('ne-assignee').value||null,
+  };
+  if(neImgData)update.img_url=neImgData;
+  _tw('canvas_nodes',selNode.id);
+  await sb.from('canvas_nodes').update(update).eq('id',selNode.id);
+  Object.assign(selNode,update);closeNE();selNode=null;neImgData=null;toast('Saved');
 }
 async function deleteNode(){
-  if(!selNode||!confirm('Delete?'))return;const id=selNode.id;_tw('canvas_nodes',id);
+  if(!selNode||!confirm('Delete?'))return;const id=selNode.id,label=selNode.label;_tw('canvas_nodes',id);
   await sb.from('canvas_nodes').delete().eq('id',id);await sb.from('canvas_links').delete().or(`source.eq.${id},target.eq.${id}`);
   nodes=nodes.filter(n=>n.id!==id);links=links.filter(l=>(l.source?.id||l.source)!==id&&(l.target?.id||l.target)!==id);
+  logActivity('node_delete',label,id);
   closeNE();selNode=null;
 }
 
@@ -1133,6 +1245,31 @@ async function repairGroups(){
   for(const n of nodes){const gid=getGid(n);if(gid!==n.group_id){n.group_id=gid;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({group_id:gid||null}).eq('id',n.id);}}
   for(const g of groups){const m=nigByGid(g.id);if(m.length){sizeGAN(g,m);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}}
   toast('Groups repaired');
+}
+async function validateCanvas(silent){
+  const issues=[];
+  // 1. Orphaned links — source or target node missing
+  const nodeIds=new Set(nodes.map(n=>n.id));
+  const orphanLinks=links.filter(l=>{const s=l.source?.id||l.source,t=l.target?.id||l.target;return!nodeIds.has(s)||!nodeIds.has(t);});
+  for(const l of orphanLinks){_tw('canvas_links',l.id);await sb.from('canvas_links').delete().eq('id',l.id);issues.push('Removed orphan link '+l.id);}
+  if(orphanLinks.length)links=links.filter(l=>!orphanLinks.includes(l));
+  // 2. Dead group_id refs — group doesn't exist
+  const groupIds=new Set(groups.map(g=>g.id));
+  for(const n of nodes){if(n.group_id&&!groupIds.has(n.group_id)){n.group_id=null;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({group_id:null}).eq('id',n.id);issues.push('Cleared dead group ref on '+n.label);}}
+  // 3. Duplicate links — same source+target pair
+  const seen=new Set();const dupeLinks=[];
+  for(const l of links){const s=l.source?.id||l.source,t=l.target?.id||l.target;const key=[s,t].sort().join('|');if(seen.has(key)){dupeLinks.push(l);}else seen.add(key);}
+  for(const l of dupeLinks){_tw('canvas_links',l.id);await sb.from('canvas_links').delete().eq('id',l.id);issues.push('Removed duplicate link '+l.id);}
+  if(dupeLinks.length)links=links.filter(l=>!dupeLinks.includes(l));
+  // 4. Overlapping nodes
+  const before=nodes.map(n=>n.x+'|'+n.y).join(',');
+  separateNodes(nodes);
+  const after=nodes.map(n=>n.x+'|'+n.y).join(',');
+  if(before!==after){issues.push('Fixed node overlaps');for(const n of nodes){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}}
+  // 5. Group sizing
+  for(const g of groups){const m=nigByGid(g.id);if(m.length){const ox=g.x,oy=g.y,ow=g.w,oh=g.h;sizeGAN(g,m);if(g.x!==ox||g.y!==oy||g.w!==ow||g.h!==oh){_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);issues.push('Resized group "'+g.label+'"');}}}
+  if(!silent)toast(issues.length?`Validated — fixed ${issues.length} issue${issues.length>1?'s':''}`:'Canvas valid ✓');
+  return issues;
 }
 function repelNodes(gn){
   let moved=true;let it=0;
@@ -1217,7 +1354,7 @@ Ungrouped nodes:\n${nl}\nExisting groups:\n${gl||'(none)'}
 Suggest which group each ungrouped node should join, or propose new groups. Respond ONLY with JSON, no markdown:
 {"assignments":[{"nodeId":"id","groupId":"existing-group-id-or-null","newGroupLabel":"only if new group needed"}]}`;
   try{
-    const text=await callClaude([{role:'user',content:prompt}],800);
+    const text=await callClaude([{role:'user',content:prompt}],null,800);
     const data=extractJSON(text);
     if(!data?.assignments){toast('Could not parse response');return;}
     for(const a of data.assignments){
@@ -1244,8 +1381,9 @@ async function smartReorg(){
   if(!directive){toast('Describe how to reorganize first');return;}
   const btn=document.getElementById('reorg-btn');
   btn.disabled=true;btn.classList.add('loading');btn.textContent='Thinking...';
-  const{nl,ll,gl}=cCtx();
+  const{graphCtx,nl,ll,gl}=cCtxGraph();
   const prompt=`You are reorganizing a visual canvas for 100xbtr_sound (Will: design/CNC, Brendan: cabinetry, Nishant: EE/horn design).
+${_cacheSummary?'Canvas summary:\n'+_cacheSummary+'\n':''}Structure overview:\n${graphCtx}
 Current nodes:\n${nl||'(none)'}\nCurrent groups:\n${gl||'(none)'}\nCurrent links:\n${ll||'(none)'}
 Directive: "${directive}"
 Respond ONLY with valid JSON, no markdown:
@@ -1256,7 +1394,7 @@ Respond ONLY with valid JSON, no markdown:
 ]}
 Prefer moving nodes into existing groups before creating new ones. Only include actions that make meaningful changes.`;
   try{
-    const text=await callClaude([{role:'user',content:prompt}],4000);
+    const text=await callClaude([{role:'user',content:prompt}],null,4000);
     const parsed=extractJSON(text);
     if(parsed?.actions){
       const body=document.getElementById('cpb');
@@ -1325,6 +1463,89 @@ async function gridLayoutGroup(g){
   toast('Nodes grid-arranged');
 }
 async function gridLayoutAllGroups(){for(const g of groups)await gridLayoutGroup(g);toast('All groups grid-arranged');}
+async function forceLayout(){
+  if(!nodes.length){toast('No nodes');return;}if(simRunning)return;simRunning=true;toast('Force layout...');
+  // Build particles: groups as rigid bodies, ungrouped nodes as individuals
+  const particles=[],groupMap=new Map();
+  for(const g of groups){
+    const m=nigByGid(g.id);if(!m.length)continue;
+    const cx=m.reduce((s,n)=>s+n.x+(n.w||DW)/2,0)/m.length;
+    const cy=m.reduce((s,n)=>s+n.y+(n.h||DH)/2,0)/m.length;
+    const p={id:g.id,x:cx,y:cy,dx:0,dy:0,isGroup:true,group:g,members:m,w:g.w,h:g.h};
+    particles.push(p);groupMap.set(g.id,p);
+    m.forEach(n=>groupMap.set(n.id,p));
+  }
+  const ungrouped=nodes.filter(n=>!n.group_id||!groupMap.has(n.id));
+  for(const n of ungrouped){
+    const p={id:n.id,x:n.x+(n.w||DW)/2,y:n.y+(n.h||DH)/2,dx:0,dy:0,isGroup:false,node:n,w:n.w||DW,h:n.h||DH};
+    particles.push(p);groupMap.set(n.id,p);
+  }
+  if(particles.length<2){simRunning=false;toast('Need 2+ elements');return;}
+  // Build edges between distinct particles
+  const edges=[];
+  for(const l of links){
+    const sid=l.source?.id||l.source,tid=l.target?.id||l.target;
+    const sp=groupMap.get(sid),tp=groupMap.get(tid);
+    if(sp&&tp&&sp!==tp)edges.push({s:sp,t:tp});
+  }
+  // Fruchterman-Reingold
+  const area=Math.max(800,particles.length*200)*Math.max(600,particles.length*150);
+  const k=Math.sqrt(area/particles.length);
+  const maxIter=120;let temp=k*2;
+  for(let iter=0;iter<maxIter;iter++){
+    // Reset displacements
+    particles.forEach(p=>{p.dx=0;p.dy=0;});
+    // Repulsive forces between all pairs
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const a=particles[i],b=particles[j];
+        let dx=a.x-b.x,dy=a.y-b.y;
+        const dist=Math.max(Math.sqrt(dx*dx+dy*dy),1);
+        const force=k*k/dist;
+        const fx=dx/dist*force,fy=dy/dist*force;
+        a.dx+=fx;a.dy+=fy;b.dx-=fx;b.dy-=fy;
+      }
+    }
+    // Attractive forces along edges
+    for(const e of edges){
+      let dx=e.s.x-e.t.x,dy=e.s.y-e.t.y;
+      const dist=Math.max(Math.sqrt(dx*dx+dy*dy),1);
+      const force=dist*dist/k;
+      const fx=dx/dist*force,fy=dy/dist*force;
+      e.s.dx-=fx;e.s.dy-=fy;e.t.dx+=fx;e.t.dy+=fy;
+    }
+    // Apply displacements clamped by temperature
+    let maxDisp=0;
+    for(const p of particles){
+      const dist=Math.max(Math.sqrt(p.dx*p.dx+p.dy*p.dy),1);
+      const clamp=Math.min(dist,temp)/dist;
+      p.x+=p.dx*clamp;p.y+=p.dy*clamp;
+      maxDisp=Math.max(maxDisp,dist*clamp);
+    }
+    temp*=(1-iter/maxIter);
+    if(maxDisp<2)break;
+  }
+  // Apply positions back to nodes/groups
+  for(const p of particles){
+    if(p.isGroup){
+      const ox=p.group.x+p.group.w/2,oy=p.group.y+p.group.h/2;
+      const dx=Math.round(p.x-ox),dy=Math.round(p.y-oy);
+      p.group.x+=dx;p.group.y+=dy;
+      p.members.forEach(n=>{n.x+=dx;n.y+=dy;});
+    } else {
+      p.node.x=Math.round(p.x-p.w/2);p.node.y=Math.round(p.y-p.h/2);
+    }
+  }
+  // Post-process: separate overlaps, repel groups
+  separateNodes(ungrouped);
+  if(groups.length>1)repelGroupList(groups,60,40);
+  // Move grouped nodes with their groups after repel
+  for(const p of particles){if(p.isGroup){const g=p.group;const m=nigByGid(g.id);sizeGAN(g,m);}}
+  // Persist
+  for(const n of nodes){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}
+  for(const g of groups){_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
+  simRunning=false;toast('Force layout done');
+}
 async function alignG(g,dir){await alignNodesInGroups(dir,[g]);}
 async function alignNodesInGroups(dir,gs){
   const tgt=gs||groups;
@@ -1400,7 +1621,15 @@ async function loadCanvasList(){
   const{data}=await sb.from('saved_canvases').select('*').order('updated_at',{ascending:false});
   const list=document.getElementById('sb-list');
   if(!data?.length){list.innerHTML='<div class="sb-empty">No saved canvases.</div>';return;}
-  list.innerHTML=data.map(c=>`<div class="sb-item"><div class="sb-name">${c.name}</div><div class="sb-meta">${c.node_count||0} nodes · ${new Date(c.updated_at).toLocaleDateString()}</div><div class="sb-item-actions"><button class="sb-del" onclick="loadCanvas('${c.id}')">Load</button><button class="sb-del" onclick="delCanvas('${c.id}')">Del</button></div></div>`).join('');
+  list.innerHTML=data.map(c=>`<div class="sb-item"><div class="sb-name">${c.name}</div><div class="sb-meta">${c.node_count||0} nodes · ${new Date(c.updated_at).toLocaleDateString()}</div><div class="sb-item-actions"><button class="sb-del" onclick="loadCanvas('${c.id}')">Load</button><button class="sb-del" onclick="overwriteCanvas('${c.id}',${JSON.stringify(c.name)},${c.node_count||0})">Save</button><button class="sb-del" onclick="delCanvas('${c.id}')">Del</button></div></div>`).join('');
+}
+async function overwriteCanvas(id,name,oldNodeCount){
+  if(!confirm(`Overwrite "${name}" (${oldNodeCount} nodes) with current (${nodes.length} nodes)?`))return;
+  await sb.from('saved_canvases').update({
+    snapshot:{nodes:nodes.map(n=>({...n})),links:links.map(l=>({...l})),groups:groups.map(g=>({...g}))},
+    node_count:nodes.length,updated_at:new Date().toISOString(),author:who
+  }).eq('id',id);
+  await loadCanvasList();toast('Canvas overwritten');
 }
 async function saveCanvas(){
   const name=document.getElementById('sb-name-input').value.trim();if(!name){toast('Enter a name');return;}
@@ -1429,31 +1658,75 @@ async function delCanvas(id){if(!confirm('Delete saved canvas?'))return;await sb
 async function newCanvas(){if(!confirm('Clear canvas?'))return;await sb.from('canvas_nodes').delete().neq('id','_');await sb.from('canvas_links').delete().neq('id','_');await sb.from('canvas_groups').delete().neq('id','_');nodes=[];links=[];groups=[];toast('Blank canvas');}
 
 // CLAUDE
+// HOT CACHE — compressed semantic summary of canvas state
+const CACHE_KEY='100xbtr_canvas_cache';
+let _cacheHash='',_cacheSummary='';
+function canvasHash(){
+  let s=nodes.length+'|'+links.length+'|'+groups.length;
+  nodes.forEach(n=>{s+='|'+n.id.slice(-6)+':'+n.label.slice(0,20)+':'+n.type+':'+(n.group_id||'');});
+  links.forEach(l=>{s+='|'+(l.source?.id||l.source).slice(-6)+'-'+(l.target?.id||l.target).slice(-6);});
+  groups.forEach(g=>{s+='|'+g.id.slice(-6)+':'+g.label.slice(0,20);});
+  let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;
+  return h.toString(36);
+}
+function loadCache(){
+  try{const c=JSON.parse(localStorage.getItem(CACHE_KEY));if(c){_cacheHash=c.hash||'';_cacheSummary=c.summary||'';}}catch(e){}
+}
+function saveCache(hash,summary){
+  _cacheHash=hash;_cacheSummary=summary;
+  localStorage.setItem(CACHE_KEY,JSON.stringify({hash,summary,ts:Date.now()}));
+}
+async function refreshCache(){
+  const h=canvasHash();
+  if(h===_cacheHash&&_cacheSummary)return _cacheSummary;
+  if(nodes.length<3){_cacheSummary='';_cacheHash=h;return'';}
+  try{
+    const{graphCtx}=cCtxGraph();
+    const text=await callClaude([{role:'user',content:`Compress this canvas state into a ~300-word semantic summary for future AI context. Include: main themes/clusters, key nodes per group, notable connections, isolated nodes, overall structure. Plain text, no JSON.\n\n${graphCtx}`}],null,600);
+    saveCache(h,text);return text;
+  }catch(e){return _cacheSummary;}// stale fallback
+}
+
 const _ac={};let _acn=0;
 function _sa(acts){const id=_acn++;_ac[id]=acts;return id;}
 function toggleClaude(){claudeOn=!claudeOn;document.getElementById('clt').classList.toggle('on',claudeOn);document.getElementById('cp').classList.toggle('open',claudeOn);if(claudeOn)analyzeCanvas();}
-async function callClaude(messages,maxTokens=1600,_attempt=0){
-  const res=await fetch('/.netlify/functions/claude',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Accept':'application/json'},
-    body:JSON.stringify({messages,max_tokens:maxTokens})
-  });
-  if(!res.ok){const t=await res.text();throw new Error('Claude API error: '+res.status+' '+t.substring(0,120));}
-  const data=await res.json();
-  // Anthropic returns HTTP 200 even for API-level errors
-  if(data.type==='error'){
-    const errType=data.error?.type||'';
-    const errMsg=data.error?.message||'API error';
-    if((errType==='overloaded_error'||errType==='api_error')&&_attempt<2){
-      await new Promise(r=>setTimeout(r,2000*(1+_attempt)));
-      return callClaude(messages,maxTokens,_attempt+1);
+async function callClaude(messages, system, maxTokens) {
+  const body = JSON.stringify({ system: system||undefined, messages, max_tokens: maxTokens||4000 });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch('/.netlify/functions/claude', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body
+      });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch (_) {
+        const isTimeout = /timeout/i.test(text);
+        if (isTimeout && attempt < 2) { toast('Claude call timed out — retrying...'); await new Promise(r=>setTimeout(r,5000)); continue; }
+        return JSON.stringify({ response: isTimeout ? 'Request timed out. Try a simpler prompt or use Build mode.' : 'Server returned an invalid response.', actions: [] });
+      }
+      if (data.usage) {
+        window._lastClaudeUsage = data.usage;
+        window._claudeTotalTokens = window._claudeTotalTokens || { input:0, output:0 };
+        window._claudeTotalTokens.input += data.usage.input_tokens||0;
+        window._claudeTotalTokens.output += data.usage.output_tokens||0;
+        window._claudeCallCount = (window._claudeCallCount||0) + 1;
+      }
+      if (data.content && data.content[0]) return data.content[0].text;
+      const errMsg = (data.error?.message || data.error || '') + '';
+      const isRateLimit = errMsg.includes('rate limit') || errMsg.includes('429') || data.error?.type === 'rate_limit_error';
+      if (isRateLimit && attempt < 2) {
+        const waitMs = 35000 + attempt * 15000;
+        toast(`Rate limit — waiting ${Math.round(waitMs/1000)}s...`);
+        await new Promise(r=>setTimeout(r,waitMs)); continue;
+      }
+      if (data.error) return JSON.stringify({ response: 'Error: ' + errMsg, actions: [] });
+      return JSON.stringify({ response: 'No response from Claude', actions: [] });
+    } catch (err) {
+      if (attempt < 2) { await new Promise(r=>setTimeout(r,5000)); continue; }
+      return JSON.stringify({ response: 'Network error: ' + err.message, actions: [] });
     }
-    throw new Error(errType==='overloaded_error'?'Anthropic API is overloaded — try again in a moment':errMsg);
   }
-  if(data.content?.[0]?.text)return data.content[0].text;
-  if(data.text)return data.text;
-  if(typeof data==='string')return data;
-  throw new Error('Unexpected response: '+JSON.stringify(data).substring(0,120));
+  return JSON.stringify({ response: 'Failed after retries', actions: [] });
 }
 
 function extractJSON(text){
@@ -1473,16 +1746,348 @@ function cCtx(){
   const gl=groups.map(g=>`- id:"${g.id}" label:"${g.label}" members:[${nigByGid(g.id).map(n=>'"'+n.label+'"').join(',')}]`).join('\n');
   return{nl,ll,gl};
 }
+function cCtxGraph(){
+  const{nl,ll,gl}=cCtx();
+  // Build adjacency
+  const deg={};nodes.forEach(n=>{deg[n.id]={in:0,out:0,label:n.label};});
+  links.forEach(l=>{const s=l.source?.id||l.source,t=l.target?.id||l.target;if(deg[s])deg[s].out++;if(deg[t])deg[t].in++;});
+  // Hubs: top 3 by total degree, min degree 2
+  const ranked=Object.entries(deg).map(([id,d])=>({id,label:d.label,deg:d.in+d.out})).filter(x=>x.deg>=2).sort((a,b)=>b.deg-a.deg);
+  const hubs=ranked.slice(0,3);
+  // Isolates: degree 0
+  const isolates=Object.entries(deg).filter(([,d])=>d.in+d.out===0).map(([,d])=>d.label);
+  // Group summaries with internal/cross link counts
+  const gSums=groups.map(g=>{
+    const mIds=new Set(nigByGid(g.id).map(n=>n.id));
+    let internal=0,cross=0;
+    links.forEach(l=>{const s=l.source?.id||l.source,t=l.target?.id||l.target;const sIn=mIds.has(s),tIn=mIds.has(t);if(sIn&&tIn)internal++;else if(sIn||tIn)cross++;});
+    return`"${g.label}" (${mIds.size} nodes, ${internal} internal links, ${cross} cross-links): [${nigByGid(g.id).map(n=>n.label).join(', ')}]`;
+  });
+  // Cross-group connections
+  const crossLinks=[];
+  links.forEach(l=>{
+    const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
+    if(!s||!t||!s.group_id||!t.group_id||s.group_id===t.group_id)return;
+    const sg=groups.find(g=>g.id===s.group_id),tg=groups.find(g=>g.id===t.group_id);
+    if(sg&&tg)crossLinks.push(`"${sg.label}" ↔ "${tg.label}" via "${s.label}" → "${t.label}"`);
+  });
+  // Compose
+  let graphCtx=`Canvas: ${nodes.length} nodes, ${links.length} links, ${groups.length} groups.`;
+  if(hubs.length)graphCtx+=`\nHubs: ${hubs.map(h=>`"${h.label}" (${h.deg} connections)`).join(', ')}.`;
+  if(isolates.length)graphCtx+=`\nIsolated (no connections): ${isolates.join(', ')}.`;
+  if(gSums.length)graphCtx+=`\nGroups:\n${gSums.map(s=>'  '+s).join('\n')}`;
+  if(crossLinks.length)graphCtx+=`\nCross-group links:\n${crossLinks.map(c=>'  '+c).join('\n')}`;
+  return{graphCtx,nl,ll,gl};
+}
+function getCanvasContextSlim(){
+  const groupById=Object.fromEntries(groups.map(g=>[g.id,g.label]));
+  return JSON.stringify({
+    groups:groups.map(g=>g.label),
+    nodes:nodes.map(n=>({label:n.label,type:n.type,group:n.group_id?groupById[n.group_id]:null})),
+    links:links.map(l=>{const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);return{from:s?.label,to:t?.label,type:l.link_type||'related'};})
+  });
+}
+function addChatMsg(text,isUser){
+  const cpb=document.getElementById('cpb');
+  const d=document.createElement('div');
+  d.className='cpmsg'+(isUser?' user':'');
+  d.textContent=text;
+  cpb.appendChild(d);
+  if(!isUser&&window._lastClaudeUsage){
+    const u=window._lastClaudeUsage;
+    const inT=u.input_tokens||0,outT=u.output_tokens||0;
+    const cost=(inT*3+outT*15)/1e6;
+    const totals=window._claudeTotalTokens||{input:0,output:0};
+    const totalCost=(totals.input*3+totals.output*15)/1e6;
+    const tag=document.createElement('div');
+    tag.style.cssText='font-size:8px;color:var(--tx3,#a0a09a);margin-top:2px;';
+    tag.textContent=`${inT.toLocaleString()} in · ${outT.toLocaleString()} out · ~$${cost.toFixed(4)} · session: ${window._claudeCallCount||0} calls ~$${totalCost.toFixed(4)}`;
+    cpb.appendChild(tag);
+    window._lastClaudeUsage=null;
+  }
+  cpb.scrollTop=cpb.scrollHeight;
+}
+function fitToNodeIds(nodeIdSet,animate){
+  if(!nodeIdSet||nodeIdSet.size===0)return;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const n of nodes){
+    if(!nodeIdSet.has(n.id))continue;
+    minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);
+    maxX=Math.max(maxX,n.x+(n.w||DW));maxY=Math.max(maxY,n.y+(n.h||DH));
+  }
+  if(!isFinite(minX))return;
+  const pad=120;
+  const contentW=(maxX-minX)+pad*2,contentH=(maxY-minY)+pad*2;
+  const W=canvas.width,H=canvas.height;
+  const z=Math.max(0.05,Math.min(1.0,Math.min(W/contentW,H/contentH)));
+  const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+  const targetX=-cx*z,targetY=-cy*z;
+  if(!animate){cam.x=targetX;cam.y=targetY;cam.z=z;draw();return;}
+  const startX=cam.x,startY=cam.y,startZ=cam.z;
+  const dX=targetX-startX,dY=targetY-startY,dZ=z-startZ;
+  const dur=350,t0=performance.now();
+  function step(t){
+    const p=Math.min(1,(t-t0)/dur);
+    const e=1-Math.pow(1-p,3);
+    cam.x=startX+dX*e;cam.y=startY+dY*e;cam.z=startZ+dZ*e;
+    draw();
+    if(p<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ── SEMANTIC SEARCH ─────────────────────────────────────────────
+function applySearchResult(result,opts){
+  if(result&&result.nodeIds&&result.nodeIds.size>0){
+    searchHighlight=result;
+    const fitSet=result.coreNodeIds&&result.coreNodeIds.size>0?result.coreNodeIds:result.nodeIds;
+    const animate=!opts||opts.animate!==false;
+    fitToNodeIds(fitSet,animate);
+    showSearchResultBar(result);
+  } else {
+    searchHighlight=null;hideSearchResultBar();draw();
+  }
+}
+function showSearchResultBar(result){
+  const bar=document.getElementById('search-result-bar');
+  const stats=document.getElementById('srb-stats');
+  const explain=document.getElementById('srb-explain');
+  if(!bar||!stats||!explain)return;
+  const coreCount=result.coreNodeIds?result.coreNodeIds.size:result.nodeIds.size;
+  const nodeCount=result.nodeIds.size;
+  const wireCount=result.linkIds.size;
+  const coreLabel=result.includeNeighbors&&nodeCount!==coreCount
+    ?`${coreCount} matched · ${nodeCount-coreCount} neighbors`
+    :`${coreCount} ${coreCount===1?'node':'nodes'}`;
+  stats.textContent=`${coreLabel} · ${wireCount} ${wireCount===1?'wire':'wires'}`;
+  explain.textContent=result.explanation?'"'+result.explanation+'"':'';
+  bar.classList.add('on');
+}
+function hideSearchResultBar(){const bar=document.getElementById('search-result-bar');if(bar)bar.classList.remove('on');}
+
+function loadRecentSearches(){
+  try{const raw=localStorage.getItem(RECENT_SEARCHES_KEY);if(!raw)return[];const arr=JSON.parse(raw);return Array.isArray(arr)?arr.filter(s=>typeof s==='string'&&s.trim()).slice(0,MAX_RECENT_SEARCHES):[];}catch(_){return[];}
+}
+function saveRecentSearches(arr){try{localStorage.setItem(RECENT_SEARCHES_KEY,JSON.stringify(arr.slice(0,MAX_RECENT_SEARCHES)));}catch(_){}}
+function addRecentSearch(query){
+  const q=String(query||'').trim();if(!q)return;
+  const cur=loadRecentSearches();
+  const filtered=cur.filter(s=>s.toLowerCase()!==q.toLowerCase());
+  filtered.unshift(q);saveRecentSearches(filtered);
+}
+function removeRecentSearch(query){const cur=loadRecentSearches();saveRecentSearches(cur.filter(s=>s!==query));}
+function renderSearchRecent(){
+  const dd=document.getElementById('search-recent');if(!dd)return;
+  const items=loadRecentSearches();dd.innerHTML='';
+  if(items.length===0){dd.classList.remove('on');return;}
+  const hdr=document.createElement('div');hdr.className='sr-hdr';hdr.textContent='Recent searches';dd.appendChild(hdr);
+  items.forEach(q=>{
+    const row=document.createElement('div');row.className='sr-item';
+    const text=document.createElement('div');text.className='sr-text';text.textContent=q;
+    text.addEventListener('mousedown',e=>{e.preventDefault();const input=document.getElementById('canvas-search-input');if(input){input.value=q;hideSearchRecent();onSearchSubmit();}});
+    row.appendChild(text);
+    const del=document.createElement('button');del.className='sr-del';del.textContent='\u00d7';del.title='Remove';
+    del.addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();removeRecentSearch(q);renderSearchRecent();});
+    row.appendChild(del);dd.appendChild(row);
+  });
+}
+function showSearchRecent(){const dd=document.getElementById('search-recent');if(!dd)return;renderSearchRecent();if(loadRecentSearches().length>0)dd.classList.add('on');}
+function hideSearchRecent(){const dd=document.getElementById('search-recent');if(dd)dd.classList.remove('on');}
+
+async function onSearchSubmit(){
+  const input=document.getElementById('canvas-search-input');if(!input)return;
+  const query=input.value.trim();if(!query){onSearchClear();return;}
+  hideSearchRecent();
+  const origPlaceholder=input.placeholder;
+  input.placeholder='Searching…';input.disabled=true;
+  try{
+    const result=await searchCanvas(query);
+    if(result&&result.error){input.placeholder='Error — press Enter to retry';}
+    else if(!result||!result.nodeIds||result.nodeIds.size===0){input.placeholder='No matches — try a different query';searchHighlight=null;hideSearchResultBar();draw();}
+    else{applySearchResult(result);addRecentSearch(query);input.placeholder=origPlaceholder;}
+  }catch(e){input.placeholder='Error: '+(e.message||e);}
+  finally{input.disabled=false;input.focus();}
+}
+function onSearchClear(){
+  const input=document.getElementById('canvas-search-input');
+  if(input){input.value='';input.placeholder='Search the canvas…';}
+  hideSearchRecent();clearSearchHighlight();
+}
+function clearSearchHighlight(){if(!searchHighlight)return;searchHighlight=null;hideSearchResultBar();draw();}
+
+async function searchCanvas(query){
+  if(!query||!query.trim())return null;
+  const trimmed=query.trim();
+  const context=getCanvasContextSlim();
+  const system=`You are a semantic search engine for a cognitive mapping canvas. The user asks a natural-language question. You return JSON only:
+{"node_labels":["<exact label from canvas>",...],"link_types":[],"include_neighbors":true|false,"explanation":"<one short sentence, max 15 words>"}
+Rules:
+- node_labels MUST be exact labels copied from the canvas context. Case-sensitive, no paraphrasing.
+- include_neighbors: true means also highlight 1-hop neighbors. Set true when query asks about connections/relationships.
+- If no matches, return empty node_labels and explain why.
+- Respond with JSON ONLY, no prose, no markdown fence.`;
+  const messages=[{role:'user',content:`Query: ${trimmed}\n\nCanvas:\n${context}`}];
+  const reply=await callClaude(messages,system,2000);
+  const json=extractJSON(reply);
+  if(!json)return{query:trimmed,error:'Could not parse response',nodeIds:new Set(),linkIds:new Set()};
+
+  const labels=Array.isArray(json.node_labels)?json.node_labels:[];
+  const matchedIds=new Set();
+  for(const label of labels){
+    const tl=String(label||'').trim();if(!tl)continue;
+    let hit=nodes.find(n=>(n.label||'').trim()===tl);
+    if(!hit){const lower=tl.toLowerCase();hit=nodes.find(n=>(n.label||'').trim().toLowerCase()===lower);}
+    if(hit)matchedIds.add(hit.id);
+  }
+
+  const expandedIds=new Set(matchedIds);
+  if(json.include_neighbors&&matchedIds.size>0){
+    for(const l of links){
+      const s=l.source?.id||l.source,t=l.target?.id||l.target;
+      if(matchedIds.has(s))expandedIds.add(t);
+      if(matchedIds.has(t))expandedIds.add(s);
+    }
+  }
+
+  const allowedTypes=Array.isArray(json.link_types)&&json.link_types.length>0?new Set(json.link_types):null;
+  const highlightLinkIds=new Set();
+  for(const l of links){
+    const s=l.source?.id||l.source,t=l.target?.id||l.target;
+    if(!expandedIds.has(s)||!expandedIds.has(t))continue;
+    if(allowedTypes&&!allowedTypes.has(l.link_type))continue;
+    highlightLinkIds.add(l.id);
+  }
+
+  return{
+    query:trimmed,explanation:json.explanation||'',matchedLabels:labels,
+    nodeIds:expandedIds,coreNodeIds:matchedIds,linkIds:highlightLinkIds,
+    includeNeighbors:!!json.include_neighbors,allowedLinkTypes:allowedTypes?[...allowedTypes]:null,
+  };
+}
+
+// ── LINK CHECK ──────────────────────────────────────────────────
+async function checkBrokenLinks(){
+  const cpb=document.getElementById('cpb');
+  const placeholder=cpb.querySelector('.cplo');
+  if(placeholder&&cpb.children.length===1)cpb.innerHTML='';
+  const trustedDomains=/\.(pexels|unsplash|pixabay|wikimedia)\.com|\.wikimedia\.org/i;
+  const targets=nodes.filter(n=>{
+    if(!n.url||typeof n.url!=='string'||!/^https?:\/\//i.test(n.url))return false;
+    try{return!trustedDomains.test(new URL(n.url).hostname);}catch{return true;}
+  });
+  if(targets.length===0){addChatMsg('Check links',true);addChatMsg('No reference URLs to check.',false);return;}
+  addChatMsg(`Check ${targets.length} link${targets.length===1?'':'s'}`,true);
+  const loading=document.createElement('div');loading.className='cplo';
+  loading.textContent=`Checking 0/${targets.length} links…`;
+  cpb.appendChild(loading);cpb.scrollTop=cpb.scrollHeight;
+
+  const CONCURRENCY=6;let done=0,broken=0,errors=0;const brokenNodes=[];
+  const checkOne=async(node)=>{
+    let result;
+    try{const res=await fetch('/.netlify/functions/link-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:node.url})});result=await res.json();}
+    catch(e){result={status:0,error:String(e.message||e)};}
+    const isReachable=result&&typeof result.status==='number'&&result.status>=200&&result.status<400;
+    const isBroken=!isReachable;const now=new Date().toISOString();
+    try{await sb.from('canvas_nodes').update({url_broken:isBroken,url_checked_at:now}).eq('id',node.id);}catch(_){errors++;}
+    node.url_broken=isBroken;node.url_checked_at=now;
+    if(isBroken){broken++;brokenNodes.push({label:node.label,url:node.url,status:result?.status||0,error:result?.error});}
+    done++;loading.textContent=`Checking ${done}/${targets.length} links…`;
+  };
+  let idx=0;
+  const workers=Array.from({length:Math.min(CONCURRENCY,targets.length)},async()=>{while(idx<targets.length){const my=idx++;await checkOne(targets[my]);}});
+  await Promise.all(workers);
+  draw();loading.remove();
+  addChatMsg(`Checked ${targets.length}: ${targets.length-broken} reachable, ${broken} broken.${errors?' ('+errors+' save errors)':''}`,false);
+  if(brokenNodes.length>0){
+    const list=document.createElement('div');
+    list.style.cssText='margin-top:6px;font-size:10px;color:#6a6a66;border-left:2px solid #C96B3A;padding:4px 0 4px 8px;';
+    brokenNodes.slice(0,20).forEach(b=>{
+      const row=document.createElement('div');row.style.cssText='padding:3px 0;cursor:pointer;';
+      row.title='Click to highlight on canvas';
+      row.textContent=`⚠ [${b.status||b.error||'err'}] ${b.label}`;
+      row.onmouseover=()=>{row.style.color='#C96B3A';};row.onmouseout=()=>{row.style.color='#6a6a66';};
+      row.onclick=()=>{
+        const match=nodes.find(n=>n.label===b.label);
+        if(match){
+          const coreIds=new Set([match.id]),expandedIds=new Set(coreIds);
+          for(const l of links){const s=l.source?.id||l.source,t=l.target?.id||l.target;if(coreIds.has(s))expandedIds.add(t);if(coreIds.has(t))expandedIds.add(s);}
+          const linkIds=new Set();for(const l of links){const s=l.source?.id||l.source,t=l.target?.id||l.target;if(expandedIds.has(s)&&expandedIds.has(t))linkIds.add(l.id);}
+          applySearchResult({query:'broken link',explanation:`Broken URL: ${b.url}`,nodeIds:expandedIds,coreNodeIds:coreIds,linkIds,matchedLabels:[b.label],includeNeighbors:true,allowedLinkTypes:null});
+        }
+      };
+      list.appendChild(row);
+    });
+    cpb.appendChild(list);cpb.scrollTop=cpb.scrollHeight;
+  }
+  toast(`Link check: ${broken} broken / ${targets.length} total`);
+}
+
+// ── SUMMARY GENERATOR ───────────────────────────────────────────
+async function regenerateSummary(){
+  const cpb=document.getElementById('cpb');
+  const placeholder=cpb.querySelector('.cplo');
+  if(placeholder&&cpb.children.length===1)cpb.innerHTML='';
+  addChatMsg('Regenerate summary',true);
+  const loading=document.createElement('div');loading.className='cplo';loading.textContent='Summarizing canvas...';
+  cpb.appendChild(loading);cpb.scrollTop=cpb.scrollHeight;
+  const context=getCanvasContextSlim();
+  const system=`You are writing an executive summary of a cognitive mapping canvas for a living public document. Your output will be read by stakeholders who were not in the room when the canvas was built.
+Respond with JSON ONLY: {"summary":"<markdown executive summary>"}
+The summary must contain:
+## Overview
+[2-4 sentences: what this canvas is about, the core focus, and the key insight]
+## Key Decisions
+- **[Exact decision label]** — [1 sentence on what and why]
+## Open Questions
+- **[Exact question label]** — [why it matters]
+## Next Actions (Prioritized)
+1. **[Exact label]** — [owner if assigned], [one sentence on why this is next]
+## What We Know
+- [1 sentence each, 3-5 research findings. Cite reference node labels when relevant.]
+Rules: Use exact labels from the canvas. Be specific. If a section has no items write "None yet". Keep under 1500 words.`;
+  const messages=[{role:'user',content:`Canvas to summarize:\n\n${context}`}];
+  try{
+    const reply=await callClaude(messages,system,4000);
+    loading.remove();
+    const json=extractJSON(reply);
+    const summaryText=(json&&json.summary)?json.summary:reply;
+    if(!summaryText||typeof summaryText!=='string'){addChatMsg('Summary generation failed: empty response',false);return;}
+    // Save to canvas_config table
+    await sb.from('canvas_config').upsert({key:'summary',value:summaryText,updated_at:new Date().toISOString()});
+    addChatMsg('Summary saved. Open doc.html to see the living document.',false);
+    toast('Summary updated');
+  }catch(e){loading.remove();addChatMsg('Summary failed: '+(e.message||e),false);}
+}
+
+// ── ACTIVITY LOGGING ────────────────────────────────────────────
+async function logActivity(action,detail,nodeId){
+  try{await sb.from('activity_log').insert({action,detail:detail||null,author:who||null,node_id:nodeId||null});}catch(_){}
+}
+
+// ── DEEP LINK HIGHLIGHT ─────────────────────────────────────────
+function checkHashHighlight(){
+  const hash=window.location.hash;
+  if(!hash||!hash.startsWith('#highlight='))return;
+  const nodeId=decodeURIComponent(hash.slice(11));
+  const n=nById(nodeId);if(!n)return;
+  const coreIds=new Set([n.id]),expandedIds=new Set(coreIds);
+  for(const l of links){const s=l.source?.id||l.source,t=l.target?.id||l.target;if(coreIds.has(s))expandedIds.add(t);if(coreIds.has(t))expandedIds.add(s);}
+  const linkIds=new Set();for(const l of links){const s=l.source?.id||l.source,t=l.target?.id||l.target;if(expandedIds.has(s)&&expandedIds.has(t))linkIds.add(l.id);}
+  setTimeout(()=>applySearchResult({query:'deep link',explanation:n.label,nodeIds:expandedIds,coreNodeIds:coreIds,linkIds,matchedLabels:[n.label],includeNeighbors:true,allowedLinkTypes:null}),300);
+}
+
 async function analyzeCanvas(){
   const body=document.getElementById('cpb');body.innerHTML='<div class="cplo">Reading canvas...</div>';
-  const{nl,ll,gl}=cCtx();
+  const cache=await refreshCache();
+  const{graphCtx,nl,ll,gl}=cCtxGraph();
   const prompt=`You are analyzing a shared canvas for 100xbtr_sound — a boutique horn speaker company (Will: design/CNC, Brendan: cabinetry, Nishant: EE/horn design).
+${cache?'Canvas summary:\n'+cache+'\n':''}Structure overview:\n${graphCtx}
 Nodes:\n${nl||'(none)'}\nConnections:\n${ll||'(none)'}\nGroups:\n${gl||'(none)'}
 Respond ONLY with valid JSON, no markdown:
 {"reading":"2-3 sentences specific to actual nodes","gaps":[{"question":"specific gap","connect":["node label"]}],"suggestions":[{"from":"exact node label","to":"exact node label","reason":"brief reason"}],"actions":[{"type":"create_group","label":"Name","nodeLabels":["label1"],"description":"why"},{"type":"create_node","label":"Label","nodeType":"idea","group":"group label","description":"why"},{"type":"create_link","from":"label","to":"label","description":"why"}]}
 Max 3 gaps, 3 suggestions, 6 actions.`;
   try{
-    const text=await callClaude([{role:'user',content:prompt}],2000);
+    const text=await callClaude([{role:'user',content:prompt}],null,2000);
     const parsed=extractJSON(text);
     if(parsed)renderAnalysis(parsed);
     else body.innerHTML='<div class="cplo">Could not parse response. Raw: '+text.substring(0,300)+'</div>';
@@ -1542,24 +2147,17 @@ async function execAll(actions){
   for(const a of actions.filter(x=>x.type==='create_node'))await execA(a);
   for(const a of actions.filter(x=>x.type==='move_to_group'))await execA(a);
   for(const a of actions.filter(x=>x.type==='create_link'))await execA(a);
-  await repairGroups();await runLayout();toast(`Done — ${actions.length} actions`);if(claudeOn)setTimeout(analyzeCanvas,600);
+  await repairGroups();await runLayout();await validateCanvas(true);_cacheHash='';toast(`Done — ${actions.length} actions`);if(claudeOn)setTimeout(analyzeCanvas,600);
 }
 async function askClaude(){
   const prompt=document.getElementById('cpp').value.trim();if(!prompt)return;
   const body=document.getElementById('cpb');const prev=body.innerHTML;body.innerHTML='<div class="cplo">Thinking...</div>';
-  const{nl,ll,gl}=cCtx();
-  const sys=`You are an AI collaborator for 100xbtr_sound (Will, Brendan, Nishant — boutique horn speakers).
-Canvas Nodes: ${nl||'(none)'}\nLinks: ${ll||'(none)'}\nGroups: ${gl||'(none)'}
-If asked to DO something (build, create, map, add, connect), respond ONLY with valid JSON, no markdown:
-{"response":"brief message","actions":[
-  {"type":"create_group","label":"Group Name","color":"#378ADD","description":"why"},
-  {"type":"create_node","label":"Node Label","nodeType":"idea","group":"Group Name","description":"why"},
-  {"type":"create_link","from":"source label","to":"target label","description":"why"}
-]}
-Valid nodeType values: idea, reference, material, decision, image, question, anchor.
-Use "group" (the group label string) NOT "group_id". Otherwise respond with plain text.`;
+  const{graphCtx,nl,ll,gl}=cCtxGraph();
+  const sys=(_soundBrain||'You are an AI collaborator for 100xbtr_sound.')+`\n\n--- CURRENT CANVAS STATE ---
+${_cacheSummary?'Canvas summary:\n'+_cacheSummary+'\n':''}Structure overview:\n${graphCtx}
+Canvas Nodes: ${nl||'(none)'}\nLinks: ${ll||'(none)'}\nGroups: ${gl||'(none)'}`;
   try{
-    const text=await callClaude([{role:'user',content:sys+'\n\nUser: '+prompt}],4000);
+    const text=await callClaude([{role:'user',content:'User: '+prompt}],sys,4000);
     const parsed=extractJSON(text);
     if(parsed?.actions){
       body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${parsed.response||'Done.'}</div></div>`;
@@ -1585,9 +2183,10 @@ async function askClaudeBuild(){
   let totalActions=0;
 
   const phasePrompt=(phase,extra)=>{
-    const{nl,ll,gl}=cCtx();
+    const{graphCtx,nl,ll,gl}=cCtxGraph();
     const base=`You are building a visual canvas for 100xbtr_sound (Will, Brendan, Nishant — boutique horn speakers).
 User request: "${prompt}"
+Structure overview:\n${graphCtx}
 Current groups: ${gl||'(none)'}\nCurrent nodes: ${nl||'(none)'}
 ${extra}
 Respond ONLY with valid JSON, no markdown fences:`;
@@ -1607,7 +2206,7 @@ Create ALL meaningful connections between existing nodes. Links only — no grou
     body.scrollTop=body.scrollHeight;
     const phaseEl=body.lastElementChild;
     try{
-      const text=await callClaude([{role:'user',content:phasePrompt(phase,extra)}],6000);
+      const text=await callClaude([{role:'user',content:phasePrompt(phase,extra)}],null,6000);
       const parsed=extractJSON(text);
       if(parsed?.actions?.length){
         const filtered=parsed.actions.filter(a=>
@@ -1624,10 +2223,11 @@ Create ALL meaningful connections between existing nodes. Links only — no grou
   await runPhase('groups','Groups');
   await runPhase('nodes','Nodes');
   await runPhase('links','Connections');
-  await repairGroups();await runLayout();
+  await repairGroups();await runLayout();await validateCanvas(true);_cacheHash='';
   body.innerHTML+=`<div class="cplo">Build complete — ${totalActions} actions executed.</div>`;
   body.scrollTop=body.scrollHeight;
   sendBtn.disabled=false;buildBtn.disabled=false;buildBtn.textContent='⬡ Build in phases';
+  regenerateSummary().catch(()=>{});// auto-fire summary in background
 }
 
 // DB / RT
