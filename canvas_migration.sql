@@ -69,3 +69,9 @@ CREATE POLICY "anon read activity_log" ON activity_log
 -- 8. Snapshot support — image_data column on activity_log
 -- ═══════════════════════════════════════════════════════════════
 ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS image_data text;
+
+-- ═══════════════════════════════════════════════════════════════
+-- 9. Decision support — priority and sort_order on canvas_nodes
+-- ═══════════════════════════════════════════════════════════════
+ALTER TABLE canvas_nodes ADD COLUMN IF NOT EXISTS priority text;
+ALTER TABLE canvas_nodes ADD COLUMN IF NOT EXISTS sort_order integer DEFAULT 0;

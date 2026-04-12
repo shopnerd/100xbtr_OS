@@ -391,6 +391,19 @@ textarea.nei{line-height:1.4;}
           <option value="Nishant">Nishant</option>
         </select>
       </div>
+      <div id="ne-priority-row" style="display:none;margin-top:4px;">
+        <div style="font-size:8px;color:#888882;margin-bottom:2px;">Priority</div>
+        <select class="nei" id="ne-priority" style="font-size:9px;padding:3px 4px;">
+          <option value="">None</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div style="margin-top:4px;">
+        <div style="font-size:8px;color:#888882;margin-bottom:2px;">Due date</div>
+        <input type="date" class="nei" id="ne-due" style="font-size:9px;padding:3px 4px;">
+      </div>
       <div class="nea"><button class="nesv" onclick="saveNE()">Save</button><button class="nedl" onclick="deleteNode()">Delete</button></div>
     </div>
     <!-- GROUP EDIT -->
@@ -770,6 +783,8 @@ function drawNodes(){
     ctx.fillStyle=color+'99';ctx.textBaseline='bottom';ctx.fillText(n.type,n.x+7/cam.z,n.y+h-2/cam.z);
     ctx.textAlign='right';ctx.fillStyle='#888882';ctx.fillText(n.author||'',n.x+w-5/cam.z,n.y+h-2/cam.z);
     if(n.url){ctx.fillStyle='#378ADD88';ctx.font=`${fs*0.8}px monospace`;ctx.textAlign='right';ctx.textBaseline='top';ctx.fillText('↗',n.x+w-4/cam.z,n.y+2/cam.z);}
+    // Priority dot (top-right corner for decision nodes)
+    if(n.priority&&n.type==='decision'){const pc={high:'#CC2222',medium:'#FF8000',low:'#FFD700'}[n.priority];if(pc){ctx.beginPath();ctx.arc(n.x+w-6/cam.z,n.y+6/cam.z,3.5/cam.z,0,Math.PI*2);ctx.fillStyle=pc;ctx.fill();}}
     // ports — drawn last so they sit on top; white=open, black=wired
     const pr=(PR+1)/cam.z;
     // Broken URL badge
@@ -1198,6 +1213,9 @@ function openNE(node,cx,cy){
   document.getElementById('ne-img-status').textContent=node.img_url?'Image set':'';
   document.getElementById('nety').innerHTML=TYPES.map(t=>`<button class="${node.type===t?'on':''}" style="${node.type===t?'background:'+TC[t]+';border-color:'+TC[t]+';color:#fff':''}" onclick="setNT('${t}')">${t}</button>`).join('');
   document.getElementById('ne-assignee').value=node.assignee||'';
+  document.getElementById('ne-priority').value=node.priority||'';
+  document.getElementById('ne-priority-row').style.display=node.type==='decision'?'block':'none';
+  document.getElementById('ne-due').value=node.due_date||'';
   updateStatusRow(node.type,node.status);
   const p=document.getElementById('ne');const W=canvas.width,H=canvas.height;
   let px=cx+14,py=cy;if(px+220>W)px=cx-234;if(py+320>H)py=H-330;
@@ -1216,7 +1234,7 @@ function updateStatusRow(type,status){
   }).join('');
 }
 function closeNE(){document.getElementById('ne').style.display='none';}
-function setNT(t){if(!selNode)return;const oldType=selNode.type;selNode.type=t;document.querySelectorAll('#nety button').forEach(b=>{const on=b.textContent===t;b.classList.toggle('on',on);b.style.background=on?TC[t]:'';b.style.borderColor=on?TC[t]:'';b.style.color=on?'#fff':'';});updateStatusRow(t,selNode.status);if(oldType!==t)logActivity('type_change',`${selNode.label}: ${oldType} → ${t}`,selNode.id);}
+function setNT(t){if(!selNode)return;const oldType=selNode.type;selNode.type=t;document.querySelectorAll('#nety button').forEach(b=>{const on=b.textContent===t;b.classList.toggle('on',on);b.style.background=on?TC[t]:'';b.style.borderColor=on?TC[t]:'';b.style.color=on?'#fff':'';});updateStatusRow(t,selNode.status);document.getElementById('ne-priority-row').style.display=t==='decision'?'block':'none';if(oldType!==t)logActivity('type_change',`${selNode.label}: ${oldType} → ${t}`,selNode.id);}
 function setNStatus(s){if(!selNode)return;selNode.status=s;updateStatusRow(selNode.type,s);}
 function neAddImage(input){const file=input.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{neImgData=e.target.result;document.getElementById('ne-img-status').textContent='Ready';};reader.readAsDataURL(file);}
 async function saveNE(){
@@ -1228,6 +1246,8 @@ async function saveNE(){
     type:selNode.type,
     status:selNode.status||null,
     assignee:document.getElementById('ne-assignee').value||null,
+    priority:document.getElementById('ne-priority').value||null,
+    due_date:document.getElementById('ne-due').value||null,
   };
   if(neImgData)update.img_url=neImgData;
   _tw('canvas_nodes',selNode.id);
