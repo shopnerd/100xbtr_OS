@@ -248,9 +248,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="view on" id="v-home">
     <!-- S1: Status -->
     <div class="grid3">
-      <div class="metric"><div class="metric-label">Status</div><div class="metric-val">Pre-Lunch</div><div class="metric-sub">formation pending</div></div>
-      <div class="metric"><div class="metric-label">Open decisions</div><div class="metric-val" id="open-count">—</div><div class="metric-sub">before first build</div></div>
-      <div class="metric"><div class="metric-label">First prototype</div><div class="metric-val">~6 mo</div><div class="metric-sub">listenable, not for sale</div></div>
+      <div class="metric"><div class="metric-label">Open decisions</div><div class="metric-val" id="open-count">—</div><div class="metric-sub">need resolution</div></div>
+      <div class="metric"><div class="metric-label">Actions</div><div class="metric-val" id="action-count">—</div><div class="metric-sub" id="action-sub">loading…</div></div>
+      <div class="metric"><div class="metric-label">Questions</div><div class="metric-val" id="question-count">—</div><div class="metric-sub">open unknowns</div></div>
     </div>
     <!-- S2: Identity -->
     <div class="grid2">
@@ -405,15 +405,6 @@ const fmtDT=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'nu
 const fmtD=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 let fc={};
 
-const DD=[
-  {id:'d1',text:'Horn speakers confirmed as technical direction',owner:'Nishant leads — all three agree',done:false,badge:'open'},
-  {id:'d2',text:'Nishant commits as a founding partner',owner:'Needs explicit yes before LLC formation',done:false,badge:'open'},
-  {id:'d3',text:'Equity split agreed in principle',owner:'Starting point: Will 34%, Brendan 34%, Nishant 32%',done:false,badge:'open'},
-  {id:'d4',text:'Collaboration model and roles defined',owner:'Formal titles optional — process matters more',done:false,badge:'open'},
-  {id:'d5',text:'First speaker named, specced, and deadline set',owner:'Bookshelf horn, $2.5–3.5K target, prototype ~6 months',done:false,badge:'open'},
-  {id:'d6',text:'LLC formed and founders agreement drafted',owner:'Will initiates — $300–500 via Stripe Atlas or attorney',done:false,badge:'soon'},
-  {id:'d7',text:'100xbetter existing entity status resolved',owner:'Attorney check — convert, amend, or form fresh LLC',done:false,badge:'open'},
-];
 const DCQ=[
   {id:'cq1',question:'Do we want formal titles at all — or does the work define the roles?',category:'team'},
   {id:'cq2',question:'When we genuinely disagree on a design decision, how do we resolve it?',category:'team'},
@@ -465,35 +456,46 @@ sb.auth.onAuthStateChange((event,session)=>{
 })();
 
 async function initDB(){
-  const[d,f,q,l]=await Promise.all([
-    sb.from('decisions').select('id').limit(1),
+  const[f,q,l]=await Promise.all([
     sb.from('editable_fields').select('id').limit(1),
     sb.from('collab_questions').select('id').limit(1),
     sb.from('log_entries').select('id').limit(1),
   ]);
-  if(!d.data?.length)await sb.from('decisions').insert(DD.map(x=>({id:x.id,text:x.text,owner:x.owner,done:false,badge:x.badge})));
   if(!q.data?.length)await sb.from('collab_questions').insert(DCQ.map(x=>({id:x.id,question:x.question,category:x.category})));
   if(!l.data?.length)await sb.from('log_entries').insert(DL.map((x,i)=>({text:x.text,author:x.author,color:x.color,created_at:new Date(Date.now()-(DL.length-i)*60000).toISOString()})));
 }
 
 function setupRealtime(){
   sb.channel('rt-os')
-    .on('postgres_changes',{event:'*',schema:'public',table:'decisions'},loadDecisions)
     .on('postgres_changes',{event:'*',schema:'public',table:'log_entries'},loadLog)
     .on('postgres_changes',{event:'*',schema:'public',table:'editable_fields'},loadFields)
     .on('postgres_changes',{event:'*',schema:'public',table:'collab_answers'},loadQs)
-    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_nodes'},()=>{loadCanvasData().then(renderCanvasTab);})
+    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_nodes'},()=>{loadCanvasData().then(()=>{renderCanvasTab();loadDecisions();updateOverviewMetrics();});})
     .on('postgres_changes',{event:'*',schema:'public',table:'canvas_groups'},()=>{loadCanvasData().then(renderCanvasTab);})
     .on('postgres_changes',{event:'*',schema:'public',table:'canvas_links'},()=>{loadCanvasData().then(renderCanvasTab);})
     .on('postgres_changes',{event:'*',schema:'public',table:'canvas_config'},loadCanvasSummary)
-    .on('postgres_changes',{event:'*',schema:'public',table:'activity_log'},()=>{loadCanvasData().then(renderCanvasTab);})
+    .on('postgres_changes',{event:'*',schema:'public',table:'activity_log'},()=>{loadCanvasData().then(renderCanvasTab);loadLog();})
     .subscribe();
 }
 
 async function loadAll(){
-  await Promise.all([loadDecisions(),loadLog(),loadFields(),loadQs(),loadCanvasData()]);
+  await Promise.all([loadLog(),loadFields(),loadQs(),loadCanvasData()]);
+  loadDecisions();
+  updateOverviewMetrics();
   renderCanvasTab();
   loadCanvasSummary();
+}
+
+function updateOverviewMetrics(){
+  const actions=(cvNodes||[]).filter(n=>n.type==='action');
+  const doneActions=actions.filter(n=>n.status==='done').length;
+  const el=document.getElementById('action-count');
+  if(el)el.textContent=`${doneActions}/${actions.length}`;
+  const sub=document.getElementById('action-sub');
+  if(sub)sub.textContent=actions.length?Math.round(doneActions/actions.length*100)+'% complete':'none yet';
+  const questions=(cvNodes||[]).filter(n=>n.type==='question'&&n.status!=='done');
+  const qEl=document.getElementById('question-count');
+  if(qEl)qEl.textContent=questions.length;
 }
 
 let dView='all';
@@ -508,11 +510,12 @@ function setDView(v){
 }
 
 async function loadDecisions(){
-  const{data}=await sb.from('decisions').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:true});
-  if(!data)return;
-  window._lastDecisions=data;
-  document.getElementById('open-count').textContent=data.filter(d=>!d.done).length;
-  renderDecisions(data);
+  const data=(cvNodes||[]).filter(n=>n.type==='decision').sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)||(new Date(a.created_at))-(new Date(b.created_at)));
+  // map to legacy shape for renderDecisions
+  const mapped=data.map(n=>({id:n.id,text:n.label||'',owner:n.description||'',done:n.status==='done',badge:n.status==='done'?'done':n.status==='in_progress'?'soon':'open',priority:n.priority||null,sort_order:n.sort_order||0}));
+  window._lastDecisions=mapped;
+  document.getElementById('open-count').textContent=mapped.filter(d=>!d.done).length;
+  renderDecisions(mapped);
 }
 
 function renderDecisions(data){
@@ -579,7 +582,7 @@ async function dragDrop(e,targetId){
   reordered.splice(tgtIdx,0,moved);
   window._lastDecisions=reordered;
   renderDecisions(reordered);
-  await Promise.all(reordered.map((d,i)=>sb.from('decisions').update({sort_order:i}).eq('id',d.id)));
+  await Promise.all(reordered.map((d,i)=>sb.from('canvas_nodes').update({sort_order:i}).eq('id',d.id)));
   await alog(`${who} reordered decisions`);
 }
 function dragEnd(){
@@ -591,7 +594,7 @@ async function saveDecisionText(id,el){
   const newText=el.innerText.trim();
   const orig=(window._lastDecisions||[]).find(d=>d.id===id);
   if(!orig||newText===orig.text)return;
-  await sb.from('decisions').update({text:newText}).eq('id',id);
+  await sb.from('canvas_nodes').update({label:newText}).eq('id',id);
   await alog(`${who} edited decision: "${newText.substring(0,60)}"`);
 }
 
@@ -599,14 +602,15 @@ async function saveDecisionOwner(id,el){
   const newOwner=el.innerText.trim();
   const orig=(window._lastDecisions||[]).find(d=>d.id===id);
   if(!orig||newOwner===(orig.owner||''))return;
-  await sb.from('decisions').update({owner:newOwner}).eq('id',id);
+  await sb.from('canvas_nodes').update({description:newOwner}).eq('id',id);
   await alog(`${who} updated comment on decision: "${newOwner.substring(0,60)}"`);
 }
 
 async function toggleD(id,cur){
-  await sb.from('decisions').update({done:!cur}).eq('id',id);
-  const{data}=await sb.from('decisions').select('text').eq('id',id).single();
-  await alog(`${who} ${!cur?'marked decided':'reopened'}: "${data.text}"`);
+  const newStatus=cur?'open':'done';
+  await sb.from('canvas_nodes').update({status:newStatus}).eq('id',id);
+  const node=(cvNodes||[]).find(n=>n.id===id);
+  await alog(`${who} ${!cur?'marked decided':'reopened'}: "${(node?.label||'').substring(0,60)}"`);
 }
 
 async function addDecision(){
@@ -614,9 +618,9 @@ async function addDecision(){
   const owner=document.getElementById('new-d-owner').value.trim();
   const priority=document.getElementById('new-d-priority').value;
   if(!text)return;
-  const id='d-'+Date.now();
+  const id='n-'+Date.now();
   const sortOrder=(window._lastDecisions||[]).length;
-  await sb.from('decisions').insert({id,text,owner:owner||'',done:false,badge:'open',priority:priority==='none'?null:priority,sort_order:sortOrder});
+  await sb.from('canvas_nodes').insert({id,label:text,type:'decision',description:owner||'',status:'open',priority:priority==='none'?null:priority,sort_order:sortOrder,author:who,x:0,y:0,w:180,h:54});
   await alog(`${who} added decision: "${text}"`);
   document.getElementById('new-d-text').value='';
   document.getElementById('new-d-owner').value='';
@@ -966,22 +970,27 @@ async function saveAns(qId){
 }
 
 async function loadLog(){
-  const{data}=await sb.from('log_entries').select('*').order('created_at',{ascending:false});
-  if(!data)return;
+  const[le,al]=await Promise.all([
+    sb.from('log_entries').select('*').order('created_at',{ascending:false}),
+    sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(100),
+  ]);
+  const manual=(le.data||[]).map(e=>({id:e.id,text:e.text,author:e.author,color:e.color||'#378ADD',created_at:e.created_at,src:'log',image_data:null}));
+  const canvas=(al.data||[]).map(e=>({id:e.id,text:e.detail||e.action,author:e.author||'canvas',color:gc(e.author)||'#378ADD',created_at:e.created_at,src:'activity',image_data:e.image_data||null}));
+  const merged=[...manual,...canvas].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   const rows=(entries,lim)=>(lim?entries.slice(0,lim):entries).map(e=>`
     <div class="log-item">
-      <div class="log-dot" style="background:${e.color||'#378ADD'};"></div>
-      <div class="log-content"><div class="log-text">${e.text}</div><div class="log-meta">${e.author} · ${fmtDT(e.created_at)}</div></div>
-      <button class="log-del" onclick="delLog('${e.id}')">✕</button>
+      <div class="log-dot" style="background:${e.color};"></div>
+      <div class="log-content"><div class="log-text">${e.text}${e.image_data?`<br><img src="${e.image_data}" style="max-width:200px;border-radius:4px;margin-top:4px;cursor:pointer;" onclick="openCvSnap(this.src)">`:''}${e.src==='activity'?'<span style="font-size:9px;color:var(--tx3);margin-left:6px;">canvas</span>':''}</div><div class="log-meta">${e.author} · ${fmtDT(e.created_at)}</div></div>
+      ${e.src==='log'?`<button class="log-del" onclick="delLog('${e.id}')">✕</button>`:''}
     </div>`).join('');
   const ll=document.getElementById('log-list');
-  if(ll)ll.innerHTML=rows(data)+`<div class="log-form"><textarea id="log-input" placeholder="Add a note, decision, or moment..."></textarea><button onclick="mlog()">Add</button></div>`;
+  if(ll)ll.innerHTML=rows(merged)+`<div class="log-form"><textarea id="log-input" placeholder="Add a note, decision, or moment..."></textarea><button onclick="mlog()">Add</button></div>`;
   const hp=document.getElementById('home-log-preview');
-  if(hp)hp.innerHTML=data.length?rows(data,4):'<div style="font-size:13px;color:var(--tx3);padding:8px 0;">No entries yet.</div>';
+  if(hp)hp.innerHTML=merged.length?rows(merged,4):'<div style="font-size:13px;color:var(--tx3);padding:8px 0;">No entries yet.</div>';
 }
 
 async function alog(text){
-  await sb.from('log_entries').insert({text,author:who,color:gc(who),created_at:new Date().toISOString()});
+  await sb.from('activity_log').insert({action:'manual',detail:text,author:who,created_at:new Date().toISOString()});
 }
 async function mlog(){
   const inp=document.getElementById('log-input');
