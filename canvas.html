@@ -272,6 +272,8 @@ textarea.nei{line-height:1.4;}
             <button class="sb-action-btn" onclick="validateCanvas()">✓  Validate canvas</button>
             <button class="sb-action-btn" onclick="gridLayoutAllGroups()">⬡  Grid-arrange groups</button>
             <button class="sb-action-btn" onclick="autoAssociate()">⬡  Group ungrouped nodes</button>
+            <button class="sb-action-btn" onclick="cleanUp()">⧉  Clean up</button>
+            <button class="sb-action-btn" id="autoconnect-btn" onclick="autoConnect()">⚘  Auto connect</button>
           </div>
           <div style="margin-top:8px;">
             <div class="sb-label">Smart reorganize</div>
@@ -1376,6 +1378,122 @@ Suggest which group each ungrouped node should join, or propose new groups. Resp
     toast(`Auto-associated ${data.assignments.length} nodes`);
   }catch(e){toast('Auto-associate failed: '+e.message);}
 }
+
+function compactGroup(g){
+  const mems=nigByGid(g.id);if(!mems.length)return;
+  const pad=8;mems.sort((a,b)=>(a.y-b.y)||(a.x-b.x));
+  const cols=Math.max(1,Math.ceil(Math.sqrt(mems.length)));
+  const startX=g.x+pad,startY=g.y+GH+pad;
+  mems.forEach((n,i)=>{const col=i%cols,row=Math.floor(i/cols);n.x=startX+col*((n.w||DW)+pad);n.y=startY+row*((n.h||DH)+pad);});
+  sizeGAN(g,mems);
+}
+
+async function removeEmptyGroups(){
+  const empty=groups.filter(g=>nigByGid(g.id).length===0);
+  if(!empty.length)return 0;
+  for(const g of empty){_tw('canvas_groups',g.id);await sb.from('canvas_groups').delete().eq('id',g.id);}
+  groups=groups.filter(g=>nigByGid(g.id).length>0);
+  return empty.length;
+}
+
+async function mergeDuplicateGroups(){
+  const byLabel=new Map();
+  for(const g of groups){const key=(g.label||'').trim().toLowerCase();if(!key)continue;if(!byLabel.has(key))byLabel.set(key,[]);byLabel.get(key).push(g);}
+  let merged=0;
+  for(const[,group]of byLabel){
+    if(group.length<2)continue;
+    group.sort((a,b)=>nigByGid(b.id).length-nigByGid(a.id).length);
+    const keeper=group[0],losers=group.slice(1);
+    for(const loser of losers){
+      const mems=nigByGid(loser.id);
+      for(const n of mems){n.group_id=keeper.id;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({group_id:keeper.id}).eq('id',n.id);}
+      _tw('canvas_groups',loser.id);await sb.from('canvas_groups').delete().eq('id',loser.id);merged++;
+    }
+  }
+  if(merged>0){const ids=new Set();for(const[,group]of byLabel){group.sort((a,b)=>nigByGid(b.id).length-nigByGid(a.id).length);ids.add(group[0].id);}groups=groups.filter(g=>ids.has(g.id)||!byLabel.has((g.label||'').trim().toLowerCase()));}
+  return merged;
+}
+
+async function cleanUp(){
+  if(!nodes.length&&!groups.length){toast('Nothing to clean');return;}
+  toast('Cleaning up...');
+  const pad=10;
+  const mergedCount=await mergeDuplicateGroups();
+  const removed=await removeEmptyGroups();
+  for(const g of groups)compactGroup(g);
+  if(groups.length>0){
+    const sorted=[...groups].sort((a,b)=>(a.y-b.y)||(a.x-b.x));
+    const gCols=Math.max(1,Math.ceil(Math.sqrt(sorted.length)));
+    let cx=0,cy=0,rowH=0;
+    sorted.forEach((g,i)=>{const col=i%gCols;if(col===0&&i>0){cy+=rowH+spreadGapY;cx=0;rowH=0;}const oldX=g.x,oldY=g.y;g.x=cx;g.y=cy;const dx=g.x-oldX,dy=g.y-oldY;nigByGid(g.id).forEach(n=>{n.x+=dx;n.y+=dy;});cx+=g.w+spreadGapX;rowH=Math.max(rowH,g.h);});
+  }
+  const ug=nodes.filter(n=>!n.group_id);
+  if(ug.length){const maxGY=groups.length?Math.max(...groups.map(g=>g.y+g.h))+spreadGapY:0;const cols=Math.max(1,Math.ceil(Math.sqrt(ug.length)));ug.forEach((n,i)=>{n.x=(i%cols)*((n.w||DW)+pad);n.y=maxGY+Math.floor(i/cols)*((n.h||DH)+pad);});}
+  for(const n of nodes){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}
+  for(const g of groups){_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
+  const summary=[mergedCount?`merged ${mergedCount} duplicates`:null,removed?`removed ${removed} empty`:null].filter(Boolean).join(', ');
+  toast('Clean up complete'+(summary?` (${summary})`:''));
+}
+
+async function autoConnect(){
+  if(nodes.length<2){toast('Need at least 2 nodes');return;}
+  const btn=document.getElementById('autoconnect-btn');
+  btn.disabled=true;btn.textContent='⟳  Connecting...';
+  try{
+    const nl=nodes.map(n=>{let info=`- [${n.type}] "${n.label}"`;if(n.description)info+=` (${n.description.substring(0,60)})`;if(n.group_id){const g=groups.find(gr=>gr.id===n.group_id);if(g)info+=` [group: ${g.label}]`;}return info;}).join('\n');
+    const existingLinks=links.map(l=>{const sn=nById(l.source),tn=nById(l.target);return sn&&tn?`- "${sn.label}" --${l.link_type||'related'}--> "${tn.label}"`:null;}).filter(Boolean).join('\n');
+    const linkTypes='supports, blocks, spawned, depends_on, promoted_to, related';
+    const resp=await callClaude([{role:'user',content:`Analyze these nodes and suggest meaningful connections between them. Only suggest connections that don't already exist.
+
+Nodes:
+${nl}
+
+Existing connections:
+${existingLinks||'(none)'}
+
+Available link types: ${linkTypes}
+
+Respond with JSON only:
+{"connections":[{"from":"exact node label","to":"exact node label","type":"link_type","reason":"brief why"}]}
+
+Suggest 3-8 high-value connections. Use exact node labels.`}],null,2000);
+    const json=extractJSON(resp);
+    if(json?.connections?.length){
+      const cpb=document.getElementById('cpb');
+      if(!claudeOn)toggleClaude();
+      addChatMsg('Auto connect',true);
+      let html='<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;margin-bottom:10px;">';
+      html+='<div style="font-size:10px;color:var(--tx2);margin-bottom:6px;">Suggested connections:</div>';
+      json.connections.forEach((c,i)=>{
+        html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:6px 8px;margin-bottom:4px;">
+          <div style="font-size:10px;color:var(--tx);">${esc(c.from)} → ${esc(c.to)}</div>
+          <div style="font-size:9px;color:var(--tx3);margin-bottom:4px;">${esc(c.type)}: ${esc(c.reason)}</div>
+          <button style="font-size:9px;padding:2px 6px;border:none;border-radius:var(--r);background:var(--accent);color:#fff;cursor:pointer;font-family:var(--font);margin-right:3px;" onclick="applyConn(${i})">Do it</button>
+          <button style="font-size:9px;padding:2px 6px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--tx3);cursor:pointer;font-family:var(--font);" onclick="this.parentElement.remove()">Skip</button>
+        </div>`;
+      });
+      html+=`<button style="width:100%;padding:5px;border-radius:var(--r);border:none;background:var(--accent);color:#fff;font-size:10px;cursor:pointer;font-family:var(--font);margin-top:4px;" onclick="applyAllConns()">Do all</button>`;
+      html+='</div>';
+      cpb.innerHTML+=html;cpb.scrollTop=cpb.scrollHeight;
+      window._pendingConns=json.connections;
+      toast(json.connections.length+' connections suggested');
+    } else toast('No connections suggested');
+  }catch(e){toast('Error: '+e.message);}
+  btn.disabled=false;btn.textContent='⚘  Auto connect';
+}
+async function applyConn(idx){
+  const c=window._pendingConns?.[idx];if(!c)return;
+  const src=nodes.find(n=>n.label===c.from),tgt=nodes.find(n=>n.label===c.to);
+  if(!src||!tgt){toast('Node not found');return;}
+  if(links.some(l=>(l.source===src.id&&l.target===tgt.id)||(l.source===tgt.id&&l.target===src.id))){toast('Already connected');return;}
+  const lid='l-'+Date.now()+Math.random().toString(36).slice(2,6);
+  const link={id:lid,source:src.id,target:tgt.id,label:null,link_type:c.type||'related',claude:true,sport:0,tport:0};
+  links.push(link);_tw('canvas_links',lid);await sb.from('canvas_links').insert(link);
+  logActivity('link_create',`${src.label} → ${tgt.label} (${c.type}) [auto]`,src.id);
+  toast('Connected: '+c.from+' → '+c.to);
+}
+async function applyAllConns(){if(!window._pendingConns?.length)return;for(let i=0;i<window._pendingConns.length;i++)await applyConn(i);toast('All connections applied');window._pendingConns=[];}
+
 async function smartReorg(){
   const directive=document.getElementById('reorg-input').value.trim();
   if(!directive){toast('Describe how to reorganize first');return;}
