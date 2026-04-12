@@ -5,7 +5,9 @@
 Two interconnected tools for a boutique horn loudspeaker startup, **100xbtr_sound**, co-founded by Will (design/CNC), Brendan (cabinetry), and Nishant (EE/horn design).
 
 ### `index.html` — Company OS
-A real-time collaborative web app for the three founders. Tabs: Overview, Decisions, Team, First Build, Margins, Roadmap, Log. All edits are attributed with editor name and timestamp; every change auto-generates a log entry. Auth-gated to three specific Gmail addresses.
+A real-time collaborative web app for the three founders. Tabs: Overview, Decisions, Team, First Build, Margins, Roadmap, Log, Canvas. Auth-gated to three specific Gmail addresses.
+
+**Canvas is the single source of truth.** The Decisions tab reads/writes `canvas_nodes` (type='decision'). Overview metrics (open decisions, action progress, open questions) are derived from canvas data. The Log tab merges `log_entries` and `activity_log` into one unified feed. The Canvas tab shows a grouped summary of all canvas data with the AI-generated summary.
 
 ### `canvas.html` — Canvas
 A shared visual thinking space: a Grasshopper-inspired node canvas where Claude lives inside it. You can ask Claude to build maps, analyze what's on the canvas, find gaps, suggest connections, and execute changes in real time while all three founders watch. Nodes, groups, and wires are stored in Supabase and sync live across all clients.
@@ -88,9 +90,9 @@ No npm, no bundler, no framework. Both apps are single HTML files with all CSS a
 ## Database Schema
 
 ### OS tables (from `supabase_setup.sql` + `supabase_update.sql`)
-- `decisions` — decisions list with owner, done status, badge
-- `log_entries` — activity log with author and color
-- `editable_fields` — team bios, build specs, etc.
+- `decisions` — **DEPRECATED** — migrated to canvas_nodes (type='decision'). Table kept as backup.
+- `log_entries` — legacy log entries (still read in merged Log view, new entries go to activity_log)
+- `editable_fields` — team bios, build specs, mission/vision prose
 - `collab_questions` / `collab_answers` — founder Q&A
 
 ### Canvas tables (created manually in Supabase SQL editor during development)
@@ -101,9 +103,21 @@ create table if not exists canvas_nodes (
   id text primary key,
   label text default '',
   type text default 'idea',
+  description text,
   url text default '',
   img_url text default '',
+  thumbnail_url text,
+  favicon_url text,
   author text default '',
+  assignee text,
+  status text,
+  priority text,
+  due_date date,
+  sort_order integer default 0,
+  resolved_at timestamptz,
+  resolved_by text,
+  url_broken boolean,
+  url_checked_at timestamptz,
   x integer default 0,
   y integer default 0,
   w integer default 180,
@@ -127,10 +141,28 @@ create table if not exists canvas_links (
   id text primary key,
   source text references canvas_nodes(id) on delete cascade,
   target text references canvas_nodes(id) on delete cascade,
+  link_type text default 'related',
+  label text,
   claude boolean default false,
   sport integer default 0,
   tport integer default 0,
   created_at timestamptz default now()
+);
+
+create table if not exists activity_log (
+  id uuid primary key default gen_random_uuid(),
+  action text not null,
+  detail text,
+  author text,
+  node_id text,
+  image_data text,
+  created_at timestamptz default now()
+);
+
+create table if not exists canvas_config (
+  key text primary key,
+  value text,
+  updated_at timestamptz default now()
 );
 
 create table if not exists saved_canvases (

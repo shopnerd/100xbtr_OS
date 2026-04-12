@@ -83,9 +83,30 @@ Nodes of type `decision` or `action` can have a status:
 - **in_progress** — actively being worked on
 - **done** — completed
 
+## Priority
+
+Decision nodes can have a `priority` field: `high`, `medium`, or `low`.
+- Priority drives sort order in the Company OS Decisions tab
+- High-priority decisions show a red dot on the canvas node
+- Medium = orange dot, Low = gold dot
+
+## Due Dates
+
+Any node can have a `due_date` (date field). Used for time-sensitive actions and decisions.
+
 ## Assignees
 
 Actions can be assigned to: Will, Brendan, Nishant. Use exact names.
+
+## Canvas ↔ Company OS
+
+The Company OS (index.html) reads directly from canvas_nodes. Changes you make here appear in the OS instantly:
+- **Decisions tab** = `canvas_nodes WHERE type='decision'`, editable inline
+- **Overview metrics** = open decision count, action progress, open question count
+- **Log tab** = merged `activity_log` feed (your actions + manual entries)
+- **Canvas tab** = grouped view of all canvas data with summary
+
+When you create decision nodes, they're immediately visible in the OS Decisions tab. When you mark a decision done, the OS reflects it in real time.
 
 ## Groups
 

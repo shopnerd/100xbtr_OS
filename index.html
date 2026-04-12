@@ -415,13 +415,6 @@ const DCQ=[
   {id:'bq3',question:'What makes this design genuinely special vs what already exists?',category:'build'},
   {id:'bq4',question:'How long to a simulation we can validate before cutting wood?',category:'build'},
 ];
-const DL=[
-  {text:'Company direction agreed: horn loudspeakers, high-end to boutique, part-time to start, build-to-sell in 5–10 years.',author:'Will',color:'#C83C3C'},
-  {text:'Brand name confirmed: 100xbtr. A genuine value statement and a knowing joke about audiophile culture.',author:'Will',color:'#C83C3C'},
-  {text:'North star set: Ojas (Devon Turnbull). Maker-artist → Klipsch collab → $8,498/pair sold out.',author:'Will',color:'#C83C3C'},
-  {text:'100xbtr_sound OS launched. All three founders have access.',author:'Will',color:'#C83C3C'},
-];
-
 async function signInGoogle(){
   const err=document.getElementById('auth-err');
   err.style.display='none';
@@ -456,13 +449,11 @@ sb.auth.onAuthStateChange((event,session)=>{
 })();
 
 async function initDB(){
-  const[f,q,l]=await Promise.all([
+  const[f,q]=await Promise.all([
     sb.from('editable_fields').select('id').limit(1),
     sb.from('collab_questions').select('id').limit(1),
-    sb.from('log_entries').select('id').limit(1),
   ]);
   if(!q.data?.length)await sb.from('collab_questions').insert(DCQ.map(x=>({id:x.id,question:x.question,category:x.category})));
-  if(!l.data?.length)await sb.from('log_entries').insert(DL.map((x,i)=>({text:x.text,author:x.author,color:x.color,created_at:new Date(Date.now()-(DL.length-i)*60000).toISOString()})));
 }
 
 function setupRealtime(){
