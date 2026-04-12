@@ -1264,7 +1264,7 @@ async function fetchTitle(id,url){
     const d=await r.json();
     const update={};
     if(d.title)update.label=d.title;
-    if(d.image&&!nById(id)?.thumbnail_url){update.thumbnail_url=d.image;update.w=280;update.h=210;}
+    if(d.image&&!nById(id)?.thumbnail_url){update.thumbnail_url=d.image;}
     if(d.favicon)update.favicon_url=d.favicon;
     if(d.description){update.description=d.description;}
     if(Object.keys(update).length){_tw('canvas_nodes',id);await sb.from('canvas_nodes').update(update).eq('id',id);const n=nById(id);if(n)Object.assign(n,update);}
@@ -1275,8 +1275,8 @@ async function addImageFile(input){
   const reader=new FileReader();
   reader.onload=async(e)=>{
     const id='n-'+Date.now();const x=(Math.random()-0.5)*200,y=(Math.random()-0.5)*150;_tw('canvas_nodes',id);
-    await sb.from('canvas_nodes').insert({id,label:'image',type:'image',url:'',img_url:e.target.result,author:who,x:Math.round(x),y:Math.round(y),w:DW,h:DH,group_id:null});
-    nodes.push({id,label:'image',type:'image',url:'',img_url:e.target.result,author:who,x,y,w:DW,h:DH,group_id:null});toast('Image added');
+    await sb.from('canvas_nodes').insert({id,label:'image',type:'image',url:'',img_url:e.target.result,author:who,x:Math.round(x),y:Math.round(y),w:280,h:210,group_id:null});
+    nodes.push({id,label:'image',type:'image',url:'',img_url:e.target.result,author:who,x,y,w:280,h:210,group_id:null});toast('Image added');
   };reader.readAsDataURL(file);try{input.value='';}catch(e){}
 }
 async function addLink(srcId,tgtId,linkType){
