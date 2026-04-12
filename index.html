@@ -14,7 +14,7 @@ html{overflow-y:scroll;scrollbar-width:none;}
 #cscroll-resize:hover{opacity:0.7;}
 #cscroll-grip{position:absolute;right:100%;top:50%;transform:translateY(-50%);width:12px;height:32px;background:rgba(0,0,0,0.18);border-radius:3px 0 0 3px;border-right:2px solid rgba(0,0,0,0.32);transition:background 0.15s;background-image:linear-gradient(to right,transparent calc(50% - 1px),rgba(0,0,0,0.32) calc(50% - 1px),rgba(0,0,0,0.32) calc(50% + 1px),transparent calc(50% + 1px));}
 #cscroll-resize:hover #cscroll-grip,#cscroll-resize:active #cscroll-grip{background-color:rgba(0,0,0,0.38);}
-#cscroll-thumb{position:absolute;left:6px;right:0;background:#929290;border-radius:6px;cursor:grab;min-height:28px;transition:top 0.18s cubic-bezier(0.22,0.61,0.36,1),background 0.15s;}
+#cscroll-thumb{position:absolute;left:6px;right:0;background:#929290;border-radius:6px;cursor:grab;min-height:28px;transition:background 0.15s;}
 #cscroll-thumb:hover{background:#6a6a66;}
 #cscroll-thumb:active{cursor:grabbing;background:#4a4a48;}
 :root{
@@ -1042,21 +1042,47 @@ function recalc(){
 
 recalc();
 
-// Grid zoom on scroll wheel — only when cursor is over the grid background (not content)
+// Smooth momentum scroller — replaces native scroll for a weightless feel
 let gridZ=1;
+let _scrollTarget=0,_scrollCurrent=0,_scrolling=false;
+function initSmoothScroll(){
+  _scrollTarget=window.scrollY;_scrollCurrent=window.scrollY;
+  // Sync on native scroll (drag, click, programmatic)
+  window.addEventListener('scroll',()=>{if(!_scrolling){_scrollTarget=window.scrollY;_scrollCurrent=window.scrollY;}});
+}
+function smoothScrollTick(){
+  if(Math.abs(_scrollTarget-_scrollCurrent)<0.5){_scrollCurrent=_scrollTarget;_scrolling=false;}
+  else{
+    // Ease toward target — heavier damping near edges for soft stops
+    const maxS=document.documentElement.scrollHeight-window.innerHeight;
+    const edgeDist=Math.min(_scrollTarget,maxS-_scrollTarget);
+    const edgeDamp=edgeDist<80?0.06+0.06*(edgeDist/80):0.12;
+    _scrollCurrent+=(_scrollTarget-_scrollCurrent)*edgeDamp;
+    window.scrollTo(0,_scrollCurrent);
+    _scrolling=true;
+    requestAnimationFrame(smoothScrollTick);
+  }
+}
+function smoothScrollBy(dy){
+  const maxS=document.documentElement.scrollHeight-window.innerHeight;
+  _scrollTarget=Math.max(0,Math.min(_scrollTarget+dy,maxS));
+  if(!_scrolling){_scrolling=true;_scrollCurrent=window.scrollY;requestAnimationFrame(smoothScrollTick);}
+}
 document.addEventListener('wheel',e=>{
-  // Over scrollbar or content: let native scroll handle it (consistent speed everywhere)
-  if(e.target.closest('#cscroll'))return;
-  // Only zoom grid when cursor is directly over the body/app background, not over cards/nav/content
+  if(e.target.closest('#cscroll')){smoothScrollBy(e.deltaY*0.5);e.preventDefault();return;}
   const over=e.target;
   const isGrid=over===document.body||over===document.getElementById('app')||(over.classList&&over.classList.contains('view'));
-  if(!isGrid)return;
-  gridZ*=e.deltaY<0?1.08:1/1.08;
-  gridZ=Math.min(Math.max(gridZ,0.2),8);
-  const sz=Math.round(32*gridZ);
-  document.body.style.backgroundSize=sz+'px '+sz+'px';
+  if(isGrid){
+    gridZ*=e.deltaY<0?1.08:1/1.08;
+    gridZ=Math.min(Math.max(gridZ,0.2),8);
+    document.body.style.backgroundSize=Math.round(32*gridZ)+'px '+Math.round(32*gridZ)+'px';
+    e.preventDefault();return;
+  }
+  // Smooth scroll over content instead of native jumps
+  smoothScrollBy(e.deltaY*0.5);
   e.preventDefault();
 },{passive:false});
+initSmoothScroll();
 // CUSTOM SCROLLBAR — drag thumb to scroll, drag left edge to resize width
 let cScrollW=Math.max(parseInt(localStorage.getItem('cScrollW'))||20,8);
 function initCustomScroll(){
@@ -1084,7 +1110,6 @@ function initCustomScroll(){
   let tDrag=false,tStartY=0,tStartSY=0;
   thumb.addEventListener('mousedown',e=>{
     tDrag=true;tStartY=e.clientY;tStartSY=window.scrollY;
-    thumb.style.transition='background 0.15s'; // kill position transition during drag
     document.body.style.userSelect='none';e.preventDefault();
   });
   // track click → jump to position
@@ -1109,7 +1134,7 @@ function initCustomScroll(){
     if(rDrag)applyW(window.innerWidth-e.clientX);
   });
   document.addEventListener('mouseup',()=>{
-    if(tDrag){tDrag=false;document.body.style.userSelect='';thumb.style.transition='';} // restore CSS transition
+    if(tDrag){tDrag=false;document.body.style.userSelect='';}
     if(rDrag){rDrag=false;document.body.style.cursor='';document.body.style.userSelect='';localStorage.setItem('cScrollW',cScrollW);}
   });
 }
