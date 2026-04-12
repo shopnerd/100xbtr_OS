@@ -26,7 +26,16 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { query, count = 6, source = 'auto' } = JSON.parse(event.body || '{}');
+    const { query, count = 6, source = 'auto', debug = false } = JSON.parse(event.body || '{}');
+
+    if (debug) {
+      const key = process.env.GOOGLE_CSE_API_KEY || '';
+      return { statusCode: 200, headers, body: JSON.stringify({
+        GOOGLE_CSE_API_KEY_set: !!key, GOOGLE_CSE_API_KEY_len: key.length, GOOGLE_CSE_API_KEY_prefix: key.substring(0,8),
+        GOOGLE_CSE_ID: process.env.GOOGLE_CSE_ID || '(not set)',
+        PEXELS_API_KEY_set: !!process.env.PEXELS_API_KEY,
+      }) };
+    }
 
     if (!query) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'query required' }) };
