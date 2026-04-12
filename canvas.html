@@ -76,6 +76,14 @@ body{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:#d0d0cc;
 .sb-slider-val{font-size:9px;color:var(--tx3);margin-top:2px;}
 .sb-action-btn{width:100%;padding:4px 8px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx2);font-size:9px;cursor:pointer;font-family:inherit;text-align:left;}
 .sb-action-btn:hover{background:var(--chrome2);color:var(--tx);}
+.pal-dot{width:12px;height:12px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color 0.2s,transform 0.1s;flex-shrink:0;}
+.pal-dot:hover{transform:scale(1.2);}
+.pal-dot.active{border-color:#e8e8e4;}
+.wl-row{display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;user-select:none;}
+.wl-row:hover{background:var(--chrome2);}
+.wl-row.dimmed{opacity:0.35;}
+.wl-swatch{width:36px;height:0;flex-shrink:0;}
+.wl-label{font-size:10px;color:var(--tx);}
 #reorg-btn{background:#C96B3A;color:#fff;border-color:#C96B3A;position:relative;overflow:hidden;}
 #reorg-btn:hover:not(:disabled){background:#a85830;border-color:#a85830;}
 #reorg-btn:disabled{cursor:wait;opacity:0.85;}
@@ -275,6 +283,23 @@ textarea.nei{line-height:1.4;}
             <button class="sb-action-btn" onclick="cleanUp()">⧉  Clean up</button>
             <button class="sb-action-btn" id="autoconnect-btn" onclick="autoConnect()">⚘  Auto connect</button>
           </div>
+          <!-- Color palettes -->
+          <div style="margin-top:8px;">
+            <div class="sb-label">Color palettes</div>
+            <div id="palette-selector" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;"></div>
+          </div>
+          <!-- Wire types legend -->
+          <div style="margin-top:8px;">
+            <div class="sb-label" style="display:flex;align-items:center;justify-content:space-between;">
+              <span>Wire types</span>
+              <button style="font-size:8px;padding:1px 5px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--tx3);cursor:pointer;font-family:var(--font);text-transform:none;letter-spacing:0;" onclick="toggleAllWires()" id="wl-toggle-btn">All off</button>
+            </div>
+            <div id="wl-body"></div>
+            <div style="display:flex;gap:3px;margin-top:4px;">
+              <input id="wl-new-name" style="flex:1;font-size:9px;padding:2px 4px;border:1px solid var(--border);border-radius:var(--r);background:var(--chrome2);color:var(--tx);font-family:var(--font);outline:none;" placeholder="New type name..." onkeydown="if(event.key==='Enter')addWireType()">
+              <button style="font-size:9px;padding:2px 6px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--tx2);cursor:pointer;font-family:var(--font);" onclick="addWireType()">+</button>
+            </div>
+          </div>
           <div style="margin-top:8px;">
             <div class="sb-label">Smart reorganize</div>
             <textarea id="reorg-input" placeholder="e.g. by phase, by person, by topic, by priority..." style="width:100%;height:46px;font-size:9px;font-family:inherit;background:var(--chrome2);color:var(--tx);border:1px solid var(--border);border-radius:var(--r);padding:4px 6px;resize:none;box-sizing:border-box;margin-top:3px;"></textarea>
@@ -350,6 +375,7 @@ textarea.nei{line-height:1.4;}
           <div style="display:flex;flex-direction:column;gap:3px;">
             <button class="sb-action-btn" onclick="undoMarkup()">↩  Undo stroke</button>
             <button class="sb-action-btn" onclick="clearMarkup()">✕  Clear markup</button>
+            <button class="sb-action-btn" onclick="saveMarkupSnapshot()">📷  Save snapshot</button>
           </div>
           <div style="font-size:9px;color:var(--tx3);line-height:1.6;">Markup is a freehand layer on top of the canvas. Lock a layer to prevent edits. Markup is stored locally.</div>
         </div>
@@ -411,9 +437,50 @@ const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 const ALLOWED=['zolaray25@gmail.com','fraektaard@gmail.com','nishbphoto@gmail.com'];
 const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-auth',persistSession:true,detectSessionInUrl:true}});
 
-const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#C96B3A',anchor:'#666660'};
+// ── PALETTES ──────────────────────────────────────────────────
+const PALETTES={
+  signal_bright:{name:'Signal Bright',
+    nodes:{idea:'#378ADD',decision:'#D85A30',question:'#E8820C',material:'#BA7517',reference:'#1D9E75',image:'#7F77DD',anchor:'#666660',accent:'#C96B3A'},
+    wires:{supports:'#0891b2',blocks:'#e11d48',spawned:'#65a30d',depends_on:'#d97706',promoted_to:'#7c3aed',related:'#9ca3af'}},
+  graphite:{name:'Graphite',
+    nodes:{idea:'#4a4a4a',decision:'#2d2d2d',question:'#6b6b6b',material:'#383838',reference:'#858585',image:'#707070',anchor:'#a0a0a0',accent:'#c0c0c0'},
+    wires:{supports:'#5a5a5a',blocks:'#3d3d3d',spawned:'#707070',depends_on:'#484848',promoted_to:'#959595',related:'#b0b0b0'}},
+  warm_earth:{name:'Warm Earth',
+    nodes:{idea:'#c2703e',decision:'#a65d29',question:'#d4553b',material:'#8b7355',reference:'#6b4c3b',image:'#a67c5a',anchor:'#b8a089',accent:'#d4a853'},
+    wires:{supports:'#a65d29',blocks:'#d4553b',spawned:'#8b7355',depends_on:'#c2703e',promoted_to:'#6b4c3b',related:'#b8a089'}},
+  soft_pastel:{name:'Soft Pastel',
+    nodes:{idea:'#7ba7cc',decision:'#e8b86d',question:'#d4817a',material:'#b8c47a',reference:'#a78bc4',image:'#c4a0d0',anchor:'#a3b0b8',accent:'#7bc4a5'},
+    wires:{supports:'#7ba7cc',blocks:'#d4817a',spawned:'#7bc4a5',depends_on:'#e8b86d',promoted_to:'#a78bc4',related:'#a3b0b8'}},
+  ocean:{name:'Ocean',
+    nodes:{idea:'#1a6b8a',decision:'#2d8a6b',question:'#8a3d5c',material:'#3d7a6b',reference:'#4a5d8a',image:'#5a7a8a',anchor:'#6b8a95',accent:'#2d6b7a'},
+    wires:{supports:'#2d8a6b',blocks:'#8a3d5c',spawned:'#3d7a6b',depends_on:'#1a6b8a',promoted_to:'#4a5d8a',related:'#6b8a95'}},
+  desert:{name:'Desert',
+    nodes:{idea:'#c4843e',decision:'#8a6b2d',question:'#b85c4a',material:'#6b8a4a',reference:'#7a5c3d',image:'#a68a5a',anchor:'#b8a890',accent:'#d4b06b'},
+    wires:{supports:'#8a6b2d',blocks:'#b85c4a',spawned:'#6b8a4a',depends_on:'#c4843e',promoted_to:'#7a5c3d',related:'#b8a890'}}
+};
+let activePalette=localStorage.getItem('sound_palette')||'signal_bright';
+function getNodeColor(type){return PALETTES[activePalette]?.nodes[type]||PALETTES.signal_bright.nodes[type]||'#6b7280';}
+function getWireColor(lt){return PALETTES[activePalette]?.wires[lt]||PALETTES.signal_bright.wires[lt]||'#9ca3af';}
+function setPalette(key){activePalette=key;localStorage.setItem('sound_palette',key);initWireLegend();document.querySelectorAll('.pal-dot').forEach(d=>d.classList.toggle('active',d.dataset.pal===key));}
+function initPaletteSelector(){const c=document.getElementById('palette-selector');if(!c)return;c.innerHTML='';Object.keys(PALETTES).forEach(key=>{const p=PALETTES[key];const dot=document.createElement('div');dot.className='pal-dot'+(key===activePalette?' active':'');dot.style.background=p.nodes.accent||p.nodes.idea;dot.dataset.pal=key;dot.title=p.name;dot.onclick=()=>setPalette(key);c.appendChild(dot);});}
+
+// TC is now a dynamic getter backed by the active palette
+const TC=new Proxy({},{get:(_,prop)=>getNodeColor(prop)});
+const TYPES=['idea','decision','question','material','reference','image','anchor'];
+
+// ── WIRE TYPES ────────────────────────────────────────────────
+let LINK_TYPES=['supports','blocks','spawned','depends_on','promoted_to','related'];
+const WIRE_TYPES={
+  supports:{dash:[],endMarker:null,label:'Supports'},
+  blocks:{dash:[],endMarker:'crossbar',label:'Blocks'},
+  spawned:{dash:[],endMarker:'arrow',label:'Spawned'},
+  depends_on:{dash:[8,4],endMarker:null,label:'Depends On'},
+  promoted_to:{dash:[8,4],endMarker:null,label:'Promoted To'},
+  related:{dash:[],endMarker:null,label:'Related'}
+};
+let wireFilterSet=new Set(LINK_TYPES);
+
 const GC=['#378ADD','#1D9E75','#BA7517','#D85A30','#7F77DD','#C96B3A','#666660','#2D7D46','#8E44AD','#C0392B'];
-const TYPES=Object.keys(TC);
 let DW=180,DH=54;
 const PR=5.5;
 
@@ -465,7 +532,7 @@ async function startApp(u){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('ued').textContent=u.email;
-  initCanvas();await loadAll();loadCache();loadSoundBrain();setupRT();await loadCanvasList();initMarkup();initSidebarResize();checkHashHighlight();
+  initCanvas();await loadAll();loadCache();loadSoundBrain();setupRT();await loadCanvasList();initMarkup();initSidebarResize();checkHashHighlight();loadCustomWireColors();initPaletteSelector();initWireLegend();
   window.addEventListener('hashchange',checkHashHighlight);
 }
 
@@ -612,12 +679,13 @@ function drawLinks(){
   portLeft=new Set();portRight=new Set();
   const searchActive=!!(searchHighlight&&searchHighlight.linkIds&&searchHighlight.linkIds.size>0);
   links.forEach(l=>{
+    const lt=l.link_type||'related';
+    // Wire filter: skip hidden types
+    if(!wireFilterSet.has(lt))return;
     const s=nById(l.source?.id||l.source),t=nById(l.target?.id||l.target);
     if(!s||!t)return;
-    // Search dim: links not in the highlight set draw at 10% opacity
     const isSearchLink=searchActive?searchHighlight.linkIds.has(l.id):true;
     if(searchActive&&!isSearchLink)ctx.globalAlpha=0.1;
-    // use nearest ports: compare horizontal centers to avoid long reverse routes
     const sCX=s.x+(s.w||DW)/2,tCX=t.x+(t.w||DW)/2;
     let sp,tp;
     if(sCX<=tCX){sp=pPos(s,'out');tp=pPos(t,'in');portRight.add(s.id);portLeft.add(t.id);}
@@ -625,24 +693,39 @@ function drawLinks(){
     const cpx=sp.x+(tp.x-sp.x)*0.5;
     const cl=l.claude;
     const isSel=selected.nodes.includes(s.id)||selected.nodes.includes(t.id)||(s.group_id&&selected.groups.includes(s.group_id))||(t.group_id&&selected.groups.includes(t.group_id));
-    const wColor=isSel?'rgba(201,107,58,0.95)':cl?'rgba(201,107,58,0.5)':'rgba(140,140,132,0.82)';
+    // Use palette wire color, override for selection/claude
+    const typeColor=getWireColor(lt);
+    const wColor=isSel?'rgba(201,107,58,0.95)':cl?'rgba(201,107,58,0.5)':typeColor;
     const lw=(isSel?1.6:cl?1.2:1.0)/cam.z;
     ctx.strokeStyle=wColor;ctx.lineWidth=lw;
+    // Dash pattern from WIRE_TYPES, override for selection
+    const wt=WIRE_TYPES[lt];
     if(isSel)ctx.setLineDash([6/cam.z,4/cam.z]);
+    else if(wt&&wt.dash.length>0)ctx.setLineDash(wt.dash.map(d=>d/cam.z));
     ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.bezierCurveTo(cpx,sp.y,cpx,tp.y,tp.x,tp.y);ctx.stroke();
-    if(isSel)ctx.setLineDash([]);
+    ctx.setLineDash([]);
     // link type label at midpoint
-    if(l.link_type&&l.link_type!=='related'){
+    if(lt&&lt!=='related'){
       const mx=(sp.x+tp.x)/2,my=(sp.y+tp.y)/2;
       ctx.font=`${8/cam.z}px 'SF Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='bottom';
-      ctx.fillStyle='rgba(140,140,132,0.7)';ctx.fillText(l.link_type,mx,my-3/cam.z);
+      ctx.fillStyle=isSel?'rgba(201,107,58,0.7)':typeColor+'b3';ctx.fillText(lt,mx,my-3/cam.z);
     }
-    // arrow
+    // End marker
     const ang=Math.atan2(tp.y-sp.y,tp.x-sp.x),as=7/cam.z;
-    ctx.beginPath();ctx.moveTo(tp.x,tp.y);
-    ctx.lineTo(tp.x-as*Math.cos(ang-0.38),tp.y-as*Math.sin(ang-0.38));
-    ctx.lineTo(tp.x-as*Math.cos(ang+0.38),tp.y-as*Math.sin(ang+0.38));
-    ctx.closePath();ctx.fillStyle=isSel?'rgba(201,107,58,1.0)':cl?'rgba(201,107,58,0.6)':'rgba(140,140,132,0.9)';ctx.fill();
+    const markerType=wt?.endMarker||'arrow';
+    if(markerType==='crossbar'){
+      // Crossbar for 'blocks'
+      const cx=tp.x,cy=tp.y;
+      const perpX=-Math.sin(ang)*as*0.6,perpY=Math.cos(ang)*as*0.6;
+      ctx.beginPath();ctx.moveTo(cx+perpX,cy+perpY);ctx.lineTo(cx-perpX,cy-perpY);
+      ctx.strokeStyle=isSel?'rgba(201,107,58,1.0)':cl?'rgba(201,107,58,0.6)':typeColor;ctx.lineWidth=(isSel?2:1.4)/cam.z;ctx.stroke();
+    } else {
+      // Arrow (default)
+      ctx.beginPath();ctx.moveTo(tp.x,tp.y);
+      ctx.lineTo(tp.x-as*Math.cos(ang-0.38),tp.y-as*Math.sin(ang-0.38));
+      ctx.lineTo(tp.x-as*Math.cos(ang+0.38),tp.y-as*Math.sin(ang+0.38));
+      ctx.closePath();ctx.fillStyle=isSel?'rgba(201,107,58,1.0)':cl?'rgba(201,107,58,0.6)':typeColor;ctx.fill();
+    }
     if(searchActive&&!isSearchLink)ctx.globalAlpha=1;
   });
 }
@@ -2564,12 +2647,152 @@ function toggleLayerLock(layer){
   const btn=document.getElementById('lock-'+layer);
   btn.textContent=layerLocked[layer]?'🔒':'🔓';
   if(layer==='canvas'){
-    // lock canvas: prevent all canvas mouse events
     canvas.style.pointerEvents=layerLocked.canvas?'none':'auto';
     toast(layerLocked.canvas?'Canvas locked':'Canvas unlocked');
   } else {
     toast(layerLocked.markup?'Markup locked':'Markup unlocked');
   }
+}
+
+// ── WIRE LEGEND MANAGEMENT ─────────────────────────────────────
+function initWireLegend(){
+  const body=document.getElementById('wl-body');
+  if(!body)return;
+  body.innerHTML='';
+  LINK_TYPES.forEach(lt=>{
+    const wt=WIRE_TYPES[lt];
+    const wc=getWireColor(lt);
+    const row=document.createElement('div');
+    row.className='wl-row';
+    row.dataset.type=lt;
+    const isDashed=wt.dash.length>0;
+    const dashStyle=isDashed?`border-top:2px dashed ${wc};`:`border-top:2px solid ${wc};`;
+    const delBtn=lt==='related'?'':`<button style="width:14px;height:14px;font-size:9px;border:none;background:none;color:var(--tx3);cursor:pointer;padding:0;flex-shrink:0;line-height:1;" title="Remove type" onclick="event.stopPropagation();removeWireType('${lt}')">&times;</button>`;
+    row.innerHTML=`<button style="width:16px;height:14px;font-size:7px;border:1px solid var(--border);border-radius:2px;background:${isDashed?'var(--bg3)':'transparent'};color:var(--tx2);cursor:pointer;padding:0;flex-shrink:0;font-family:var(--font);" title="Toggle solid/dashed" onclick="event.stopPropagation();toggleWireDash('${lt}')">${isDashed?'- -':'—'}</button><div class="wl-swatch" style="${dashStyle}"></div><span class="wl-label" style="flex:1;">${wt.label}</span>${delBtn}`;
+    row.onclick=(e)=>{if(e.target.tagName!=='BUTTON')toggleWireFilter(lt);};
+    body.appendChild(row);
+  });
+  updateToggleBtnLabel();
+}
+
+function addWireType(){
+  const input=document.getElementById('wl-new-name');
+  const name=input.value.trim();
+  if(!name)return;
+  const key=name.toLowerCase().replace(/[^a-z0-9]+/g,'_');
+  if(WIRE_TYPES[key]){toast('Type already exists');return;}
+  const usedColors=new Set(LINK_TYPES.map(t=>getWireColor(t)));
+  const colorPool=['#06b6d4','#f43f5e','#84cc16','#a855f7','#f59e0b','#6366f1','#ec4899','#14b8a6','#e11d48','#0ea5e9'];
+  const color=colorPool.find(c=>!usedColors.has(c))||'#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+  WIRE_TYPES[key]={dash:[],endMarker:null,label:name};
+  Object.values(PALETTES).forEach(p=>{p.wires[key]=color;p.nodes[key]=color;});
+  LINK_TYPES.push(key);
+  wireFilterSet.add(key);
+  input.value='';
+  saveWireCustomizations();
+  initWireLegend();
+  toast('Added: '+name);
+}
+
+function removeWireType(key){
+  if(!confirm('Remove wire type "'+(WIRE_TYPES[key]?.label||key)+'"? Existing wires of this type will become "related".'))return;
+  links.forEach(l=>{if(l.link_type===key)l.link_type='related';});
+  sb.from('canvas_links').update({link_type:'related'}).eq('link_type',key);
+  delete WIRE_TYPES[key];
+  LINK_TYPES=LINK_TYPES.filter(t=>t!==key);
+  wireFilterSet.delete(key);
+  saveWireCustomizations();
+  initWireLegend();
+  toast('Removed');
+}
+
+function toggleWireDash(lt){
+  const wt=WIRE_TYPES[lt];
+  wt.dash=wt.dash.length>0?[]:[8,4];
+  saveWireCustomizations();
+  initWireLegend();
+}
+
+function toggleWireFilter(lt){
+  if(wireFilterSet.has(lt))wireFilterSet.delete(lt);
+  else wireFilterSet.add(lt);
+  updateWireLegendUI();
+  updateToggleBtnLabel();
+}
+
+function toggleAllWires(){
+  if(wireFilterSet.size===LINK_TYPES.length)wireFilterSet.clear();
+  else LINK_TYPES.forEach(lt=>wireFilterSet.add(lt));
+  updateWireLegendUI();
+  updateToggleBtnLabel();
+}
+
+function updateToggleBtnLabel(){
+  const btn=document.getElementById('wl-toggle-btn');
+  if(btn)btn.textContent=wireFilterSet.size===LINK_TYPES.length?'All off':'All on';
+}
+
+function updateWireLegendUI(){
+  document.querySelectorAll('.wl-row').forEach(row=>{
+    row.classList.toggle('dimmed',!wireFilterSet.has(row.dataset.type));
+  });
+}
+
+function saveWireCustomizations(){
+  const custom={};
+  const defaultTypes=['supports','blocks','spawned','depends_on','promoted_to','related'];
+  LINK_TYPES.forEach(t=>{
+    const wt=WIRE_TYPES[t];
+    const colors={};
+    if(!defaultTypes.includes(t)){
+      Object.keys(PALETTES).forEach(pk=>{colors[pk]=PALETTES[pk].wires[t];});
+    }
+    custom[t]={dash:wt.dash,endMarker:wt.endMarker,label:wt.label,colors};
+  });
+  localStorage.setItem('sound-wire-custom',JSON.stringify(custom));
+}
+
+function loadCustomWireColors(){
+  try{
+    const saved=localStorage.getItem('sound-wire-custom');
+    if(saved){
+      const custom=JSON.parse(saved);
+      Object.keys(custom).forEach(lt=>{
+        if(WIRE_TYPES[lt]){
+          WIRE_TYPES[lt].dash=custom[lt].dash||[];
+          WIRE_TYPES[lt].endMarker=custom[lt].endMarker||null;
+          WIRE_TYPES[lt].label=custom[lt].label||lt;
+        } else {
+          WIRE_TYPES[lt]={dash:custom[lt].dash||[],endMarker:custom[lt].endMarker||null,label:custom[lt].label||lt};
+          if(!LINK_TYPES.includes(lt))LINK_TYPES.push(lt);
+          const savedColors=custom[lt].colors||{};
+          Object.keys(PALETTES).forEach(pk=>{
+            const c=savedColors[pk]||'#888888';
+            PALETTES[pk].wires[lt]=c;
+            PALETTES[pk].nodes[lt]=c;
+          });
+        }
+      });
+      LINK_TYPES=LINK_TYPES.filter(lt=>WIRE_TYPES[lt]);
+      wireFilterSet=new Set(LINK_TYPES);
+    }
+  }catch(e){}
+}
+
+// ── SNAPSHOT ───────────────────────────────────────────────────
+async function saveMarkupSnapshot(){
+  if(!canvas){toast('Canvas not ready');return;}
+  try{
+    const W=canvas.width,H=canvas.height;
+    const composite=document.createElement('canvas');
+    composite.width=W;composite.height=H;
+    const cctx=composite.getContext('2d');
+    cctx.drawImage(canvas,0,0);
+    if(mkCanvas&&markupVisible)cctx.drawImage(mkCanvas,0,0);
+    const dataUrl=composite.toDataURL('image/jpeg',0.7);
+    await sb.from('activity_log').insert({action:'markup_snapshot',detail:'Saved a markup snapshot',author:who||null,image_data:dataUrl});
+    toast('Snapshot saved');
+  }catch(e){toast('Snapshot failed: '+e.message);}
 }
 </script>
 </body>

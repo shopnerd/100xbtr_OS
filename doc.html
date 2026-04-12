@@ -67,6 +67,11 @@ h2{font-size:14px;font-weight:600;color:var(--tx);margin:32px 0 16px;padding-bot
 .activity-item{font-size:10px;color:var(--tx2);padding:6px 0;border-bottom:1px solid var(--border);}
 .activity-item .time{color:var(--tx3);margin-right:8px;}
 .activity-item .author{color:var(--accent);}
+.snapshot-thumb{max-width:180px;border-radius:4px;margin-top:4px;cursor:pointer;border:1px solid var(--border);transition:opacity 0.2s;}
+.snapshot-thumb:hover{opacity:0.85;}
+.snapshot-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;justify-content:center;align-items:center;z-index:999;cursor:pointer;}
+.snapshot-overlay.open{display:flex;}
+.snapshot-overlay img{max-width:92vw;max-height:92vh;border-radius:6px;}
 /* Empty */
 .empty{font-size:11px;color:var(--tx3);font-style:italic;padding:12px 0;}
 /* Loading */
@@ -82,6 +87,7 @@ h2{font-size:14px;font-weight:600;color:var(--tx);margin:32px 0 16px;padding-bot
   </header>
   <div id="content"><div class="loading">Loading...</div></div>
 </div>
+<div class="snapshot-overlay" id="snap-overlay" onclick="this.classList.remove('open')"><img id="snap-full" src=""></div>
 <script>
 const SURL='https://uzhcjxolnfzcezbntzrz.supabase.co';
 const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6aGNqeG9sbmZ6Y2V6Ym50enJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNzUzMDksImV4cCI6MjA5MDY1MTMwOX0.M92v-r1_hYvIj0FLNiXokWn-UFbH_HYK5UCNGuwhQNc';
@@ -92,6 +98,7 @@ let nodes=[],groups=[],links=[],activity=[];
 const TC={idea:'#378ADD',reference:'#1D9E75',material:'#BA7517',decision:'#D85A30',image:'#7F77DD',question:'#E8820C',anchor:'#666660',action:'#C96B3A'};
 
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function openSnapshot(src){document.getElementById('snap-full').src=src;document.getElementById('snap-overlay').classList.add('open');}
 
 function renderSummaryMarkdown(md){
   let html=esc(md);
@@ -313,6 +320,7 @@ function renderPage(){
       if(a.author)html+=`<span class="author">${esc(a.author)}</span> `;
       html+=`${esc(a.action)}`;
       if(a.detail)html+=` — ${esc(a.detail)}`;
+      if(a.image_data)html+=`<br><img class="snapshot-thumb" src="${a.image_data}" onclick="openSnapshot(this.src)" alt="Canvas snapshot">`;
       html+='</div>';
     });
   }

@@ -64,3 +64,8 @@ CREATE POLICY "anon read canvas_links" ON canvas_links
   FOR SELECT TO anon USING (true);
 CREATE POLICY "anon read activity_log" ON activity_log
   FOR SELECT TO anon USING (true);
+
+-- ═══════════════════════════════════════════════════════════════
+-- 8. Snapshot support — image_data column on activity_log
+-- ═══════════════════════════════════════════════════════════════
+ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS image_data text;
