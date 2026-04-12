@@ -1068,9 +1068,10 @@ function initCustomScroll(){
     track.style.width=cScrollW+'px';
   }
   applyW(cScrollW);
+  const THUMB_H=192; // ~2 inches at 96dpi
   function updateThumb(){
     const dh=document.documentElement.scrollHeight,vh=window.innerHeight;
-    const th=cScrollW; // fixed square thumb — same size on every page
+    const th=THUMB_H;
     thumb.style.display='block';
     thumb.style.height=th+'px';
     const tt=dh<=vh?0:(window.scrollY/(dh-vh))*(vh-th);
@@ -1100,7 +1101,7 @@ function initCustomScroll(){
   document.addEventListener('mousemove',e=>{
     if(tDrag){
       const dh=document.documentElement.scrollHeight,vh=window.innerHeight;
-      const th=cScrollW; // match actual rendered thumb height (fixed square)
+      const th=THUMB_H;
       const dy=e.clientY-tStartY;
       window.scrollTo({top:tStartSY+dy*((dh-vh)/(vh-th))});
     }
