@@ -825,7 +825,18 @@ function drawNodes(){
       ctx.fillStyle=color+'99';ctx.textBaseline='bottom';ctx.fillText(n.type,n.x+7/cam.z,n.y+h-2/cam.z);
       ctx.textAlign='right';ctx.fillStyle='#888882';ctx.fillText(n.author||'',n.x+w-5/cam.z,n.y+h-2/cam.z);
     }
-    if(n.url){const ufs=Math.min(h*0.22,w*0.075)*0.8;ctx.fillStyle='#378ADD88';ctx.font=`${ufs}px monospace`;ctx.textAlign='right';ctx.textBaseline='top';ctx.fillText('↗',n.x+w-4/cam.z,n.y+2/cam.z);}
+    if(n.url){
+      // Favicon (if available)
+      if(n.favicon_url){const fk=n.id+'_fav';const fi=imgCache[fk];const fsz=12/cam.z;
+        if(fi&&fi.complete&&fi.naturalWidth>0){ctx.drawImage(fi,n.x+w-fsz-4/cam.z,n.y+2/cam.z,fsz,fsz);}
+        else if(!fi){const i=new Image();i.crossOrigin='anonymous';i.src=n.favicon_url;imgCache[fk]=i;}
+      }
+      // Link icon — solid background pill
+      const ufs=Math.max(10/cam.z,Math.min(h*0.22,w*0.075));
+      const ux=n.x+w-(n.favicon_url?18:6)/cam.z,uy=n.y+2/cam.z;
+      ctx.fillStyle='#378ADD';ctx.globalAlpha=0.85;ctx.font=`bold ${ufs}px monospace`;ctx.textAlign='right';ctx.textBaseline='top';
+      ctx.fillText('↗',ux,uy);ctx.globalAlpha=isDone?0.45:1;
+    }
     // Priority dot (top-right corner for decision nodes)
     if(n.priority&&n.type==='decision'){const pc={high:'#CC2222',medium:'#FF8000',low:'#FFD700'}[n.priority];if(pc){ctx.beginPath();ctx.arc(n.x+w-6/cam.z,n.y+6/cam.z,3.5/cam.z,0,Math.PI*2);ctx.fillStyle=pc;ctx.fill();}}
     // ports — drawn last so they sit on top; white=open, black=wired
