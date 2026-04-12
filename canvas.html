@@ -521,7 +521,7 @@ async function startApp(u){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('ued').textContent=u.email;
-  initCanvas();await loadAll();loadCache();loadSoundBrain();setupRT();await loadCanvasList();initMarkup();initSidebarResize();checkHashHighlight();loadCustomWireColors();initPaletteSelector();initWireLegend();
+  initCanvas();await loadAll();loadCache();loadSoundBrain();setupRT();await loadCanvasList();initMarkup();initSidebarResize();checkHashHighlight();loadCustomWireColors();initPaletteSelector();initWireLegend();loadClaudeChatHistory();
   window.addEventListener('hashchange',checkHashHighlight);
 }
 
@@ -1581,7 +1581,8 @@ Suggest 3-8 high-value connections. Use exact node labels.`}],null,2000);
       cpb.innerHTML+=html;cpb.scrollTop=cpb.scrollHeight;
       window._pendingConns=json.connections;
       toast(json.connections.length+' connections suggested');
-    } else toast('No connections suggested');
+      logClaude('Auto connect','Suggested '+json.connections.length+' connections',json.connections,'auto_connect');
+    } else {toast('No connections suggested');logClaude('Auto connect','No suggestions',null,'auto_connect');}
   }catch(e){toast('Error: '+e.message);}
   btn.disabled=false;btn.textContent='⚘  Auto connect';
 }
@@ -2027,6 +2028,65 @@ function addChatMsg(text,isUser){
   }
   cpb.scrollTop=cpb.scrollHeight;
 }
+
+// Chat history persistence — survives page reloads
+async function logClaude(prompt,response,actionsExecuted,trigger){
+  try{
+    await sb.from('claude_logs').insert({
+      id:'cl-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+      prompt:prompt||'',
+      response:typeof response==='string'?response:JSON.stringify(response),
+      actions_executed:actionsExecuted||null,
+      trigger:trigger||'chat',
+      author:who
+    });
+  }catch(e){console.warn('logClaude failed:',e);}
+}
+
+async function loadClaudeChatHistory(){
+  try{
+    const{data}=await sb.from('claude_logs')
+      .select('prompt,response,trigger,author,created_at')
+      .order('created_at',{ascending:true})
+      .limit(50);
+    if(!data||!data.length)return;
+    const cpb=document.getElementById('cpb');
+    const placeholder=cpb.querySelector('.cplo');
+    if(placeholder&&cpb.children.length===1)cpb.innerHTML='';
+    const sep=document.createElement('div');
+    sep.style.cssText='text-align:center;font-size:8px;color:var(--tx3);padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px;';
+    sep.textContent=`── ${data.length} previous interactions ──`;
+    cpb.appendChild(sep);
+    for(const row of data){
+      const userMsg=document.createElement('div');
+      userMsg.className='cpmsg user';userMsg.style.opacity='0.6';
+      const label=row.trigger==='analyze'?'Analyze':row.trigger==='summary'?'Summary':row.prompt||'';
+      userMsg.textContent=label.length>120?label.slice(0,120)+'…':label;
+      cpb.appendChild(userMsg);
+      if(row.response){
+        const assistMsg=document.createElement('div');
+        assistMsg.className='cpmsg';assistMsg.style.opacity='0.6';
+        const resp=row.response.length>200?row.response.slice(0,200)+'…':row.response;
+        assistMsg.textContent=resp;
+        cpb.appendChild(assistMsg);
+      }
+    }
+    const liveSep=document.createElement('div');
+    liveSep.style.cssText='text-align:center;font-size:8px;color:var(--tx3);padding:8px 0;border-top:1px solid var(--border);margin-top:8px;';
+    liveSep.textContent='── current session ──';
+    cpb.appendChild(liveSep);
+    cpb.scrollTop=cpb.scrollHeight;
+  }catch(e){console.warn('loadClaudeChatHistory failed:',e);}
+}
+
+function resetClaudePanel(){
+  const cpb=document.getElementById('cpb');
+  if(cpb)cpb.innerHTML='<div class="cplo">Click Analyze to read the canvas and surface gaps, patterns, and connections.</div>';
+  window._claudeTotalTokens={input:0,output:0};
+  window._claudeCallCount=0;
+  window._lastClaudeUsage=null;
+}
+
 function fitToNodeIds(nodeIdSet,animate){
   if(!nodeIdSet||nodeIdSet.size===0)return;
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
@@ -2276,6 +2336,7 @@ Rules: Use exact labels from the canvas. Be specific. If a section has no items 
     await sb.from('canvas_config').upsert({key:'summary',value:summaryText,updated_at:new Date().toISOString()});
     addChatMsg('Summary saved. Open doc.html to see the living document.',false);
     toast('Summary updated');
+    try{logClaude('Regenerate summary',summaryText.slice(0,300),null,'summary');}catch(_){}
   }catch(e){loading.remove();addChatMsg('Summary failed: '+(e.message||e),false);}
 }
 
@@ -2309,7 +2370,7 @@ Max 3 gaps, 3 suggestions, 6 actions.`;
   try{
     const text=await callClaude([{role:'user',content:prompt}],null,2000);
     const parsed=extractJSON(text);
-    if(parsed)renderAnalysis(parsed);
+    if(parsed){renderAnalysis(parsed);logClaude('Analyze canvas state',parsed.reading||text.slice(0,300),parsed.actions||null,'analyze');}
     else body.innerHTML='<div class="cplo">Could not parse response. Raw: '+text.substring(0,300)+'</div>';
   }catch(e){body.innerHTML=`<div class="cplo">Error: ${e.message}</div>`;}
 }
@@ -2386,7 +2447,8 @@ Canvas Nodes: ${nl||'(none)'}\nLinks: ${ll||'(none)'}\nGroups: ${gl||'(none)'}`;
       parsed.actions.forEach(a=>{const id=_sa(a);ah+=`<div class="cpac"><div class="cpact">${aLabel(a)}</div><div class="cpacb">${a.description||''}</div><button class="cpado" onclick="execA(_ac[${id}])">Do it</button><button class="cpadx" onclick="this.parentElement.remove()">Skip</button></div>`;});
       ah+=`<button class="cpsend" style="margin-top:4px;" onclick="execAll(_ac[${allId}])">Do all ↵</button>`;
       body.innerHTML+=ah+'</div>';
-    } else {body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${text.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</div></div>`;}
+      logClaude(prompt,parsed.response||text.slice(0,300),parsed.actions,'chat');
+    } else {body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${text.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</div></div>`;logClaude(prompt,text.slice(0,300),null,'chat');}
     document.getElementById('cpp').value='';
   }catch(e){
     const hint=e.message?.includes('504')||e.message?.includes('timeout')?'Request timed out — try "Build in phases" for large requests.':e.message?.includes('max_tokens')||e.message?.includes('truncat')?'Response too large — use "Build in phases" below.':'Error: '+e.message;
@@ -2447,6 +2509,7 @@ Create ALL meaningful connections between existing nodes. Links only — no grou
   body.innerHTML+=`<div class="cplo">Build complete — ${totalActions} actions executed.</div>`;
   body.scrollTop=body.scrollHeight;
   sendBtn.disabled=false;buildBtn.disabled=false;buildBtn.textContent='⬡ Build in phases';
+  logClaude(prompt,`Build complete — ${totalActions} actions executed`,null,'build');
   regenerateSummary().catch(()=>{});// auto-fire summary in background
 }
 

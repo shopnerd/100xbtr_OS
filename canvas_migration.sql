@@ -75,3 +75,20 @@ ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS image_data text;
 -- ═══════════════════════════════════════════════════════════════
 ALTER TABLE canvas_nodes ADD COLUMN IF NOT EXISTS priority text;
 ALTER TABLE canvas_nodes ADD COLUMN IF NOT EXISTS sort_order integer DEFAULT 0;
+
+-- ═══════════════════════════════════════════════════════════════
+-- 10. Claude chat history persistence
+-- ═══════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS claude_logs (
+  id text PRIMARY KEY,
+  prompt text DEFAULT '',
+  response text DEFAULT '',
+  actions_executed jsonb,
+  trigger text DEFAULT 'chat',
+  author text,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE claude_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "auth all claude_logs" ON claude_logs
+  FOR ALL USING (auth.role()='authenticated');
