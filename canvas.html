@@ -2694,6 +2694,10 @@ async function execA(a){
   if(a.type==='image_search'){
     const expanded=await expandImageSearch(a);
     for(const ea of expanded)await execA(ea);
+    // Auto-organize the group after images land
+    const gLabel=a.group_label||a.query;
+    const g=groups.find(gg=>(gg.label||'').trim().toLowerCase()===(gLabel||'').trim().toLowerCase());
+    if(g){await cleanUpGroup(g.id);}
     return;
   }
   if(a.type==='create_group'){
@@ -2814,21 +2818,22 @@ function showActionApproval(actions){
   const container=document.createElement('div');container.style.cssText='margin-top:8px;';
   actions.forEach((a,i)=>{
     const row=document.createElement('div');
-    row.style.cssText='background:var(--bg3,#3a3a38);border:1px solid var(--border);border-radius:var(--r);padding:6px 8px;margin-bottom:4px;';
+    row.style.cssText='background:#3a3a38;border:1px solid var(--border,#555550);border-radius:var(--r,4px);padding:6px 8px;margin-bottom:4px;';
     const label=a.type==='create_group'?`Group: "${a.label}"`
       :a.type==='create_node'?`${a.node_type||a.nodeType||'idea'}: "${a.label}"`
+      :a.type==='image_search'?`Image search: "${a.query}" (${a.count||6} images → "${a.group_label||'new group'}")`
       :a.type==='create_link'?`Wire: ${a.source_label||a.from} → ${a.target_label||a.to}`
       :a.type==='move_to_group'?`Move "${a.node_label||a.label}" → ${a.group_label||a.group}`
       :a.type==='delete_group'?`Delete group: "${a.group_label||a.label}"`
       :a.type==='delete_node'?`Delete node: "${a.node_label||a.label}"`
       :JSON.stringify(a).substring(0,50);
-    row.innerHTML=`<div style="font-size:10px;color:var(--tx);margin-bottom:4px;">${esc(label)}</div>
-      <button style="font-size:9px;padding:2px 6px;border:none;border-radius:var(--r);background:var(--accent);color:#fff;cursor:pointer;font-family:var(--font);margin-right:3px;" onclick="approveAction(${i},this.parentElement)">Do it</button>
-      <button style="font-size:9px;padding:2px 6px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--tx3);cursor:pointer;font-family:var(--font);" onclick="this.parentElement.remove()">Skip</button>`;
+    row.innerHTML=`<div style="font-size:10px;color:#f0f0e8;margin-bottom:4px;">${esc(label)}</div>
+      <button style="font-size:9px;padding:2px 6px;border:none;border-radius:4px;background:#C96B3A;color:#fff;cursor:pointer;margin-right:3px;" onclick="approveAction(${i},this.parentElement)">Do it</button>
+      <button style="font-size:9px;padding:2px 6px;border:1px solid #555550;border-radius:4px;background:transparent;color:#a0a09a;cursor:pointer;" onclick="this.parentElement.remove()">Skip</button>`;
     container.appendChild(row);
   });
   const doAll=document.createElement('button');
-  doAll.style.cssText='width:100%;padding:5px;border-radius:var(--r);border:none;background:var(--accent);color:#fff;font-size:10px;cursor:pointer;font-family:var(--font);margin-top:4px;';
+  doAll.style.cssText='width:100%;padding:5px;border-radius:4px;border:none;background:#C96B3A;color:#fff;font-size:10px;cursor:pointer;margin-top:4px;';
   doAll.textContent='Do all ('+actions.length+')';
   doAll.onclick=async()=>{await execAll(actions);container.remove();toast('All actions applied');};
   container.appendChild(doAll);
