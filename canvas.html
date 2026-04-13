@@ -218,11 +218,11 @@ textarea.nei{line-height:1.4;}
     <div class="tb-sep"></div>
     <span class="tb-hint">right-click to add · alt+drag to select · ctrl+a all · click port to wire · dbl-click to edit · space+drag to pan</span>
     <div class="tb-right">
+      <button class="tb-extents" onclick="fitAll()" title="Zoom to fit all (E)">⊡</button>
       <div class="tb-search">
         <input type="text" id="canvas-search-input" class="tb-search-input" placeholder="Search the canvas…" onkeydown="if(event.key==='Enter'){event.preventDefault();onSearchSubmit();}" onfocus="showSearchRecent()" onblur="setTimeout(hideSearchRecent,150)" />
         <div id="search-recent"></div>
       </div>
-      <button class="tb-extents" onclick="fitAll()" title="Zoom to fit all (E)">⊡</button>
       <div class="tb-sep"></div>
       <div class="ctw"><span>Claude</span><div class="tt" id="clt" onclick="toggleClaude()"><div class="tth"></div></div></div>
       <div class="tb-sep"></div>
@@ -1928,7 +1928,7 @@ async function loadCanvasList(){
   list.innerHTML=data.map(c=>{
     const isActive=_activeCanvasId===c.id;
     const cls='sb-item'+(isActive?(modified?' active modified':' active'):'');
-    return `<div class="${cls}"><div class="sb-name">${c.name}</div><div class="sb-meta">${c.node_count||0} nodes · ${new Date(c.updated_at).toLocaleDateString()}</div><div class="sb-item-actions"><button class="sb-del" onclick="loadCanvas('${c.id}')">Load</button><button class="sb-del" onclick="overwriteCanvas('${c.id}',${JSON.stringify(c.name)},${c.node_count||0})">Save</button><button class="sb-del" onclick="delCanvas('${c.id}')">Del</button></div></div>`;
+    return `<div class="${cls}" ondblclick="loadCanvas('${c.id}')"><div class="sb-name">${c.name}</div><div class="sb-meta">${c.node_count||0} nodes · ${new Date(c.updated_at).toLocaleDateString()}</div><div class="sb-item-actions"><button class="sb-del" onclick="loadCanvas('${c.id}')">Load</button><button class="sb-del" onclick="overwriteCanvas('${c.id}',${JSON.stringify(c.name)},${c.node_count||0})">Save</button><button class="sb-del" onclick="delCanvas('${c.id}')">Del</button></div></div>`;
   }).join('');
   // Show unsaved work indicator if no active canvas but nodes exist
   if(!_activeCanvasId&&nodes.length){list.insertAdjacentHTML('afterbegin','<div class="sb-item unsaved"><div class="sb-name">Unsaved work on canvas</div><div class="sb-meta">'+nodes.length+' nodes · not yet saved</div></div>');}
