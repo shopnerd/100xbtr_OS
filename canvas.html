@@ -532,6 +532,7 @@ async function startApp(u){
   document.getElementById('app').style.display='flex';
   document.getElementById('ued').textContent=u.email;
   initCanvas();await loadAll();loadCache();loadSoundBrain();setupRT();await restoreActiveCanvas();await loadCanvasList();initMarkup();initSidebarResize();checkHashHighlight();loadCustomWireColors();initPaletteSelector();initWireLegend();loadClaudeChatHistory();
+  if(nodes.length||groups.length)setTimeout(()=>fitAll(),200);
   window.addEventListener('hashchange',checkHashHighlight);
 }
 
@@ -663,6 +664,11 @@ function drawGroups(){
     const gfs=Math.min(GH*0.55,w*0.075);ctx.font=`500 ${gfs}px 'SF Mono',monospace`;
     ctx.fillStyle='#1a1a18';ctx.textBaseline='middle';ctx.textAlign='left';
     ctx.fillText(g.label||'Group',x+8/cam.z,y+GH/2);
+    // cleanup button ⋯ in top-right of header
+    const btnSize=GH*0.5;const btnX=x+w-btnSize-4/cam.z;
+    ctx.fillStyle='rgba(0,0,0,0.3)';ctx.font=`${btnSize}px 'SF Mono',monospace`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('\u22ef',btnX+btnSize/2,y+GH/2);ctx.textAlign='left';
     // bottom full-width resize bar
     const bh=6/cam.z;
     ctx.fillStyle=color+'44';
@@ -709,7 +715,7 @@ function drawLinks(){
     // link type label at midpoint
     if(lt&&lt!=='related'){
       const mx=(sp.x+tp.x)/2,my=(sp.y+tp.y)/2;
-      ctx.font=`${8/cam.z}px 'SF Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='bottom';
+      const wlFs=Math.max(9,Math.min(14,10/cam.z));ctx.font=`${wlFs/cam.z}px 'SF Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='bottom';
       ctx.fillStyle=isSel?'rgba(201,107,58,0.7)':typeColor+'b3';ctx.fillText(lt,mx,my-3/cam.z);
     }
     // End marker
@@ -896,6 +902,7 @@ function hitUrlIcon(wx,wy){const zone=16;for(let i=nodes.length-1;i>=0;i--){cons
 function hNode(wx,wy){return[...nodes].reverse().find(n=>{const w=n.w||DW,h=n.h||DH;return wx>=n.x&&wx<=n.x+w&&wy>=n.y&&wy<=n.y+h;});}
 function hGroup(wx,wy){return[...groups].reverse().find(g=>wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+g.h);}
 function hGroupHeader(g,wx,wy){return wx>=g.x&&wx<=g.x+g.w&&wy>=g.y&&wy<=g.y+GH;}
+function hitGroupCleanupBtn(wx,wy){for(let i=groups.length-1;i>=0;i--){const g=groups[i];const bs=GH*0.5,bx=g.x+g.w-bs-4;if(wx>=bx&&wx<=bx+bs&&wy>=g.y&&wy<=g.y+GH)return g;}return null;}
 function hNR(n,wx,wy){const w=n.w||DW,h=n.h||DH;return wx>=n.x+w-14&&wy>=n.y+h-14;}
 function hGR(g,wx,wy){return wx>=g.x+g.w-16&&wy>=g.y+g.h-16;}
 function hGBottom(g,wx,wy){const bz=10/cam.z;return wx>=g.x&&wx<=g.x+g.w&&wy>=g.y+g.h-bz&&wy<=g.y+g.h+4;}
@@ -973,6 +980,9 @@ function onDown(e){
       mn:selected.nodes.map(id=>({n:nById(id),ox:wx-(nById(id)?.x||0),oy:wy-(nById(id)?.y||0)})).filter(x=>x.n)};
     canvas.style.cursor='grabbing';return;
   }
+  // Group cleanup button — check before group drag
+  const gcBtn=hitGroupCleanupBtn(wx,wy);
+  if(gcBtn){cleanUpGroup(gcBtn.id);return;}
   const g=hGroup(wx,wy);
   if(g){
     if(hGBottom(g,wx,wy)){drag={on:true,rg:g,ox:wx,oy:wy,sw:g.w,sh:g.h};canvas.style.cursor='s-resize';return;}
@@ -1022,8 +1032,11 @@ function onMove(e){
     ws.style.width=Math.abs(cx-drag.ox)+'px';ws.style.height=Math.abs(cy-drag.oy)+'px';
   }
   else if(drag.node){
+    const dragIds=new Set(drag.mn.map(({n})=>n.id));
     drag.mn.forEach(({n,ox,oy})=>{n.x=wx-ox;n.y=wy-oy;});
-    separateNodes(nodes,new Set(drag.mn.map(({n})=>n.id)));
+    separateNodes(nodes,dragIds);
+    // clamp non-dragged nodes back into their group bounds
+    for(const n of nodes){if(dragIds.has(n.id)||!n.group_id)continue;const g=groups.find(x=>x.id===n.group_id);if(!g)continue;const pad=4;n.x=Math.max(g.x+pad,Math.min(n.x,g.x+g.w-(n.w||DW)-pad));n.y=Math.max(g.y+GH+pad,Math.min(n.y,g.y+g.h-(n.h||DH)-pad));}
     // live resize groups
     const liveGids=new Set([...drag.mn.map(({n})=>n.group_id).filter(Boolean),...(drag.prevGids||[])]);
     liveGids.forEach(gid=>{const g=groups.find(x=>x.id===gid);if(g)sizeGAN(g,nigByGid(gid));});
@@ -1415,6 +1428,69 @@ function sizeGAN(g,members){
   g.x=minX-PAD;g.y=minY-GH-PAD;g.w=maxX-g.x+PAD;g.h=maxY-g.y+PAD;
   g.w=Math.max(g.w,200);g.h=Math.max(g.h,GH+80);
 }
+// Expand-only group resize — never shrinks or rearranges nodes
+function autoResizeGroup(gid){
+  const g=groups.find(gr=>gr.id===gid);if(!g)return;
+  const mems=nigByGid(gid);if(!mems.length)return;
+  const pad=10;
+  const minX=Math.min(...mems.map(n=>n.x))-pad;
+  const minY=Math.min(...mems.map(n=>n.y))-GH-pad;
+  const maxX=Math.max(...mems.map(n=>n.x+(n.w||DW)))+pad;
+  const maxY=Math.max(...mems.map(n=>n.y+(n.h||DH)))+pad;
+  g.x=Math.min(g.x,minX);g.y=Math.min(g.y,minY);
+  g.w=Math.max(g.w,maxX-g.x);g.h=Math.max(g.h,maxY-g.y);
+  _tw('canvas_groups',g.id);
+  sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
+}
+// Batch expand-only resize for all groups affected by selected nodes
+function autoResizeGroups(){
+  const seen=new Set();
+  selected.nodes.forEach(id=>{const n=nById(id);if(n?.group_id&&!seen.has(n.group_id)){seen.add(n.group_id);autoResizeGroup(n.group_id);}});
+}
+// Compact a single group: re-grid members + save
+async function cleanUpGroup(gid){
+  const g=groups.find(gr=>gr.id===gid);if(!g)return;
+  const mems=nigByGid(gid);if(!mems.length)return;
+  compactGroup(g);
+  _tw('canvas_groups',g.id);
+  await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
+  for(const n of mems){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}
+  toast('Group cleaned up');
+}
+// Tidy selected groups + loose selected nodes
+async function cleanUpSelection(){
+  const selGroupIds=new Set(selected.groups||[]);
+  const selNodeIds=(selected.nodes||[]).filter(id=>{const n=nById(id);if(!n)return false;return !(n.group_id&&selGroupIds.has(n.group_id));});
+  if(!selGroupIds.size&&!selNodeIds.length){toast('Nothing selected to clean up');return;}
+  const writes=[];
+  for(const gid of selGroupIds){
+    const g=groups.find(gr=>gr.id===gid);if(!g)continue;
+    const mems=nigByGid(gid);if(!mems.length)continue;
+    compactGroup(g);
+    _tw('canvas_groups',g.id);
+    writes.push(sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id));
+    mems.forEach(n=>{_tw('canvas_nodes',n.id);writes.push(sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id));});
+  }
+  if(selNodeIds.length){
+    const looseNodes=selNodeIds.map(id=>nById(id)).filter(Boolean);
+    const cx=looseNodes.reduce((s,n)=>s+n.x+(n.w||DW)/2,0)/looseNodes.length;
+    const cy=looseNodes.reduce((s,n)=>s+n.y+(n.h||DH)/2,0)/looseNodes.length;
+    const pad=12;const cols=Math.max(1,Math.ceil(Math.sqrt(looseNodes.length)));
+    const rows=Math.ceil(looseNodes.length/cols);
+    const cellW=Math.max(...looseNodes.map(n=>n.w||DW))+pad;
+    const cellH=Math.max(...looseNodes.map(n=>n.h||DH))+pad;
+    const totalW=cols*cellW-pad,totalH=rows*cellH-pad;
+    const startX=cx-totalW/2,startY=cy-totalH/2;
+    looseNodes.sort((a,b)=>(a.y-b.y)||(a.x-b.x));
+    looseNodes.forEach((n,i)=>{
+      const col=i%cols,row=Math.floor(i/cols);
+      n.x=Math.round(startX+col*cellW);n.y=Math.round(startY+row*cellH);
+      _tw('canvas_nodes',n.id);writes.push(sb.from('canvas_nodes').update({x:n.x,y:n.y}).eq('id',n.id));
+    });
+  }
+  await Promise.all(writes);
+  toast(`Cleaned up ${selGroupIds.size} group${selGroupIds.size===1?'':'s'}`+(selNodeIds.length?` + ${selNodeIds.length} loose node${selNodeIds.length===1?'':'s'}`:''));
+}
 function getGid(n){
   const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;
   for(const g of groups){if(cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h)return g.id;}return null;
@@ -1621,6 +1697,7 @@ async function cleanUp(){
   for(const g of groups){_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
   const summary=[mergedCount?`merged ${mergedCount} duplicates`:null,removed?`removed ${removed} empty`:null].filter(Boolean).join(', ');
   toast('Clean up complete'+(summary?` (${summary})`:''));
+  setTimeout(()=>fitAll(),100);
 }
 
 async function autoConnect(){
@@ -1980,6 +2057,7 @@ async function loadCanvas(id){
   _activeCanvasId=id;_activeCanvasName=data.name||'';_activeCanvasHash=_liveHash();
   await sb.from('canvas_config').upsert({key:'active_canvas',value:JSON.stringify({id,name:data.name||'',who,at:new Date().toISOString()}),updated_at:new Date().toISOString()});
   await loadCanvasList();toast('Canvas loaded ✓');
+  setTimeout(()=>fitAll(),100);
 }
 async function delCanvas(id){if(!confirm('Delete saved canvas?'))return;await sb.from('saved_canvases').delete().eq('id',id);if(_activeCanvasId===id){_activeCanvasId=null;_activeCanvasName=null;_activeCanvasHash=null;}await loadCanvasList();}
 async function newCanvas(){const modified=_activeCanvasId&&_activeCanvasHash&&_liveHash()!==_activeCanvasHash;const msg=modified?'You have unsaved changes. Clear canvas anyway?':'Clear canvas?';if(!confirm(msg))return;await sb.from('canvas_nodes').delete().neq('id','_');await sb.from('canvas_links').delete().neq('id','_');await sb.from('canvas_groups').delete().neq('id','_');nodes=[];links=[];groups=[];_activeCanvasId=null;_activeCanvasName=null;_activeCanvasHash=null;await sb.from('canvas_config').upsert({key:'active_canvas',value:JSON.stringify({id:null,who,at:new Date().toISOString()}),updated_at:new Date().toISOString()});await loadCanvasList();toast('Blank canvas');}
@@ -2630,6 +2708,7 @@ Create ALL meaningful connections between existing nodes. Links only — no grou
   await runPhase('nodes','Nodes');
   await runPhase('links','Connections');
   await repairGroups();await runLayout();await validateCanvas(true);_cacheHash='';
+  setTimeout(()=>fitAll(),100);
   body.innerHTML+=`<div class="cplo">Build complete — ${totalActions} actions executed.</div>`;
   body.scrollTop=body.scrollHeight;
   sendBtn.disabled=false;buildBtn.disabled=false;buildBtn.textContent='⬡ Build in phases';
