@@ -1558,57 +1558,45 @@ function repelGroupList(glist,gapX,gapY){
     }}
   }
 }
-async function repelGroupsOnly(){
+// Layout-only (no DB writes) — used by slider for fluid feel
+function spreadLayout(){
   if(groups.length<1&&!nodes.length)return;
   const gap=spreadGapX;
-  // Inner spacing scales with slider but less aggressively
   const innerPad=Math.max(8,Math.round(gap*0.4));
-
-  // 1. Re-grid nodes INSIDE each group at the new inner spacing
   for(const g of groups){
-    const mems=nigByGid(g.id);
-    if(!mems.length)continue;
+    const mems=nigByGid(g.id);if(!mems.length)continue;
     mems.sort((a,b)=>(a.y-b.y)||(a.x-b.x));
     const cols=Math.max(1,Math.ceil(Math.sqrt(mems.length)));
-    const startX=g.x+innerPad;
-    const startY=g.y+GH+innerPad;
-    mems.forEach((n,i)=>{
-      const col=i%cols,row=Math.floor(i/cols);
-      n.x=startX+col*((n.w||DW)+innerPad);
-      n.y=startY+row*((n.h||DH)+innerPad);
-    });
+    const startX=g.x+innerPad,startY=g.y+GH+innerPad;
+    mems.forEach((n,i)=>{const col=i%cols,row=Math.floor(i/cols);n.x=startX+col*((n.w||DW)+innerPad);n.y=startY+row*((n.h||DH)+innerPad);});
     sizeGAN(g,mems);
   }
-
-  // 2. Re-layout groups in a grid with the slider gap
   const sorted=[...groups].sort((a,b)=>(a.y-b.y)||(a.x-b.x));
   const gCols=Math.max(1,Math.ceil(Math.sqrt(sorted.length)));
   let cx=0,cy=0,rowH=0;
-  sorted.forEach((g,i)=>{
-    const col=i%gCols;
-    if(col===0&&i>0){cy+=rowH+gap;cx=0;rowH=0;}
-    const oldX=g.x,oldY=g.y;
-    g.x=cx;g.y=cy;
-    const dx=g.x-oldX,dy=g.y-oldY;
-    nigByGid(g.id).forEach(n=>{n.x+=dx;n.y+=dy;});
-    cx+=g.w+gap;
-    rowH=Math.max(rowH,g.h);
-  });
-
-  // 3. Spread ungrouped nodes below groups
+  sorted.forEach((g,i)=>{const col=i%gCols;if(col===0&&i>0){cy+=rowH+gap;cx=0;rowH=0;}const oldX=g.x,oldY=g.y;g.x=cx;g.y=cy;const dx=g.x-oldX,dy=g.y-oldY;nigByGid(g.id).forEach(n=>{n.x+=dx;n.y+=dy;});cx+=g.w+gap;rowH=Math.max(rowH,g.h);});
   const ug=nodes.filter(n=>!n.group_id);
-  if(ug.length){
-    const maxGroupY=groups.length?Math.max(...groups.map(g=>g.y+g.h))+gap:0;
-    const cols=Math.max(1,Math.ceil(Math.sqrt(ug.length)));
-    ug.forEach((n,i)=>{
-      n.x=(i%cols)*((n.w||DW)+gap);
-      n.y=maxGroupY+Math.floor(i/cols)*((n.h||DH)+gap);
-    });
-  }
-
-  // 4. Save all
+  if(ug.length){const maxGroupY=groups.length?Math.max(...groups.map(g=>g.y+g.h))+gap:0;const cols=Math.max(1,Math.ceil(Math.sqrt(ug.length)));ug.forEach((n,i)=>{n.x=(i%cols)*((n.w||DW)+gap);n.y=maxGroupY+Math.floor(i/cols)*((n.h||DH)+gap);});}
+}
+// Persist current positions to DB
+async function spreadSave(){
   await Promise.all(groups.map(g=>{_tw('canvas_groups',g.id);return sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}));
   await Promise.all(nodes.map(n=>{_tw('canvas_nodes',n.id);return sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}));
+}
+// Full spread: layout + save (used by non-slider callers)
+async function repelGroupsOnly(){spreadLayout();await spreadSave();}
+// Instant camera fit (no animation) for fluid slider feel
+function fitAllInstant(){
+  if(!nodes.length&&!groups.length)return;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const n of nodes){minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);maxX=Math.max(maxX,n.x+(n.w||DW));maxY=Math.max(maxY,n.y+(n.h||DH));}
+  for(const g of groups){minX=Math.min(minX,g.x);minY=Math.min(minY,g.y);maxX=Math.max(maxX,g.x+g.w);maxY=Math.max(maxY,g.y+g.h);}
+  if(!isFinite(minX))return;
+  const pad=80,contentW=(maxX-minX)+pad*2,contentH=(maxY-minY)+pad*2;
+  const W=canvas.width,H=canvas.height;
+  cam.z=Math.max(0.05,Math.min(1.0,Math.min(W/contentW,H/contentH)));
+  const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+  cam.x=-cx*cam.z;cam.y=-cy*cam.z;
 }
 
 async function autoAssociate(){
@@ -1998,7 +1986,7 @@ function initSidebarResize(){
 }
 function showSbTab(id,el){document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('on'));document.getElementById('sbp-'+id).classList.add('on');el.classList.add('on');if(mkCanvas)mkCanvas.style.pointerEvents=id==='markup'?'auto':'none';}
 let _spreadTimer=null;
-function onSpreadSlider(v){spreadGapX=parseInt(v);spreadGapY=parseInt(v);document.getElementById('spread-val').textContent=v+' px';clearTimeout(_spreadTimer);_spreadTimer=setTimeout(async()=>{await repelGroupsOnly();fitAll();},300);}
+function onSpreadSlider(v){spreadGapX=parseInt(v);spreadGapY=parseInt(v);document.getElementById('spread-val').textContent=v+' px';spreadLayout();fitAllInstant();clearTimeout(_spreadTimer);_spreadTimer=setTimeout(()=>spreadSave(),500);}
 
 // SAVED CANVASES
 function _liveHash(){return nodes.length+'|'+groups.length+'|'+links.length;}
