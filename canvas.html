@@ -2813,7 +2813,7 @@ You CAN create any kind of content the user asks for — not just business conte
   const cpb=document.getElementById('cpb');
   const loading=document.createElement('div');loading.className='cplo';loading.textContent='Thinking...';
   cpb.appendChild(loading);cpb.scrollTop=cpb.scrollHeight;
-  const reply=await callClaude([{role:'user',content:msg}],sys,4000);
+  const reply=await callClaude([{role:'user',content:msg}],sys,8000);
   loading.remove();
   const json=extractJSON(reply);
   if(json){

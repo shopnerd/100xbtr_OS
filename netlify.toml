@@ -1,5 +1,9 @@
 [functions]
   directory = "netlify/functions"
+  external_node_modules = ["@anthropic-ai/sdk"]
+
+[functions."claude"]
+  timeout = 60
 
 [[headers]]
   for = "/canvas.html"
