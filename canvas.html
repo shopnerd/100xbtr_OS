@@ -1877,12 +1877,14 @@ async function runLayout(){
   nodes.forEach(n=>{const gid=n.group_id||getGid(n);n.group_id=gid;if(gid&&groups.find(g=>g.id===gid)){if(!mem[gid])mem[gid]=[];mem[gid].push(n);}else ug.push(n);});
   // repel nodes inside each group first
   Object.values(mem).forEach(gn=>{if(gn.length>1)repelNodes(gn);});
-  // size and lay out groups
+  // size and lay out groups — use actual node dimensions
   groups.forEach(g=>{
     const gn=mem[g.id]||[];if(!gn.length)return;
+    const cellW=Math.max(...gn.map(n=>n.w||DW));
+    const cellH=Math.max(...gn.map(n=>n.h||DH));
     const cols=Math.max(1,Math.ceil(Math.sqrt(gn.length)));const rows=Math.ceil(gn.length/cols);
-    g.w=NPAD+cols*(DW+NPAD);g.h=GH+NPAD+rows*(NH+NPAD);g.w=Math.max(g.w,220);g.h=Math.max(g.h,GH+100);
-    gn.forEach((n,i)=>{n.x=g.x+NPAD+(i%cols)*(DW+NPAD);n.y=g.y+GH+NPAD+Math.floor(i/cols)*(NH+NPAD);});
+    g.w=NPAD+cols*(cellW+NPAD);g.h=GH+NPAD+rows*(cellH+NPAD);g.w=Math.max(g.w,220);g.h=Math.max(g.h,GH+100);
+    gn.forEach((n,i)=>{n.x=g.x+NPAD+(i%cols)*(cellW+NPAD);n.y=g.y+GH+NPAD+Math.floor(i/cols)*(cellH+NPAD);});
   });
   // arrange groups in grid
   const ag=groups.filter(g=>(mem[g.id]||[]).length>0);
@@ -1894,8 +1896,10 @@ async function runLayout(){
   ag.forEach((g,i)=>{
     const r2=Math.floor(i/gcols),c2=i%gcols;if(c2===0&&i>0){cX=-totW/2;cY+=rowH[r2-1]+GPAD;}
     g.x=cX;g.y=cY;cX+=colW[c2]+GPAD;
-    const gn=mem[g.id]||[];const cols=Math.max(1,Math.ceil(Math.sqrt(gn.length)));
-    gn.forEach((n,j)=>{n.x=g.x+NPAD+(j%cols)*(DW+NPAD);n.y=g.y+GH+NPAD+Math.floor(j/cols)*(NH+NPAD);});
+    const gn=mem[g.id]||[];
+    const cW2=Math.max(DW,...gn.map(n=>n.w||DW)),cH2=Math.max(DH,...gn.map(n=>n.h||DH));
+    const cols=Math.max(1,Math.ceil(Math.sqrt(gn.length)));
+    gn.forEach((n,j)=>{n.x=g.x+NPAD+(j%cols)*(cW2+NPAD);n.y=g.y+GH+NPAD+Math.floor(j/cols)*(cH2+NPAD);});
   });
   // repel groups apart
   repelGroupList(ag,GPAD_X,GPAD_Y);
@@ -2303,6 +2307,7 @@ async function logClaude(prompt,response,actionsExecuted,trigger){
 }
 
 async function loadClaudeChatHistory(){
+  if(!nodes.length&&!groups.length)return; // skip history on empty canvas
   try{
     const{data}=await sb.from('claude_logs')
       .select('prompt,response,trigger,author,created_at')
