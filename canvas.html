@@ -990,7 +990,7 @@ function onDown(e){
   if(gcBtn){cleanUpGroup(gcBtn.id);return;}
   const g=hGroup(wx,wy);
   if(g){
-    if(hGCorner(g,wx,wy)){drag={on:true,rg:g,ox:wx,oy:wy,sw:g.w,sh:g.h};canvas.style.cursor='nwse-resize';return;}
+    if(hGCorner(g,wx,wy)){const mems=nigByGid(g.id);const snp=mems.map(n=>({id:n.id,relX:n.x-g.x-8,relY:n.y-g.y-GH-8}));drag={on:true,rg:g,ox:wx,oy:wy,sw:g.w,sh:g.h,startNodePos:snp};canvas.style.cursor='nwse-resize';return;}
     if(hGroupHeader(g,wx,wy)){
       if(e.shiftKey){selected.groups=selected.groups.includes(g.id)?selected.groups.filter(id=>id!==g.id):[...selected.groups,g.id];return;}
       if(!selected.groups.includes(g.id)){selected={nodes:[],groups:[g.id]};}
@@ -1057,33 +1057,19 @@ function onMove(e){
   }
   else if(drag.resize){drag.resize.w=Math.max(100,drag.sw+(wx-drag.ox));drag.resize.h=Math.max(40,drag.sh+(wy-drag.oy));}
   else if(drag.rg){
-    const g=drag.rg;const pad=8;const members=nigByGid(g.id);
-    // Compute minimum size to contain nodes in a grid
-    let minW=120,minH=GH+40;
-    if(members.length){
-      const cols=Math.max(1,Math.ceil(Math.sqrt(members.length)));
-      const maxNW=Math.max(...members.map(n=>n.w||DW));
-      const maxNH=Math.max(...members.map(n=>n.h||DH));
-      const rows=Math.ceil(members.length/cols);
-      minW=Math.max(minW,cols*(maxNW+pad)+pad);
-      minH=Math.max(minH,GH+pad+rows*(maxNH+pad));
-    }
+    const g=drag.rg;const pad=8;const mems=nigByGid(g.id);
+    // Min size = one node + padding
+    const minW=(mems[0]?.w||DW)+pad*3;
+    const minH=GH+(mems[0]?.h||DH)+pad*3;
     g.w=Math.max(minW,drag.sw+(wx-drag.ox));g.h=Math.max(minH,drag.sh+(wy-drag.oy));
-    // Re-grid nodes to fill available space
-    if(members.length){
-      if(!drag._sortedMembers)drag._sortedMembers=[...members].sort((a,b)=>(a.y-b.y)||(a.x-b.x)).map(n=>n.id);
-      const sorted=drag._sortedMembers.map(id=>members.find(n=>n.id===id)).filter(Boolean);
-      const maxNW=Math.max(...sorted.map(n=>n.w||DW));
-      const maxNH=Math.max(...sorted.map(n=>n.h||DH));
-      const innerW=g.w-pad*2,innerH=g.h-GH-pad*2;
-      const cols=Math.max(1,Math.floor((innerW+pad)/(maxNW+pad)));
-      const gapX=cols>1?(innerW-cols*maxNW)/(cols-1):0;
-      const rows=Math.ceil(sorted.length/cols);
-      const gapY=rows>1?(innerH-rows*maxNH)/(rows-1):0;
-      sorted.forEach((n,i)=>{
-        const col=i%cols,row=Math.floor(i/cols);
-        n.x=g.x+pad+col*(maxNW+Math.max(pad,gapX));
-        n.y=g.y+GH+pad+row*(maxNH+Math.max(pad,gapY));
+    // Proportionally scale node positions within new size
+    if(mems.length&&drag.startNodePos){
+      const scaleX=(g.w-pad*2)/(drag.sw-pad*2);
+      const scaleY=(g.h-GH-pad*2)/(drag.sh-GH-pad*2);
+      drag.startNodePos.forEach(sp=>{
+        const n=mems.find(nn=>nn.id===sp.id);if(!n)return;
+        n.x=g.x+pad+(sp.relX*scaleX);
+        n.y=g.y+GH+pad+(sp.relY*scaleY);
       });
     }
   }
