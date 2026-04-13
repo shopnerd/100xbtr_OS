@@ -1046,20 +1046,34 @@ function onMove(e){
   else if(drag.resize){drag.resize.w=Math.max(100,drag.sw+(wx-drag.ox));drag.resize.h=Math.max(40,drag.sh+(wy-drag.oy));}
   else if(drag.rg){
     const g=drag.rg;const pad=8;const members=nigByGid(g.id);
-    // Compute content bounding box — group can't shrink past this
+    // Compute minimum size to contain nodes in a grid
     let minW=120,minH=GH+40;
     if(members.length){
-      const minNX=Math.min(...members.map(n=>n.x));
-      const minNY=Math.min(...members.map(n=>n.y));
-      const maxNR=Math.max(...members.map(n=>n.x+(n.w||DW)));
-      const maxNB=Math.max(...members.map(n=>n.y+(n.h||DH)));
-      // Clamp group origin to never cut into nodes from top-left
-      g.x=Math.min(g.x,minNX-pad);
-      g.y=Math.min(g.y,minNY-GH-pad);
-      minW=Math.max(minW,maxNR-g.x+pad);
-      minH=Math.max(minH,maxNB-g.y+pad);
+      const cols=Math.max(1,Math.ceil(Math.sqrt(members.length)));
+      const maxNW=Math.max(...members.map(n=>n.w||DW));
+      const maxNH=Math.max(...members.map(n=>n.h||DH));
+      const rows=Math.ceil(members.length/cols);
+      minW=Math.max(minW,cols*(maxNW+pad)+pad);
+      minH=Math.max(minH,GH+pad+rows*(maxNH+pad));
     }
     g.w=Math.max(minW,drag.sw+(wx-drag.ox));g.h=Math.max(minH,drag.sh+(wy-drag.oy));
+    // Re-grid nodes to fill available space
+    if(members.length){
+      if(!drag._sortedMembers)drag._sortedMembers=[...members].sort((a,b)=>(a.y-b.y)||(a.x-b.x)).map(n=>n.id);
+      const sorted=drag._sortedMembers.map(id=>members.find(n=>n.id===id)).filter(Boolean);
+      const maxNW=Math.max(...sorted.map(n=>n.w||DW));
+      const maxNH=Math.max(...sorted.map(n=>n.h||DH));
+      const innerW=g.w-pad*2,innerH=g.h-GH-pad*2;
+      const cols=Math.max(1,Math.floor((innerW+pad)/(maxNW+pad)));
+      const gapX=cols>1?(innerW-cols*maxNW)/(cols-1):0;
+      const rows=Math.ceil(sorted.length/cols);
+      const gapY=rows>1?(innerH-rows*maxNH)/(rows-1):0;
+      sorted.forEach((n,i)=>{
+        const col=i%cols,row=Math.floor(i/cols);
+        n.x=g.x+pad+col*(maxNW+Math.max(pad,gapX));
+        n.y=g.y+GH+pad+row*(maxNH+Math.max(pad,gapY));
+      });
+    }
   }
 }
 
