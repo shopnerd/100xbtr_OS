@@ -256,13 +256,16 @@ textarea.nei{line-height:1.4;}
         <div class="sb-tab" onclick="showSbTab('markup',this)">Markup</div>
       </div>
       <div class="sb-panel on" id="sbp-canvases">
-        <div class="sb-list" id="sb-list"><div class="sb-empty">No saved canvases.</div></div>
-        <div class="sb-save-new">
-          <input class="sb-save-input" id="sb-name-input" placeholder="Canvas name..." onkeydown="if(event.key==='Enter')saveCanvas()">
+        <div style="padding:6px 6px 4px;border-bottom:1px solid var(--border);flex-shrink:0;">
+          <input id="sb-filter" oninput="renderCanvasList()" placeholder="Filter saved canvases..." style="width:100%;font-size:10px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--r,4px);background:var(--chrome2,#2a2a28);color:var(--tx,#f0f0e8);font-family:var(--font,'SF Mono',monospace);outline:none;">
+        </div>
+        <div class="sb-list" id="sb-list" style="flex:1;overflow-y:auto;min-height:0;padding:4px;"><div class="sb-empty">No saved canvases.</div></div>
+        <div style="padding:6px;border-top:1px solid var(--border);flex-shrink:0;">
+          <input style="width:100%;font-size:10px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--r,4px);background:var(--chrome2,#2a2a28);color:var(--tx,#f0f0e8);font-family:var(--font,'SF Mono',monospace);outline:none;margin-bottom:4px;" id="sb-name-input" placeholder="Canvas name..." onkeydown="if(event.key==='Enter')saveCanvas()">
           <button class="sb-save-btn" onclick="saveCanvas()">Save current canvas</button>
         </div>
         <div style="padding:4px 6px;border-top:1px solid var(--border);">
-          <button class="sb-save-btn" onclick="newCanvas()" style="background:var(--chrome2);color:var(--tx2);border:1px solid var(--border);">+ New blank canvas</button>
+          <button class="sb-save-btn" onclick="newCanvas()" style="background:var(--chrome2,#2a2a28);color:var(--tx2,#b0b0a8);border:1px solid var(--border,#555550);">+ New blank canvas</button>
         </div>
       </div>
       <div class="sb-panel" id="sbp-layout">
@@ -2081,22 +2084,39 @@ function onSpreadSlider(v){spreadGapX=parseInt(v);spreadGapY=parseInt(v);documen
 
 // SAVED CANVASES
 function _liveHash(){return nodes.length+'|'+groups.length+'|'+links.length;}
+let _savedCanvasCache=[];
 async function restoreActiveCanvas(){
   try{const{data}=await sb.from('canvas_config').select('value').eq('key','active_canvas').single();
   if(data?.value){const v=JSON.parse(data.value);if(v.id){_activeCanvasId=v.id;_activeCanvasName=v.name||'';_activeCanvasHash=_liveHash();}}}catch(e){}
 }
 async function loadCanvasList(){
-  const{data}=await sb.from('saved_canvases').select('*').order('updated_at',{ascending:false});
+  const{data}=await sb.from('saved_canvases').select('id, name, node_count, updated_at, author').order('updated_at',{ascending:false});
+  _savedCanvasCache=data||[];
+  renderCanvasList();
+}
+function renderCanvasList(){
   const list=document.getElementById('sb-list');
-  if(!data?.length){list.innerHTML='<div class="sb-empty">No saved canvases.</div>';return;}
+  const filterEl=document.getElementById('sb-filter');
+  const q=(filterEl?.value||'').trim().toLowerCase();
+  const data=q?_savedCanvasCache.filter(c=>(c.name||'').toLowerCase().includes(q)):_savedCanvasCache;
+  if(!_savedCanvasCache.length){list.innerHTML='<div class="sb-empty">No saved canvases.</div>';return;}
+  if(!data.length){list.innerHTML=`<div class="sb-empty">No matches for "${q}".</div>`;return;}
   const modified=_activeCanvasId&&_activeCanvasHash&&_liveHash()!==_activeCanvasHash;
+  const btnStyle='font-size:9px;padding:1px 5px;border:1px solid var(--border,#555550);border-radius:var(--r,4px);background:transparent;color:var(--tx2,#b0b0a8);cursor:pointer;font-family:var(--font,monospace);';
   list.innerHTML=data.map(c=>{
     const isActive=_activeCanvasId===c.id;
-    const cls='sb-item'+(isActive?(modified?' active modified':' active'):'');
-    return `<div class="${cls}" ondblclick="loadCanvas('${c.id}')"><div class="sb-name">${c.name}</div><div class="sb-meta">${c.node_count||0} nodes · ${new Date(c.updated_at).toLocaleDateString()}</div><div class="sb-item-actions"><button class="sb-del" onclick="loadCanvas('${c.id}')">Load</button><button class="sb-del" onclick="overwriteCanvas('${c.id}',${JSON.stringify(c.name)},${c.node_count||0})">Save</button><button class="sb-del" onclick="delCanvas('${c.id}')">Del</button></div></div>`;
+    const border=isActive?'border-color:var(--accent,#C96B3A)':'border-color:transparent';
+    return `<div style="padding:6px 8px;border-radius:var(--r,4px);cursor:pointer;margin-bottom:2px;border:1px solid transparent;${border}" onmouseover="this.style.background='var(--chrome2,#2a2a28)'" onmouseout="this.style.background=''">
+      <div style="font-size:11px;font-weight:500;color:var(--tx,#f0f0e8);margin-bottom:2px;">${esc(c.name)}</div>
+      <div style="font-size:9px;color:var(--tx3,#a0a09a);">${c.node_count||0} nodes &middot; ${new Date(c.updated_at).toLocaleDateString()}</div>
+      <div style="display:flex;gap:4px;margin-top:4px;">
+        <button style="${btnStyle}" onclick="event.stopPropagation();loadCanvas('${c.id}')">Load</button>
+        <button style="${btnStyle}" onclick="event.stopPropagation();overwriteCanvas('${c.id}',${JSON.stringify(c.name).replace(/'/g,"\\'")},${c.node_count||0})" title="Overwrite with current canvas">Save</button>
+        <button style="${btnStyle}" onmouseover="this.style.color='#e05050';this.style.borderColor='#e05050'" onmouseout="this.style.color='var(--tx2,#b0b0a8)';this.style.borderColor='var(--border,#555550)'" onclick="event.stopPropagation();delCanvas('${c.id}')">Del</button>
+      </div>
+    </div>`;
   }).join('');
-  // Show unsaved work indicator if no active canvas but nodes exist
-  if(!_activeCanvasId&&nodes.length){list.insertAdjacentHTML('afterbegin','<div class="sb-item unsaved"><div class="sb-name">Unsaved work on canvas</div><div class="sb-meta">'+nodes.length+' nodes · not yet saved</div></div>');}
+  if(!_activeCanvasId&&nodes.length){list.insertAdjacentHTML('afterbegin','<div style="padding:6px 8px;margin-bottom:2px;border:1px dashed var(--border,#555550);border-radius:var(--r,4px);"><div style="font-size:11px;font-weight:500;color:var(--tx,#f0f0e8);">Unsaved work on canvas</div><div style="font-size:9px;color:var(--tx3,#a0a09a);">'+nodes.length+' nodes &middot; not yet saved</div></div>');}
 }
 async function overwriteCanvas(id,name,oldNodeCount){
   if(!confirm(`Overwrite "${name}" (${oldNodeCount} nodes) with current (${nodes.length} nodes)?`))return;
