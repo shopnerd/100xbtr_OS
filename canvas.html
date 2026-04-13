@@ -804,7 +804,7 @@ function drawNodes(){
       const iaX=n.x+stripeW+pad,iaY=n.y+pad,iaW=w-stripeW-pad*2,iaH=h-pad*2-labelH;
       if(img&&img.complete&&img.naturalWidth>0){
         // Auto-size node to image aspect ratio on first load
-        if(!n._imgSized){n._imgSized=true;const ratio=img.naturalWidth/img.naturalHeight;const nw=Math.max(180,Math.min(400,w));const nh=Math.round(nw/ratio)+labelH+pad*2;if(Math.abs(nh-h)>5||Math.abs(nw-w)>5){n.w=nw;n.h=nh;_tw('canvas_nodes',n.id);sb.from('canvas_nodes').update({w:nw,h:nh}).eq('id',n.id);}}
+        if(!n._imgSized){n._imgSized=true;}
         const ratio=img.naturalWidth/img.naturalHeight;
         // Recalc image area with possibly updated dimensions
         const iaW2=n.w-stripeW-pad*2,iaH2=n.h-pad*2-labelH;
@@ -1713,10 +1713,13 @@ Suggest which group each ungrouped node should join, or propose new groups. Resp
 
 function compactGroup(g){
   const mems=nigByGid(g.id);if(!mems.length)return;
-  const pad=8;mems.sort((a,b)=>(a.y-b.y)||(a.x-b.x));
+  const pad=10;mems.sort((a,b)=>(a.y-b.y)||(a.x-b.x));
+  // Use uniform max cell size so nodes never overlap
+  const cellW=Math.max(...mems.map(n=>n.w||DW));
+  const cellH=Math.max(...mems.map(n=>n.h||DH));
   const cols=Math.max(1,Math.ceil(Math.sqrt(mems.length)));
   const startX=g.x+pad,startY=g.y+GH+pad;
-  mems.forEach((n,i)=>{const col=i%cols,row=Math.floor(i/cols);n.x=startX+col*((n.w||DW)+pad);n.y=startY+row*((n.h||DH)+pad);});
+  mems.forEach((n,i)=>{const col=i%cols,row=Math.floor(i/cols);n.x=startX+col*(cellW+pad);n.y=startY+row*(cellH+pad);});
   sizeGAN(g,mems);
 }
 
