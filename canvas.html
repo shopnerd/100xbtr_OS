@@ -2167,7 +2167,7 @@ async function refreshCache(){
 
 const _ac={};let _acn=0;
 function _sa(acts){const id=_acn++;_ac[id]=acts;return id;}
-function toggleClaude(){claudeOn=!claudeOn;document.getElementById('clt').classList.toggle('on',claudeOn);document.getElementById('cp').classList.toggle('open',claudeOn);if(claudeOn)analyzeCanvas();}
+function toggleClaude(){claudeOn=!claudeOn;document.getElementById('clt').classList.toggle('on',claudeOn);document.getElementById('cp').classList.toggle('open',claudeOn);}
 let _claudeMax=false;
 function toggleClaudeMax(){_claudeMax=!_claudeMax;const cp=document.getElementById('cp');cp.style.width=_claudeMax?'600px':'';document.getElementById('cp-max-btn').style.opacity=_claudeMax?'1':'0.5';}
 async function callClaude(messages, system, maxTokens) {
@@ -2784,7 +2784,7 @@ async function execAll(actions){
   for(const a of actions.filter(x=>x.type==='create_link'))await execA(a);
   for(const a of actions.filter(x=>x.type==='delete_node'))await execA(a);
   for(const a of actions.filter(x=>x.type==='delete_group'))await execA(a);
-  await repairGroups();await runLayout();await validateCanvas(true);_cacheHash='';toast(`Done — ${actions.length} actions`);if(claudeOn)setTimeout(analyzeCanvas,600);
+  await repairGroups();await runLayout();await validateCanvas(true);_cacheHash='';toast(`Done — ${actions.length} actions`);
 }
 async function askClaude(){
   const input=document.getElementById('cpp');
