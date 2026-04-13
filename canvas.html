@@ -1713,14 +1713,16 @@ Suggest which group each ungrouped node should join, or propose new groups. Resp
 
 function compactGroup(g){
   const mems=nigByGid(g.id);if(!mems.length)return;
-  const pad=10;mems.sort((a,b)=>(a.y-b.y)||(a.x-b.x));
-  // Use uniform max cell size so nodes never overlap
+  const pad=12;mems.sort((a,b)=>(a.y-b.y)||(a.x-b.x));
   const cellW=Math.max(...mems.map(n=>n.w||DW));
   const cellH=Math.max(...mems.map(n=>n.h||DH));
   const cols=Math.max(1,Math.ceil(Math.sqrt(mems.length)));
+  const rows=Math.ceil(mems.length/cols);
   const startX=g.x+pad,startY=g.y+GH+pad;
   mems.forEach((n,i)=>{const col=i%cols,row=Math.floor(i/cols);n.x=startX+col*(cellW+pad);n.y=startY+row*(cellH+pad);});
-  sizeGAN(g,mems);
+  // Set group bounds directly — no sizeGAN which uses different padding
+  g.w=pad+cols*(cellW+pad);
+  g.h=GH+pad+rows*(cellH+pad);
 }
 
 async function removeEmptyGroups(){
