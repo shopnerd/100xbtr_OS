@@ -2703,11 +2703,39 @@ async function expandImageSearch(action){
   }
   return out;
 }
+async function expandWebSearch(action){
+  const query=action.query||action.label||'';
+  const count=Math.min(Math.max(1,parseInt(action.count)||5),10);
+  const groupLabel=action.group_label||query;
+  if(!query)return[];
+  toast('Searching web for "'+query+'"...');
+  let results=[];
+  try{
+    const res=await fetch('/.netlify/functions/web-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,count})});
+    const data=await res.json();results=data.results||[];
+  }catch(e){toast('Web search failed: '+e.message);return[];}
+  if(!results.length){toast('No results for "'+query+'"');return[];}
+  const out=[];
+  let uniqueLabel=groupLabel;
+  if(groups.find(g=>(g.label||'').trim().toLowerCase()===uniqueLabel.trim().toLowerCase())){
+    uniqueLabel+=' '+(groups.length+1);
+  }
+  out.push({type:'create_group',label:uniqueLabel,color:'#1D9E75'});
+  for(const r of results){
+    out.push({type:'create_node',label:(r.title||query).substring(0,60),node_type:'reference',group_label:uniqueLabel,url:r.url,description:r.description||'',favicon_url:r.favicon||''});
+  }
+  return out;
+}
 async function execA(a){
   if(typeof a==='string')a=JSON.parse(a);
   // Expand image_search into create_group + create_node actions
   if(a.type==='image_search'){
     const expanded=await expandImageSearch(a);
+    for(const ea of expanded)await execA(ea);
+    return;
+  }
+  if(a.type==='web_search'){
+    const expanded=await expandWebSearch(a);
     for(const ea of expanded)await execA(ea);
     return;
   }
@@ -2773,6 +2801,7 @@ async function execA(a){
 }
 async function execAll(actions){
   for(const a of actions.filter(x=>x.type==='create_group'))await execA(a);
+  for(const a of actions.filter(x=>x.type==='web_search'))await execA(a);
   for(const a of actions.filter(x=>x.type==='image_search'))await execA(a);
   for(const a of actions.filter(x=>x.type==='create_node'))await execA(a);
   for(const a of actions.filter(x=>x.type==='move_to_group'))await execA(a);
@@ -2801,7 +2830,8 @@ You MUST respond with JSON ONLY: {"response":"brief message","actions":[...]}
 Action types you can emit:
 - {"type":"create_group","label":"...","color":"#hex"}
 - {"type":"create_node","label":"...","node_type":"idea|reference|material|decision|question|anchor","group_label":"<group name>","description":"...","url":"https://...","w":280,"h":210}
-- {"type":"image_search","query":"<specific search terms>","group_label":"<group name>","count":6,"node_label":"<short caption>"}
+- {"type":"web_search","query":"<specific search terms>","group_label":"<group name>","count":5}
+- {"type":"image_search","query":"<specific search terms>","group_label":"<group name>","count":6}
 - {"type":"create_link","source_label":"<exact node label>","target_label":"<exact node label>","link_type":"supports|blocks|spawned|depends_on|related"}
 - {"type":"move_to_group","node_label":"...","group_label":"..."}
 - {"type":"delete_group","group_label":"...","delete_contents":true}
@@ -2809,7 +2839,12 @@ Action types you can emit:
 
 IMPORTANT: Each new request should create its own NEW group with a unique, specific label — do NOT add nodes to groups from previous requests unless the user explicitly asks to. Use descriptive group names that distinguish the content.
 
-You CAN create any kind of content the user asks for — not just business content. Prefer image_search for visual subjects (photos, objects, places, art, inspiration). Use specific search queries. Always respond with actions when the user asks you to create, add, build, or show things.`;
+CRITICAL: NEVER invent or guess URLs. You CANNOT know real URLs. Instead:
+- Use web_search to find real websites, articles, reviews, documentation — it runs a real search engine and returns verified URLs
+- Use image_search for visual content (photos, products, art, places) — it runs a real image search
+- Use create_node with node_type "reference" ONLY when the user provides a specific URL
+
+You CAN create any kind of content the user asks for — not just business content. Use specific search queries. Always respond with actions when the user asks you to create, add, build, or show things.`;
   const cpb=document.getElementById('cpb');
   const loading=document.createElement('div');loading.className='cplo';loading.textContent='Thinking...';
   cpb.appendChild(loading);cpb.scrollTop=cpb.scrollHeight;
@@ -2836,6 +2871,7 @@ function showActionApproval(actions){
     row.style.cssText='background:#3a3a38;border:1px solid var(--border,#555550);border-radius:var(--r,4px);padding:6px 8px;margin-bottom:4px;';
     const label=a.type==='create_group'?`Group: "${a.label}"`
       :a.type==='create_node'?`${a.node_type||a.nodeType||'idea'}: "${a.label}"`
+      :a.type==='web_search'?`Web search: "${a.query}" (${a.count||5} results → "${a.group_label||'new group'}")`
       :a.type==='image_search'?`Image search: "${a.query}" (${a.count||6} images → "${a.group_label||'new group'}")`
       :a.type==='create_link'?`Wire: ${a.source_label||a.from} → ${a.target_label||a.to}`
       :a.type==='move_to_group'?`Move "${a.node_label||a.label}" → ${a.group_label||a.group}`
@@ -2858,7 +2894,7 @@ async function approveAction(idx,el){
   const a=window._pendingActions?.[idx];if(!a)return;
   await execA(a);
   // Clean up groups after image_search or create_node
-  if(a.type==='image_search'||a.type==='create_node'){
+  if(a.type==='image_search'||a.type==='web_search'||a.type==='create_node'){
     const gLabel=a.group_label||a.query||a.group;
     const g=gLabel?groups.find(gg=>(gg.label||'').toLowerCase().includes(gLabel.toLowerCase())):null;
     if(g&&nigByGid(g.id).length)await cleanUpGroup(g.id);
@@ -2875,11 +2911,12 @@ Respond with JSON ONLY (no prose outside the JSON):
 
 Action types you can emit:
 - {"type":"create_group","label":"...","color":"#hex","x":NUM,"y":NUM,"w":NUM,"h":NUM}
-- {"type":"create_node","label":"...","node_type":"idea|reference|material|decision|question|anchor","group_label":"<group name>","description":"...","url":"...","w":NUM,"h":NUM}
-- {"type":"image_search","query":"<specific search terms>","group_label":"<group name>","count":6,"node_label":"<short caption>"}
+- {"type":"create_node","label":"...","node_type":"idea|reference|material|decision|question|anchor","group_label":"<group name>","description":"...","w":NUM,"h":NUM}
+- {"type":"web_search","query":"<specific search terms>","group_label":"<group name>","count":5}
+- {"type":"image_search","query":"<specific search terms>","group_label":"<group name>","count":6}
 - {"type":"create_link","source_label":"<exact node label>","target_label":"<exact node label>","link_type":"supports|blocks|spawned|depends_on|related"}
 
-Keep responses concise. Prefer image_search for visual subjects (photos, objects, places, art). Use specific search queries.`;
+NEVER invent URLs. Use web_search for websites/articles/reviews, image_search for visual content. Keep responses concise.`;
 }
 
 async function askClaudeBuild(){

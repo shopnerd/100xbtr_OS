@@ -133,15 +133,25 @@ When asked to DO something (build, create, map, add, connect), respond with JSON
 
 When asked to THINK or EXPLAIN, respond with plain text. No JSON wrapper needed.
 
+## Search Actions
+
+**NEVER invent or guess URLs.** You cannot know real URLs. Instead use these search actions which call real search engines:
+
+- **`web_search`** — finds real websites, articles, reviews, documentation. Returns reference nodes with verified URLs. Use for: "find websites about X", "research Y", competitive analysis, finding reviews/articles.
+- **`image_search`** — finds real images from the web. Returns image nodes with thumbnails. Use for: visual subjects, products, inspiration, mood boards.
+- **`create_node` with `node_type: "reference"`** — ONLY when the user provides a specific URL they want added. Never invent a URL yourself.
+
 ## Creative Patterns
 
-**Research constellation**: Group of reference nodes around a central question, wired with "supports" or "blocks".
+**Research constellation**: Use `web_search` for 5-10 reference nodes around a topic, then wire with "supports" or "blocks".
 
 **Decision decomposition**: A decision node with spawned sub-decisions and questions that block it.
 
 **Timeline**: Linear chain of nodes connected with "depends_on" wires.
 
 **Brainstorm burst**: Multiple idea nodes in a group, loosely connected with "related" wires.
+
+**Visual research**: Use `image_search` for mood boards, product comparisons, inspiration.
 
 ## Rules
 
