@@ -777,14 +777,14 @@ function drawNodes(){
     // Search-core glow
     if(isSearchCore){ctx.shadowColor='#C96B3A';ctx.shadowBlur=14/cam.z;}
     // paint explicit glow rect BEHIND node (no canvas shadow — unreliable cross-browser)
-    if(isSel||isNeighbor){
+    if(isSel){
       ctx.beginPath();rrect(ctx,n.x-pad,n.y-pad,w+pad*2,h+pad*2,r+pad);
       ctx.fillStyle='rgba(201,107,58,0.22)';ctx.fill();
     }
     // body
-    ctx.fillStyle=isSel||isNeighbor?'#c0c0bc':'#6e6e6a';
-    ctx.strokeStyle=isSel||isNeighbor?'#C96B3A':'#929290';
-    ctx.lineWidth=(isSel||isNeighbor?2:0.8)/cam.z;
+    ctx.fillStyle=isSel?'#c0c0bc':isNeighbor?'#8a8a86':'#6e6e6a';
+    ctx.strokeStyle=isSel?'#C96B3A':isNeighbor?'#C96B3A55':'#929290';
+    ctx.lineWidth=(isSel?2:isNeighbor?1.2:0.8)/cam.z;
     if(isInProgress){ctx.setLineDash([6/cam.z,4/cam.z]);ctx.strokeStyle=color;ctx.lineWidth=2/cam.z;}
     rrect(ctx,n.x,n.y,w,h,r);ctx.fill();ctx.stroke();
     if(isInProgress)ctx.setLineDash([]);
@@ -818,7 +818,7 @@ function drawNodes(){
         const lfs=Math.min(h*0.08,w*0.06);ctx.fillStyle='#666660';ctx.font=`${lfs}px 'SF Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('⚠ image failed',n.x+w/2,iaY+iaH/2);
       }
       // Label below image
-      const lfs=Math.min(labelH*0.6,w*0.07);ctx.fillStyle=isDone?'#999990':(isSel||isNeighbor)?'#1e1e1c':'#f0f0e8';
+      const lfs=Math.min(labelH*0.6,w*0.07);ctx.fillStyle=isDone?'#999990':isSel?'#1e1e1c':'#f0f0e8';
       ctx.font=`${lfs}px 'SF Mono',monospace`;ctx.textAlign='left';ctx.textBaseline='bottom';
       let dl=n.label||'';const maxLW=w-stripeW-14;
       if(ctx.measureText(dl).width>maxLW){while(ctx.measureText(dl+'…').width>maxLW&&dl.length>0)dl=dl.slice(0,-1);dl+='…';}
@@ -839,7 +839,7 @@ function drawNodes(){
         }
       }
       const fs=Math.min(h*0.22,w*0.075);ctx.font=`${fs}px 'SF Mono',monospace`;
-      ctx.fillStyle=isDone?'#999990':(isSel||isNeighbor)?'#1e1e1c':'#f0f0e8';ctx.textBaseline='middle';ctx.textAlign='left';
+      ctx.fillStyle=isDone?'#999990':isSel?'#1e1e1c':'#f0f0e8';ctx.textBaseline='middle';ctx.textAlign='left';
       const lines=wrapTxt(ctx,n.label||'',tw-6/cam.z);
       const lh=fs*1.38,th=lines.length*lh;const sy=n.y+h/2-th/2;
       lines.forEach((l,i)=>ctx.fillText(l,tx+4/cam.z,sy+i*lh+lh/2));
