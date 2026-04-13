@@ -1034,12 +1034,8 @@ function onMove(e){
     ws.style.width=Math.abs(cx-drag.ox)+'px';ws.style.height=Math.abs(cy-drag.oy)+'px';
   }
   else if(drag.node){
-    const dragIds=new Set(drag.mn.map(({n})=>n.id));
     drag.mn.forEach(({n,ox,oy})=>{n.x=wx-ox;n.y=wy-oy;});
-    separateNodes(nodes,dragIds);
-    // clamp non-dragged nodes back into their group bounds
-    for(const n of nodes){if(dragIds.has(n.id)||!n.group_id)continue;const g=groups.find(x=>x.id===n.group_id);if(!g)continue;const pad=4;n.x=Math.max(g.x+pad,Math.min(n.x,g.x+g.w-(n.w||DW)-pad));n.y=Math.max(g.y+GH+pad,Math.min(n.y,g.y+g.h-(n.h||DH)-pad));}
-    // live resize groups
+    // live resize groups to follow dragged nodes
     const liveGids=new Set([...drag.mn.map(({n})=>n.group_id).filter(Boolean),...(drag.prevGids||[])]);
     liveGids.forEach(gid=>{const g=groups.find(x=>x.id===gid);if(g)sizeGAN(g,nigByGid(gid));});
   }
@@ -1088,7 +1084,10 @@ async function onUp(e){
     pushUndo(()=>moveUndo(snap,'Move undone'),()=>moveUndo(afterSnap,'Move redone'));
     _tw('canvas_nodes','*');
     const oldGids=new Set(d.mn.map(({n})=>n.group_id).filter(Boolean));
-    for(const{n}of d.mn){const gid=getGid(n);n.group_id=gid;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y),group_id:gid||null}).eq('id',n.id);}
+    for(const{n}of d.mn){const gid=getGid(n);n.group_id=gid;}
+    // Snap dropped nodes to free grid slots (prevent overlap)
+    for(const{n}of d.mn){if(n.group_id)snapToFreeSlot(n,n.group_id);}
+    for(const{n}of d.mn){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y),group_id:n.group_id||null}).eq('id',n.id);}
     const newGids=new Set(d.mn.map(({n})=>n.group_id).filter(Boolean));
     const allAff=new Set([...oldGids,...newGids]);
     await Promise.all([...allAff].map(gid=>{
@@ -1427,6 +1426,33 @@ function separateNodes(scope,fixedIds=new Set()){
     }
     if(!any)break;
   }
+}
+// Check if two nodes overlap
+function nodesOverlap(a,b){const gap=4;return!(a.x+(a.w||DW)+gap<=b.x||b.x+(b.w||DW)+gap<=a.x||a.y+(a.h||DH)+gap<=b.y||b.y+(b.h||DH)+gap<=a.y);}
+// Find nearest free grid slot for a node within its group
+function snapToFreeSlot(n,gid){
+  const g=groups.find(gr=>gr.id===gid);if(!g)return;
+  const others=nigByGid(gid).filter(m=>m.id!==n.id);
+  // Check if current position is free
+  if(!others.some(m=>nodesOverlap(n,m)))return;
+  const pad=8,nw=n.w||DW,nh=n.h||DH;
+  const startX=g.x+pad,startY=g.y+GH+pad;
+  const cellW=nw+pad,cellH=nh+pad;
+  const cols=Math.max(1,Math.floor((g.w-pad*2+pad)/(cellW)));
+  // Try each grid slot, find the closest free one
+  let bestDist=Infinity,bestX=n.x,bestY=n.y;
+  const cx=n.x+nw/2,cy=n.y+nh/2;
+  for(let row=0;row<20;row++){
+    for(let col=0;col<cols;col++){
+      const sx=startX+col*cellW,sy=startY+row*cellH;
+      const test={x:sx,y:sy,w:nw,h:nh,id:'_test'};
+      if(others.some(m=>nodesOverlap(test,m)))continue;
+      const dist=Math.hypot(sx+nw/2-cx,sy+nh/2-cy);
+      if(dist<bestDist){bestDist=dist;bestX=sx;bestY=sy;}
+    }
+    if(bestDist<Infinity&&row>2)break; // stop searching far rows once we found one
+  }
+  n.x=bestX;n.y=bestY;
 }
 function nigByPos(g){return nodes.filter(n=>{const cx=n.x+(n.w||DW)/2,cy=n.y+(n.h||DH)/2;return cx>=g.x&&cx<=g.x+g.w&&cy>=g.y&&cy<=g.y+g.h;});}
 function sizeGAN(g,members){
