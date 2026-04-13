@@ -2281,18 +2281,7 @@ function addChatMsg(text,isUser){
   d.className='cpmsg'+(isUser?' user':'');
   d.textContent=text;
   cpb.appendChild(d);
-  if(!isUser&&window._lastClaudeUsage){
-    const u=window._lastClaudeUsage;
-    const inT=u.input_tokens||0,outT=u.output_tokens||0;
-    const cost=(inT*3+outT*15)/1e6;
-    const totals=window._claudeTotalTokens||{input:0,output:0};
-    const totalCost=(totals.input*3+totals.output*15)/1e6;
-    const tag=document.createElement('div');
-    tag.style.cssText='font-size:8px;color:var(--tx3,#a0a09a);margin-top:2px;';
-    tag.textContent=`${inT.toLocaleString()} in · ${outT.toLocaleString()} out · ~$${cost.toFixed(4)} · session: ${window._claudeCallCount||0} calls ~$${totalCost.toFixed(4)}`;
-    cpb.appendChild(tag);
-    window._lastClaudeUsage=null;
-  }
+  if(!isUser&&window._lastClaudeUsage)window._lastClaudeUsage=null;
   cpb.scrollTop=cpb.scrollHeight;
 }
 
@@ -2788,6 +2777,8 @@ async function execAll(actions){
   for(const a of actions.filter(x=>x.type==='delete_group'))await execA(a);
   // Clean up all groups that have members (grid + resize)
   for(const g of groups){if(nigByGid(g.id).length)await cleanUpGroup(g.id);}
+  // Push overlapping groups apart and save positions
+  if(groups.length>1){repelGroupList(groups,40,30);await spreadSave();}
   _cacheHash='';toast(`Done — ${actions.length} actions`);
   setTimeout(()=>fitAll(),100);
 }
@@ -2866,7 +2857,8 @@ async function approveAction(idx,el){
     const g=gLabel?groups.find(gg=>(gg.label||'').toLowerCase().includes(gLabel.toLowerCase())):null;
     if(g&&nigByGid(g.id).length)await cleanUpGroup(g.id);
   }
-  if(el)el.remove();toast('Action applied');
+  if(groups.length>1){repelGroupList(groups,40,30);await spreadSave();}
+  if(el)el.remove();toast('Action applied');fitAll();
 }
 
 function getBuildSystemPrompt(){
