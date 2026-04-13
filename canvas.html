@@ -961,12 +961,7 @@ function onDown(e){
   closeCtx();
   const{wx,wy,cx,cy}=wp(e);mdPos={x:cx,y:cy};mMoved=false;lm={x:cx,y:cy};
   if(spaceDown){drag={on:true,pan:true,ox:cx,oy:cy,camX:cam.x,camY:cam.y};return;}
-  if(altDown){
-    winSelStart={cx,cy};
-    const ws=document.getElementById('win-sel');ws.style.display='block';ws.style.left=cx+'px';ws.style.top=cy+'px';ws.style.width='0';ws.style.height='0';
-    ws.style.borderColor='#C96B3A88';ws.style.background='rgba(201,107,58,0.06)';
-    drag={on:true,winSel:true,altSel:true,ox:cx,oy:cy};return;
-  }
+  // Alt+click on empty space handled below with regular empty-space path
   // Port hit — checked before hNode so edge-port clicks work outside strict node bounds
   const portN=nodes.slice().reverse().find(n=>hPort(n,wx,wy));
   if(portN&&linkFrom){
@@ -1024,9 +1019,10 @@ function onDown(e){
   linkFrom=null;closeNE();closeGE();
   if(!e.shiftKey)selected={nodes:[],groups:[]};
   winSelStart={cx,cy};
+  const isAlt=e.altKey;
   const ws=document.getElementById('win-sel');ws.style.display='block';ws.style.left=cx+'px';ws.style.top=cy+'px';ws.style.width='0';ws.style.height='0';
-  ws.style.borderColor='#378ADD66';ws.style.background='rgba(55,138,221,0.05)';
-  drag={on:true,winSel:true,ox:cx,oy:cy};
+  ws.style.borderColor=isAlt?'#C96B3A88':'#378ADD66';ws.style.background=isAlt?'rgba(201,107,58,0.06)':'rgba(55,138,221,0.05)';
+  drag={on:true,winSel:true,altSel:isAlt,ox:cx,oy:cy};
 }
 
 function onMove(e){
