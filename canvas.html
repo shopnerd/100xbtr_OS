@@ -808,8 +808,10 @@ function drawNodes(){
         const ix=iaX+(iaW2-dW)/2,iy=iaY+(iaH2-dH)/2;
         ctx.save();ctx.beginPath();rrect(ctx,iaX,iaY,iaW2,iaH2,2/cam.z);ctx.clip();
         ctx.drawImage(img,ix,iy,dW,dH);ctx.restore();
-      }else if(!img){const i=new Image();i.crossOrigin='anonymous';i.src=thumbSrc;imgCache[imgKey]=i;
+      }else if(!img){const i=new Image();i.crossOrigin='anonymous';i.onerror=()=>{if(i.crossOrigin){i.crossOrigin=null;i.src=thumbSrc;}else{i._failed=true;}};i.src=thumbSrc;imgCache[imgKey]=i;
         const lfs=Math.min(h*0.08,w*0.06);ctx.fillStyle='#888882';ctx.font=`${lfs}px 'SF Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('loading…',n.x+w/2,iaY+iaH/2);
+      }else if(img._failed){
+        const lfs=Math.min(h*0.08,w*0.06);ctx.fillStyle='#666660';ctx.font=`${lfs}px 'SF Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('⚠ image failed',n.x+w/2,iaY+iaH/2);
       }
       // Label below image
       const lfs=Math.min(labelH*0.6,w*0.07);ctx.fillStyle=isDone?'#999990':(isSel||isNeighbor)?'#1e1e1c':'#f0f0e8';
@@ -826,7 +828,7 @@ function drawNodes(){
           ctx.save();ctx.beginPath();rrect(ctx,n.x+6/cam.z,n.y+4/cam.z,sz,sz,2/cam.z);ctx.clip();
           ctx.drawImage(img,n.x+6/cam.z,n.y+4/cam.z,sz,sz);ctx.restore();
           tx=n.x+sz+10/cam.z;tw=w-sz-14/cam.z;
-        }else if(!img){const i=new Image();i.crossOrigin='anonymous';i.src=thumbSrc;imgCache[imgKey]=i;}
+        }else if(!img){const i=new Image();i.crossOrigin='anonymous';i.onerror=()=>{if(i.crossOrigin){i.crossOrigin=null;i.src=thumbSrc;}else{i._failed=true;}};i.src=thumbSrc;imgCache[imgKey]=i;}
       }
       const fs=Math.min(h*0.22,w*0.075);ctx.font=`${fs}px 'SF Mono',monospace`;
       ctx.fillStyle=isDone?'#999990':(isSel||isNeighbor)?'#1e1e1c':'#f0f0e8';ctx.textBaseline='middle';ctx.textAlign='left';
@@ -1288,10 +1290,10 @@ async function fetchTitle(id,url){
     const d=await r.json();
     const update={};
     if(d.title)update.label=d.title;
-    if(d.image&&!nById(id)?.thumbnail_url){update.thumbnail_url=d.image;}
+    if(d.image&&!nById(id)?.thumbnail_url){update.thumbnail_url=d.image;update.w=280;update.h=210;}
     if(d.favicon)update.favicon_url=d.favicon;
     if(d.description){update.description=d.description;}
-    if(Object.keys(update).length){_tw('canvas_nodes',id);await sb.from('canvas_nodes').update(update).eq('id',id);const n=nById(id);if(n)Object.assign(n,update);}
+    if(Object.keys(update).length){_tw('canvas_nodes',id);await sb.from('canvas_nodes').update(update).eq('id',id);const n=nById(id);if(n){Object.assign(n,update);delete imgCache[id+'_thumb'];}}
   }catch(e){}
 }
 async function addImageFile(input){
@@ -1996,7 +1998,7 @@ function initSidebarResize(){
 }
 function showSbTab(id,el){document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('on'));document.getElementById('sbp-'+id).classList.add('on');el.classList.add('on');if(mkCanvas)mkCanvas.style.pointerEvents=id==='markup'?'auto':'none';}
 let _spreadTimer=null;
-function onSpreadSlider(v){spreadGapX=parseInt(v);spreadGapY=parseInt(v);document.getElementById('spread-val').textContent=v+' px';clearTimeout(_spreadTimer);_spreadTimer=setTimeout(()=>repelGroupsOnly(),300);}
+function onSpreadSlider(v){spreadGapX=parseInt(v);spreadGapY=parseInt(v);document.getElementById('spread-val').textContent=v+' px';clearTimeout(_spreadTimer);_spreadTimer=setTimeout(async()=>{await repelGroupsOnly();fitAll();},300);}
 
 // SAVED CANVASES
 function _liveHash(){return nodes.length+'|'+groups.length+'|'+links.length;}
