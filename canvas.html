@@ -2747,12 +2747,21 @@ async function askClaude(){
   input.value='';
   addChatMsg(msg,true);
   const{graphCtx,nl,ll,gl}=cCtxGraph();
-  const sys=(_soundBrain||'You are an AI collaborator for 100xbtr_sound.')+`\n\n--- CURRENT CANVAS STATE ---
+  const sys=(_soundBrain||'You are an AI collaborator inside a visual canvas tool.')+`\n\n--- CURRENT CANVAS STATE ---
 ${_cacheSummary?'Canvas summary:\n'+_cacheSummary+'\n':''}Structure overview:\n${graphCtx}
 Canvas Nodes: ${nl||'(none)'}\nLinks: ${ll||'(none)'}\nGroups: ${gl||'(none)'}
 
-Respond with JSON: {"response":"brief message","actions":[...]}
-Action types: create_group, create_node (with node_type, group_label, url, description), create_link (source_label, target_label, link_type), move_to_group, delete_group, delete_node.`;
+You MUST respond with JSON ONLY: {"response":"brief message","actions":[...]}
+
+Action types you can emit:
+- {"type":"create_group","label":"...","color":"#hex"}
+- {"type":"create_node","label":"...","node_type":"idea|reference|material|decision|question|anchor","group_label":"<existing group>","description":"...","url":"https://...","w":280,"h":210}
+- {"type":"create_link","source_label":"<exact node label>","target_label":"<exact node label>","link_type":"supports|blocks|spawned|depends_on|related"}
+- {"type":"move_to_group","node_label":"...","group_label":"..."}
+- {"type":"delete_group","group_label":"...","delete_contents":true}
+- {"type":"delete_node","node_label":"..."}
+
+You CAN create any kind of content the user asks for — not just business content. For visual/image/research topics, create reference nodes with real URLs (set w:280, h:210). The canvas will auto-fetch website screenshots as thumbnails. Always respond with actions when the user asks you to create, add, build, or show things.`;
   const cpb=document.getElementById('cpb');
   const loading=document.createElement('div');loading.className='cplo';loading.textContent='Thinking...';
   cpb.appendChild(loading);cpb.scrollTop=cpb.scrollHeight;
