@@ -2635,7 +2635,10 @@ function checkHashHighlight(){
 }
 
 async function analyzeCanvas(){
-  const body=document.getElementById('cpb');body.innerHTML='<div class="cplo">Reading canvas...</div>';
+  const cpb=document.getElementById('cpb');
+  addChatMsg('Analyze',true);
+  const loading=document.createElement('div');loading.className='cplo';loading.textContent='Reading canvas...';
+  cpb.appendChild(loading);cpb.scrollTop=cpb.scrollHeight;
   const cache=await refreshCache();
   const{graphCtx,nl,ll,gl}=cCtxGraph();
   const prompt=`You are analyzing a shared canvas for 100xbtr_sound — a boutique horn speaker company (Will: design/CNC, Brendan: cabinetry, Nishant: EE/horn design).
@@ -2646,25 +2649,30 @@ Respond ONLY with valid JSON, no markdown:
 Max 3 gaps, 3 suggestions, 6 actions.`;
   try{
     const text=await callClaude([{role:'user',content:prompt}],null,2000);
+    loading.remove();
     const parsed=extractJSON(text);
     if(parsed){renderAnalysis(parsed);logClaude('Analyze canvas state',parsed.reading||text.slice(0,300),parsed.actions||null,'analyze');}
-    else body.innerHTML='<div class="cplo">Could not parse response. Raw: '+text.substring(0,300)+'</div>';
-  }catch(e){body.innerHTML=`<div class="cplo">Error: ${e.message}</div>`;}
+    else addChatMsg('Could not parse response.',false);
+  }catch(e){loading.remove();addChatMsg('Error: '+e.message,false);}
 }
 function aLabel(a){if(a.type==='create_group')return`Create group "${a.label}"`;if(a.type==='create_node')return`Add node "${a.label}"`;if(a.type==='create_link')return`Connect "${a.from}" → "${a.to}"`;if(a.type==='move_to_group')return`Move "${a.label}" → "${a.group}"`;return'Action';}
 function renderAnalysis(data){
-  const body=document.getElementById('cpb');let html='';
-  if(data.reading)html+=`<div class="cps"><div class="cpst">Reading</div><div class="cpr">${data.reading}</div></div>`;
-  if(data.gaps?.length){html+='<div class="cps"><div class="cpst">Gaps</div>';data.gaps.forEach(g=>{const qj=JSON.stringify(g.question);html+=`<div class="cpg"><div class="cpgq">${g.question}</div><button class="cpga" onclick='addGapNode(${qj})'>+ node</button></div>`;});html+='</div>';}
-  if(data.suggestions?.length){html+='<div class="cps"><div class="cpst">Suggested connections</div>';data.suggestions.forEach(s=>{html+=`<div class="cpco"><span style="flex:1;">"${s.from}" → "${s.to}"<br><span style="font-size:9px;color:#444440">${s.reason}</span></span><button class="cpcl" onclick='addSugLink(${JSON.stringify(s.from)},${JSON.stringify(s.to)})'>Connect</button></div>`;});html+='</div>';}
-  if(data.actions?.length){
-    html+='<div class="cps"><div class="cpst">Actions</div>';
-    const allId=_sa(data.actions);
-    data.actions.forEach(a=>{const id=_sa(a);html+=`<div class="cpac"><div class="cpact">${aLabel(a)}</div><div class="cpacb">${a.description||''}</div><button class="cpado" onclick="execA(_ac[${id}])">Do it</button><button class="cpadx" onclick="this.parentElement.remove()">Skip</button></div>`;});
-    html+=`<button class="cpsend" style="margin-top:4px;" onclick="execAll(_ac[${allId}])">Do all ↵</button>`;
-    html+='</div>';
+  const cpb=document.getElementById('cpb');
+  if(data.reading)addChatMsg(data.reading,false);
+  if(data.gaps?.length){
+    const gapDiv=document.createElement('div');gapDiv.className='cps';
+    gapDiv.innerHTML='<div class="cpst">Gaps</div>';
+    data.gaps.forEach(g=>{const qj=JSON.stringify(g.question);gapDiv.innerHTML+=`<div class="cpg"><div class="cpgq">${g.question}</div><button class="cpga" onclick='addGapNode(${qj})'>+ node</button></div>`;});
+    cpb.appendChild(gapDiv);
   }
-  body.innerHTML=html||'<div class="cplo">Add more nodes for a meaningful analysis.</div>';
+  if(data.suggestions?.length){
+    const sugDiv=document.createElement('div');sugDiv.className='cps';
+    sugDiv.innerHTML='<div class="cpst">Suggested connections</div>';
+    data.suggestions.forEach(s=>{sugDiv.innerHTML+=`<div class="cpco"><span style="flex:1;">"${s.from}" → "${s.to}"<br><span style="font-size:9px;color:#444440">${s.reason}</span></span><button class="cpcl" onclick='addSugLink(${JSON.stringify(s.from)},${JSON.stringify(s.to)})'>Connect</button></div>`;});
+    cpb.appendChild(sugDiv);
+  }
+  if(data.actions?.length)showActionApproval(data.actions);
+  cpb.scrollTop=cpb.scrollHeight;
 }
 async function addGapNode(question){
   const id='q-'+Date.now();const x=(Math.random()-0.5)*300,y=(Math.random()-0.5)*200;_tw('canvas_nodes',id);
