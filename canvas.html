@@ -2691,11 +2691,15 @@ async function expandImageSearch(action){
   }catch(e){toast('Image search failed: '+e.message);return[];}
   if(!images.length){toast('No images found for "'+query+'"');return[];}
   const out=[];
-  const existingGroup=groups.find(g=>(g.label||'').trim().toLowerCase()===groupLabel.trim().toLowerCase());
-  if(!existingGroup)out.push({type:'create_group',label:groupLabel,color:'#7F77DD'});
+  // Always create a new group per request — avoid merging into existing groups
+  let uniqueLabel=groupLabel;
+  if(groups.find(g=>(g.label||'').trim().toLowerCase()===uniqueLabel.trim().toLowerCase())){
+    uniqueLabel+=' '+(groups.length+1);
+  }
+  out.push({type:'create_group',label:uniqueLabel,color:'#7F77DD'});
   for(let i=0;i<images.length;i++){
     const img=images[i];
-    out.push({type:'create_node',label:(img.title||query).substring(0,60),node_type:'image',group_label:groupLabel,thumbnail_url:img.thumbnail||img.url,description:(img.description||'')+(img.artist?'\n\nBy: '+img.artist:''),w:280,h:210});
+    out.push({type:'create_node',label:(img.title||query).substring(0,60),node_type:'image',group_label:uniqueLabel,thumbnail_url:img.thumbnail||img.url,description:(img.description||'')+(img.artist?'\n\nBy: '+img.artist:''),w:280,h:210});
   }
   return out;
 }
@@ -2796,12 +2800,14 @@ You MUST respond with JSON ONLY: {"response":"brief message","actions":[...]}
 
 Action types you can emit:
 - {"type":"create_group","label":"...","color":"#hex"}
-- {"type":"create_node","label":"...","node_type":"idea|reference|material|decision|question|anchor","group_label":"<existing group>","description":"...","url":"https://...","w":280,"h":210}
-- {"type":"image_search","query":"<specific search terms>","group_label":"<existing group>","count":6,"node_label":"<short caption>"}
+- {"type":"create_node","label":"...","node_type":"idea|reference|material|decision|question|anchor","group_label":"<group name>","description":"...","url":"https://...","w":280,"h":210}
+- {"type":"image_search","query":"<specific search terms>","group_label":"<group name>","count":6,"node_label":"<short caption>"}
 - {"type":"create_link","source_label":"<exact node label>","target_label":"<exact node label>","link_type":"supports|blocks|spawned|depends_on|related"}
 - {"type":"move_to_group","node_label":"...","group_label":"..."}
 - {"type":"delete_group","group_label":"...","delete_contents":true}
 - {"type":"delete_node","node_label":"..."}
+
+IMPORTANT: Each new request should create its own NEW group with a unique, specific label — do NOT add nodes to groups from previous requests unless the user explicitly asks to. Use descriptive group names that distinguish the content.
 
 You CAN create any kind of content the user asks for — not just business content. Prefer image_search for visual subjects (photos, objects, places, art, inspiration). Use specific search queries. Always respond with actions when the user asks you to create, add, build, or show things.`;
   const cpb=document.getElementById('cpb');
@@ -2869,8 +2875,8 @@ Respond with JSON ONLY (no prose outside the JSON):
 
 Action types you can emit:
 - {"type":"create_group","label":"...","color":"#hex","x":NUM,"y":NUM,"w":NUM,"h":NUM}
-- {"type":"create_node","label":"...","node_type":"idea|reference|material|decision|question|anchor","group_label":"<existing group>","description":"...","url":"...","w":NUM,"h":NUM}
-- {"type":"image_search","query":"<specific search terms>","group_label":"<existing group>","count":6,"node_label":"<short caption>"}
+- {"type":"create_node","label":"...","node_type":"idea|reference|material|decision|question|anchor","group_label":"<group name>","description":"...","url":"...","w":NUM,"h":NUM}
+- {"type":"image_search","query":"<specific search terms>","group_label":"<group name>","count":6,"node_label":"<short caption>"}
 - {"type":"create_link","source_label":"<exact node label>","target_label":"<exact node label>","link_type":"supports|blocks|spawned|depends_on|related"}
 
 Keep responses concise. Prefer image_search for visual subjects (photos, objects, places, art). Use specific search queries.`;
