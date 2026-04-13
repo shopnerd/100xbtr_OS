@@ -393,10 +393,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="cscroll"><div id="cscroll-resize"><div id="cscroll-grip"></div></div><div id="cscroll-thumb"></div></div>
 
 <script>
-const SURL='https://uzhcjxolnfzcezbntzrz.supabase.co';
-const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6aGNqeG9sbmZ6Y2V6Ym50enJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNzUzMDksImV4cCI6MjA5MDY1MTMwOX0.M92v-r1_hYvIj0FLNiXokWn-UFbH_HYK5UCNGuwhQNc';
-const ALLOWED=['zolaray25@gmail.com','fraektaard@gmail.com','nishbphoto@gmail.com'];
-const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-auth',persistSession:true,detectSessionInUrl:true}});
+const SURL='https://jfdnzvctudgupfbyrnru.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZG56dmN0dWRndXBmYnlybnJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MjE1MTYsImV4cCI6MjA5MDk5NzUxNn0.G1jCv6BfwcR6GXKjoFRBruRXIB_SNEmDqINmxJbOW-8';
+const WSID='ws-sound';
+const sb=supabase.createClient(SURL,SKEY,{auth:{storageKey:'100xbtr-os-auth',persistSession:true,detectSessionInUrl:true}});
 
 let user=null,who='';
 const NAMES={'zolaray25@gmail.com':'Will','fraektaard@gmail.com':'Brendan','nishbphoto@gmail.com':'Nishant'};
@@ -430,8 +430,9 @@ async function signOut(){
 
 async function startApp(u){
   const email=u.email.toLowerCase();
-  if(!ALLOWED.includes(email)){await sb.auth.signOut();return;}
-  user=u;who=NAMES[email]||email.split('@')[0];
+  const{data:membership}=await sb.from('workspace_members').select('display_name,role').eq('email',email).eq('workspace_id',WSID).single();
+  if(!membership){await sb.auth.signOut();return;}
+  user=u;who=membership.display_name||NAMES[email]||email.split('@')[0];
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('user-email-display').textContent=email;
@@ -451,10 +452,10 @@ sb.auth.onAuthStateChange((event,session)=>{
 
 async function initDB(){
   const[f,q]=await Promise.all([
-    sb.from('editable_fields').select('id').limit(1),
-    sb.from('collab_questions').select('id').limit(1),
+    sb.from('editable_fields').select('id').eq('workspace_id',WSID).limit(1),
+    sb.from('collab_questions').select('id').eq('workspace_id',WSID).limit(1),
   ]);
-  if(!q.data?.length)await sb.from('collab_questions').insert(DCQ.map(x=>({id:x.id,question:x.question,category:x.category})));
+  if(!q.data?.length)await sb.from('collab_questions').insert(DCQ.map(x=>({id:x.id,question:x.question,category:x.category,workspace_id:WSID})));
 }
 
 function setupRealtime(){
@@ -462,9 +463,9 @@ function setupRealtime(){
     .on('postgres_changes',{event:'*',schema:'public',table:'log_entries'},loadLog)
     .on('postgres_changes',{event:'*',schema:'public',table:'editable_fields'},loadFields)
     .on('postgres_changes',{event:'*',schema:'public',table:'collab_answers'},loadQs)
-    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_nodes'},()=>{loadCanvasData().then(()=>{renderCanvasTab();loadDecisions();updateOverviewMetrics();});})
-    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_groups'},()=>{loadCanvasData().then(renderCanvasTab);})
-    .on('postgres_changes',{event:'*',schema:'public',table:'canvas_links'},()=>{loadCanvasData().then(renderCanvasTab);})
+    .on('postgres_changes',{event:'*',schema:'public',table:'nodes'},()=>{loadCanvasData().then(()=>{renderCanvasTab();loadDecisions();updateOverviewMetrics();});})
+    .on('postgres_changes',{event:'*',schema:'public',table:'groups'},()=>{loadCanvasData().then(renderCanvasTab);})
+    .on('postgres_changes',{event:'*',schema:'public',table:'links'},()=>{loadCanvasData().then(renderCanvasTab);})
     .on('postgres_changes',{event:'*',schema:'public',table:'canvas_config'},loadCanvasSummary)
     .on('postgres_changes',{event:'*',schema:'public',table:'activity_log'},()=>{loadCanvasData().then(renderCanvasTab);loadLog();})
     .subscribe();
@@ -574,7 +575,7 @@ async function dragDrop(e,targetId){
   reordered.splice(tgtIdx,0,moved);
   window._lastDecisions=reordered;
   renderDecisions(reordered);
-  await Promise.all(reordered.map((d,i)=>sb.from('canvas_nodes').update({sort_order:i}).eq('id',d.id)));
+  await Promise.all(reordered.map((d,i)=>sb.from('nodes').update({sort_order:i}).eq('id',d.id)));
   await alog(`${who} reordered decisions`);
 }
 function dragEnd(){
@@ -586,7 +587,7 @@ async function saveDecisionText(id,el){
   const newText=el.innerText.trim();
   const orig=(window._lastDecisions||[]).find(d=>d.id===id);
   if(!orig||newText===orig.text)return;
-  await sb.from('canvas_nodes').update({label:newText}).eq('id',id);
+  await sb.from('nodes').update({label:newText}).eq('id',id);
   await alog(`${who} edited decision: "${newText.substring(0,60)}"`);
 }
 
@@ -594,13 +595,13 @@ async function saveDecisionOwner(id,el){
   const newOwner=el.innerText.trim();
   const orig=(window._lastDecisions||[]).find(d=>d.id===id);
   if(!orig||newOwner===(orig.owner||''))return;
-  await sb.from('canvas_nodes').update({description:newOwner}).eq('id',id);
+  await sb.from('nodes').update({description:newOwner}).eq('id',id);
   await alog(`${who} updated comment on decision: "${newOwner.substring(0,60)}"`);
 }
 
 async function toggleD(id,cur){
   const newStatus=cur?'open':'done';
-  await sb.from('canvas_nodes').update({status:newStatus}).eq('id',id);
+  await sb.from('nodes').update({status:newStatus}).eq('id',id);
   const node=(cvNodes||[]).find(n=>n.id===id);
   await alog(`${who} ${!cur?'marked decided':'reopened'}: "${(node?.label||'').substring(0,60)}"`);
 }
@@ -612,7 +613,7 @@ async function addDecision(){
   if(!text)return;
   const id='n-'+Date.now();
   const sortOrder=(window._lastDecisions||[]).length;
-  await sb.from('canvas_nodes').insert({id,label:text,type:'decision',description:owner||'',status:'open',priority:priority==='none'?null:priority,sort_order:sortOrder,author:who,x:0,y:0,w:180,h:54});
+  await sb.from('nodes').insert({id,label:text,type:'decision',description:owner||'',status:'open',priority:priority==='none'?null:priority,sort_order:sortOrder,author:who,x:0,y:0,w:180,h:54,workspace_id:WSID});
   await alog(`${who} added decision: "${text}"`);
   document.getElementById('new-d-text').value='';
   document.getElementById('new-d-owner').value='';
@@ -620,7 +621,7 @@ async function addDecision(){
 }
 
 async function loadFields(){
-  const{data,error}=await sb.from('editable_fields').select('*');
+  const{data,error}=await sb.from('editable_fields').select('*').eq('workspace_id',WSID);
   if(error||!data)return;
   fc={};
   data.forEach(f=>fc[f.id]=f);
@@ -684,7 +685,7 @@ function renderOverview(){
     el.innerHTML=`<div class="eyebrow">${cfg.eyebrow}</div>${ef(cfg.id,cfg.style,opts)}${equity}`;
     if(!fc[cfg.id]?.value){
       fc[cfg.id]={id:cfg.id,value:cfg.fallback,updated_by:null,updated_at:null};
-      sb.from('editable_fields').insert({id:cfg.id,label:cfg.label,value:cfg.fallback,section:'overview'});
+      sb.from('editable_fields').insert({id:cfg.id,label:cfg.label,value:cfg.fallback,section:'overview',workspace_id:WSID});
       const fd=document.getElementById('fd-'+cfg.id);
       if(fd)fd.textContent=cfg.fallback;
       const em=document.getElementById('em-'+cfg.id);
@@ -711,7 +712,7 @@ function renderMission(data){
   if(!fc['mission-text']?.value){
     const f={id:'mission-text',value:'Make horn loudspeakers that are genuinely, obsessively better — in sound, in craft, in design. Objects worth keeping for a lifetime.',updated_by:null,updated_at:null};
     fc['mission-text']=f;
-    sb.from('editable_fields').insert({id:'mission-text',label:'Mission',value:f.value,section:'overview'});
+    sb.from('editable_fields').insert({id:'mission-text',label:'Mission',value:f.value,section:'overview',workspace_id:WSID});
     document.getElementById('fd-mission-text').textContent=f.value;
     document.getElementById('em-mission-text').textContent='click to edit';
   }
@@ -732,7 +733,7 @@ function renderNorthStar(data){
   Object.entries(defaults).forEach(([id,value])=>{
     if(!fc[id]?.value){
       fc[id]={id,value,updated_by:null,updated_at:null};
-      sb.from('editable_fields').insert({id,label:id,value,section:'overview'});
+      sb.from('editable_fields').insert({id,label:id,value,section:'overview',workspace_id:WSID});
       const el2=document.getElementById('fd-'+id);
       if(el2)el2.textContent=value;
       const em=document.getElementById('em-'+id);
@@ -888,15 +889,15 @@ async function addField(section){
   const value=inp.value.trim();
   if(!value)return;
   const id=section+'-'+Date.now();
-  await sb.from('editable_fields').insert({id,label:value.substring(0,30),value,section,updated_by:who,updated_at:new Date().toISOString()});
+  await sb.from('editable_fields').insert({id,label:value.substring(0,30),value,section,updated_by:who,updated_at:new Date().toISOString(),workspace_id:WSID});
   await alog(`${who} added to ${section}: "${value.substring(0,60)}"`);
   inp.value='';
 }
 
 async function loadQs(){
   const[{data:qs},{data:ans}]=await Promise.all([
-    sb.from('collab_questions').select('*').order('id'),
-    sb.from('collab_answers').select('*').order('created_at'),
+    sb.from('collab_questions').select('*').eq('workspace_id',WSID).order('id'),
+    sb.from('collab_answers').select('*').eq('workspace_id',WSID).order('created_at'),
   ]);
   if(!qs)return;
   renderQs('collab-qs',qs.filter(q=>q.category==='team'),ans||[]);
@@ -937,7 +938,7 @@ async function addQuestion(category){
   const text=inp.value.trim();
   if(!text)return;
   const id='q-'+Date.now();
-  await sb.from('collab_questions').insert({id,question:text,category});
+  await sb.from('collab_questions').insert({id,question:text,category,workspace_id:WSID});
   await alog(`${who} added question: "${text}"`);
   inp.value='';
 }
@@ -954,8 +955,8 @@ async function saveAns(qId){
   if(!ta)return;
   const text=ta.value.trim();
   if(!text)return;
-  const{data:q}=await sb.from('collab_questions').select('question').eq('id',qId).single();
-  await sb.from('collab_answers').insert({question_id:qId,text,author:who,created_at:new Date().toISOString()});
+  const{data:q}=await sb.from('collab_questions').select('question').eq('id',qId).eq('workspace_id',WSID).single();
+  await sb.from('collab_answers').insert({question_id:qId,text,author:who,created_at:new Date().toISOString(),workspace_id:WSID});
   await alog(`${who} answered "${q.question.substring(0,55)}...": ${text.substring(0,80)}${text.length>80?'...':''}`);
   ta.value='';
   document.getElementById('af-'+qId).style.display='none';
@@ -963,8 +964,8 @@ async function saveAns(qId){
 
 async function loadLog(){
   const[le,al]=await Promise.all([
-    sb.from('log_entries').select('*').order('created_at',{ascending:false}),
-    sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(100),
+    sb.from('log_entries').select('*').eq('workspace_id',WSID).order('created_at',{ascending:false}),
+    sb.from('activity_log').select('*').eq('workspace_id',WSID).order('created_at',{ascending:false}).limit(100),
   ]);
   const manual=(le.data||[]).map(e=>({id:e.id,text:e.text,author:e.author,color:e.color||'#378ADD',created_at:e.created_at,src:'log',image_data:null}));
   const canvas=(al.data||[]).map(e=>({id:e.id,text:e.detail||e.action,author:e.author||'canvas',color:gc(e.author)||'#378ADD',created_at:e.created_at,src:'activity',image_data:e.image_data||null}));
@@ -982,7 +983,7 @@ async function loadLog(){
 }
 
 async function alog(text){
-  await sb.from('activity_log').insert({action:'manual',detail:text,author:who,created_at:new Date().toISOString()});
+  await sb.from('activity_log').insert({action:'manual',detail:text,author:who,created_at:new Date().toISOString(),workspace_id:WSID});
 }
 async function mlog(){
   const inp=document.getElementById('log-input');
@@ -1153,10 +1154,10 @@ function openCvSnap(src){document.getElementById('cv-full').src=src;document.get
 
 async function loadCanvasData(){
   const[n,g,l,a]=await Promise.all([
-    sb.from('canvas_nodes').select('*'),
-    sb.from('canvas_groups').select('*'),
-    sb.from('canvas_links').select('*'),
-    sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(20),
+    sb.from('nodes').select('*').eq('workspace_id',WSID),
+    sb.from('groups').select('*').eq('workspace_id',WSID),
+    sb.from('links').select('*').eq('workspace_id',WSID),
+    sb.from('activity_log').select('*').eq('workspace_id',WSID).order('created_at',{ascending:false}).limit(20),
   ]);
   cvNodes=n.data||[];cvGroups=g.data||[];cvLinks=l.data||[];cvActivity=a.data||[];
 }
@@ -1165,7 +1166,7 @@ async function loadCanvasSummary(){
   const el=document.getElementById('cv-summary-wrap');
   if(!el)return;
   try{
-    const{data}=await sb.from('canvas_config').select('value,updated_at').eq('key','summary').single();
+    const{data}=await sb.from('canvas_config').select('value,updated_at').eq('key','summary').eq('workspace_id',WSID).single();
     if(data&&data.value){
       el.innerHTML=`<div class="card"><div class="cv-summary">${cvRenderMd(data.value)}</div><div style="font-size:9px;color:var(--tx3);margin-top:6px;">Summary updated ${new Date(data.updated_at).toLocaleString()}</div></div>`;
     } else {

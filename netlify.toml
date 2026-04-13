@@ -5,6 +5,11 @@
 [functions."claude"]
   timeout = 60
 
+[[redirects]]
+  from = "/canvas.html"
+  to = "https://think.100xbtr.com/canvas.html?ws=sound"
+  status = 301
+
 [[headers]]
   for = "/canvas.html"
   [headers.values]
