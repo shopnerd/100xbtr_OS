@@ -507,6 +507,7 @@ let neImgData=null;
 let altDown=false,spaceDown=false;
 let winSelStart=null;
 let _hoverGroupCorner=null;
+let _hoverGroupCleanup=null;
 let spreadGapX=80,spreadGapY=80;
 let simRunning=false;
 let searchHighlight=null;
@@ -666,8 +667,9 @@ function drawGroups(){
     ctx.fillStyle='#1a1a18';ctx.textBaseline='middle';ctx.textAlign='left';
     ctx.fillText(g.label||'Group',x+8/cam.z,y+GH/2);
     // cleanup button ⋯ in top-right of header
-    const btnSize=GH*0.5;const btnX=x+w-btnSize-4/cam.z;
-    ctx.fillStyle='rgba(0,0,0,0.3)';ctx.font=`${btnSize}px 'SF Mono',monospace`;
+    const btnSize=GH*0.6;const btnX=x+w-btnSize-4/cam.z;
+    const isHoverBtn=_hoverGroupCleanup===g.id;
+    ctx.fillStyle=isHoverBtn?'rgba(0,0,0,0.8)':'rgba(0,0,0,0.5)';ctx.font=`bold ${btnSize}px 'SF Mono',monospace`;
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('\u22ef',btnX+btnSize/2,y+GH/2);ctx.textAlign='left';
     // Corner resize handle — diagonal lines (like macOS)
@@ -1030,11 +1032,14 @@ function onMove(e){
   lm={x:cx,y:cy};if(Math.hypot(cx-mdPos.x,cy-mdPos.y)>4)mMoved=true;
   const wx=(cx-canvas.width/2-cam.x)/cam.z,wy=(cy-canvas.height/2-cam.y)/cam.z;
   if(!drag.on){
-    // Corner resize hover detection
-    let cornerHit=null;
-    for(let i=groups.length-1;i>=0;i--){if(hGCorner(groups[i],wx,wy)){cornerHit=groups[i].id;break;}}
-    _hoverGroupCorner=cornerHit;
-    if(cornerHit){canvas.style.cursor='nwse-resize';}
+    // Hover detection for group controls
+    let cornerHit=null,cleanupHit=null;
+    const gcb=hitGroupCleanupBtn(wx,wy);
+    if(gcb){cleanupHit=gcb.id;}
+    else{for(let i=groups.length-1;i>=0;i--){if(hGCorner(groups[i],wx,wy)){cornerHit=groups[i].id;break;}}}
+    _hoverGroupCorner=cornerHit;_hoverGroupCleanup=cleanupHit;
+    if(cleanupHit){canvas.style.cursor='pointer';}
+    else if(cornerHit){canvas.style.cursor='nwse-resize';}
     else if(hitUrlIcon(wx,wy)){canvas.style.cursor='pointer';}
     else{canvas.style.cursor='default';}
     return;
