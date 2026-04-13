@@ -1050,12 +1050,18 @@ function onMove(e){
   else if(drag.resize){drag.resize.w=Math.max(100,drag.sw+(wx-drag.ox));drag.resize.h=Math.max(40,drag.sh+(wy-drag.oy));}
   else if(drag.rg){
     const g=drag.rg;const pad=8;const members=nigByGid(g.id);
-    // Calculate minimum size to contain all member nodes
-    let minW=120,minH=80;
+    // Compute content bounding box — group can't shrink past this
+    let minW=120,minH=GH+40;
     if(members.length){
-      const maxR=Math.max(...members.map(n=>n.x+(n.w||DW)))-g.x+pad;
-      const maxB=Math.max(...members.map(n=>n.y+(n.h||DH)))-g.y+pad;
-      minW=Math.max(minW,maxR);minH=Math.max(minH,maxB);
+      const minNX=Math.min(...members.map(n=>n.x));
+      const minNY=Math.min(...members.map(n=>n.y));
+      const maxNR=Math.max(...members.map(n=>n.x+(n.w||DW)));
+      const maxNB=Math.max(...members.map(n=>n.y+(n.h||DH)));
+      // Clamp group origin to never cut into nodes from top-left
+      g.x=Math.min(g.x,minNX-pad);
+      g.y=Math.min(g.y,minNY-GH-pad);
+      minW=Math.max(minW,maxNR-g.x+pad);
+      minH=Math.max(minH,maxNB-g.y+pad);
     }
     g.w=Math.max(minW,drag.sw+(wx-drag.ox));g.h=Math.max(minH,drag.sh+(wy-drag.oy));
   }
