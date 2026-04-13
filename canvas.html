@@ -964,7 +964,8 @@ function onDown(e){
   if(altDown){
     winSelStart={cx,cy};
     const ws=document.getElementById('win-sel');ws.style.display='block';ws.style.left=cx+'px';ws.style.top=cy+'px';ws.style.width='0';ws.style.height='0';
-    drag={on:true,winSel:true,ox:cx,oy:cy};return;
+    ws.style.borderColor='#C96B3A88';ws.style.background='rgba(201,107,58,0.06)';
+    drag={on:true,winSel:true,altSel:true,ox:cx,oy:cy};return;
   }
   // Port hit — checked before hNode so edge-port clicks work outside strict node bounds
   const portN=nodes.slice().reverse().find(n=>hPort(n,wx,wy));
@@ -1024,6 +1025,7 @@ function onDown(e){
   if(!e.shiftKey)selected={nodes:[],groups:[]};
   winSelStart={cx,cy};
   const ws=document.getElementById('win-sel');ws.style.display='block';ws.style.left=cx+'px';ws.style.top=cy+'px';ws.style.width='0';ws.style.height='0';
+  ws.style.borderColor='#378ADD66';ws.style.background='rgba(55,138,221,0.05)';
   drag={on:true,winSel:true,ox:cx,oy:cy};
 }
 
@@ -1102,7 +1104,22 @@ async function onUp(e){
       const wMinY=(y0-canvas.height/2-cam.y)/cam.z,wMaxY=(y1-canvas.height/2-cam.y)/cam.z;
       selected.nodes=nodes.filter(n=>n.x>=wMinX&&n.x+(n.w||DW)<=wMaxX&&n.y>=wMinY&&n.y+(n.h||DH)<=wMaxY).map(n=>n.id);
       selected.groups=groups.filter(g=>g.x>=wMinX&&g.x+g.w<=wMaxX&&g.y>=wMinY&&g.y+g.h<=wMaxY).map(g=>g.id);
-      if(selected.nodes.length+selected.groups.length)toast(`Selected ${selected.nodes.length} nodes, ${selected.groups.length} groups`);
+      // Alt+drag: expand selection to include all connected nodes
+      if(d.altSel&&selected.nodes.length){
+        const seedIds=new Set(selected.nodes);
+        const expanded=new Set(seedIds);
+        for(const l of links){
+          const s=l.source?.id||l.source,t=l.target?.id||l.target;
+          if(seedIds.has(s))expanded.add(t);
+          if(seedIds.has(t))expanded.add(s);
+        }
+        selected.nodes=[...expanded].filter(id=>nById(id));
+        // Also select groups that fully-selected nodes belong to
+        const grpCounts=new Map();
+        selected.nodes.forEach(id=>{const gid=nById(id)?.group_id;if(gid){grpCounts.set(gid,(grpCounts.get(gid)||0)+1);}});
+        grpCounts.forEach((count,gid)=>{if(count===nigByGid(gid).length&&!selected.groups.includes(gid))selected.groups.push(gid);});
+      }
+      if(selected.nodes.length+selected.groups.length)toast(`Selected ${selected.nodes.length} nodes, ${selected.groups.length} groups`+(d.altSel?' (+ connected)':''));
     }
   } else if(d.node&&mMoved){
     // push undo before saving
