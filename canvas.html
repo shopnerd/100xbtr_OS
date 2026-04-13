@@ -365,12 +365,13 @@ textarea.nei{line-height:1.4;}
     </div>
     <!-- CLAUDE PANEL -->
     <div id="cp">
-      <div class="cph"><div class="cpd"></div><div class="cpt">Claude — canvas</div><button class="cpa" onclick="checkBrokenLinks()" title="Check all reference URLs for broken links">Check links</button><button class="cpa" onclick="regenerateSummary()" title="Generate executive summary of canvas state">Summary</button><button class="cpa" onclick="analyzeCanvas()">Analyze</button></div>
-      <div class="cpb" id="cpb"><div class="cplo">Click Analyze to read the canvas and surface gaps, patterns, and suggested connections.</div></div>
+      <div class="cph"><div class="cpd"></div><div class="cpt">Claude</div><button class="cpa" onclick="toggleClaudeMax()" id="cp-max-btn" title="Toggle full-width panel" style="font-size:12px;padding:1px 5px;">⛶</button><button class="cpa" onclick="checkBrokenLinks()" title="HEAD-check every reference node URL. Marks broken links with ⚠. No Claude API calls.">Check links</button><button class="cpa" onclick="regenerateSummary()" title="Generate executive summary of canvas state">Summary</button><button class="cpa" onclick="analyzeCanvas()">Analyze</button></div>
+      <div class="cpb" id="cpb"><div class="cplo">Click Analyze to read the canvas and surface gaps, patterns, and connections.</div></div>
       <div class="cpf">
-        <textarea class="cpp" id="cpp" placeholder="Tell me what to do — 'create a group called Horn Design with speaker nodes'..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askClaude();}"></textarea>
-        <button class="cpsend" id="cp-send" onclick="askClaude()">Send ↵</button>
-        <button class="cpbuild" id="cp-build" onclick="askClaudeBuild()" title="For large requests: runs 3 phases (groups → nodes → connections) to stay within token limits">⬡ Build in phases</button>
+        <textarea class="cpp" id="cpp" placeholder="Ask Claude to build, analyze, or reorganize..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askClaude();}"></textarea>
+        <button class="cpsend" id="cp-send" onclick="askClaude()">Send</button>
+        <button class="cpbuild" id="cp-build" onclick="askClaudeBuild()">Build in phases (groups / nodes / links)</button>
+        <label style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--tx3);margin-top:4px;cursor:pointer;font-family:var(--font);" title="When checked, builds create reference nodes with real URLs — fetchTitle grabs website screenshots"><input type="checkbox" id="research-mode" style="margin:0;cursor:pointer;"> Research mode (URLs only, no images)</label>
       </div>
     </div>
     <!-- NODE EDIT -->
@@ -2162,6 +2163,8 @@ async function refreshCache(){
 const _ac={};let _acn=0;
 function _sa(acts){const id=_acn++;_ac[id]=acts;return id;}
 function toggleClaude(){claudeOn=!claudeOn;document.getElementById('clt').classList.toggle('on',claudeOn);document.getElementById('cp').classList.toggle('open',claudeOn);if(claudeOn)analyzeCanvas();}
+let _claudeMax=false;
+function toggleClaudeMax(){_claudeMax=!_claudeMax;const cp=document.getElementById('cp');cp.style.width=_claudeMax?'600px':'';document.getElementById('cp-max-btn').style.opacity=_claudeMax?'1':'0.5';}
 async function callClaude(messages, system, maxTokens) {
   const body = JSON.stringify({ system: system||undefined, messages, max_tokens: maxTokens||4000 });
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -2667,29 +2670,66 @@ async function addSugLink(fl,tl){const src=nodes.find(n=>n.label===fl),tgt=nodes
 async function execA(a){
   if(typeof a==='string')a=JSON.parse(a);
   if(a.type==='create_group'){
-    const id='g-'+Date.now();const color=GC[groups.length%GC.length];const x=(Math.random()-0.5)*400,y=(Math.random()-0.5)*300;_tw('canvas_groups',id);
-    await sb.from('canvas_groups').insert({id,label:a.label,color,x:Math.round(x),y:Math.round(y),w:300,h:200});groups.push({id,label:a.label,color,x,y,w:300,h:200});toast(`Group "${a.label}" created`);
+    const id='g-'+Date.now()+'-'+Math.random().toString(36).slice(2,5);
+    const color=a.color||GC[groups.length%GC.length];
+    const x=a.x!==undefined?a.x:(Math.random()-0.5)*400;
+    const y=a.y!==undefined?a.y:(Math.random()-0.5)*300;
+    const w=a.w||a.width||300,h=a.h||a.height||200;
+    _tw('canvas_groups',id);
+    await sb.from('canvas_groups').insert({id,label:a.label,color,x:Math.round(x),y:Math.round(y),w:Math.round(w),h:Math.round(h)});
+    groups.push({id,label:a.label,color,x,y,w,h});
+    toast(`Group "${a.label}" created`);
+    return {id,label:a.label,color,x,y,w,h};
   } else if(a.type==='create_node'){
-    const id='n-'+Date.now();const g=a.group?groups.find(gg=>gg.label.toLowerCase().includes(a.group.toLowerCase())):null;
-    const gm=g?nigByGid(g.id):[];const NPAD=20,NH=DH;let x,y,gid=null;
+    const id='n-'+Date.now()+'-'+Math.random().toString(36).slice(2,5);
+    const nodeType=a.node_type||a.nodeType||'idea';
+    const gLabel=a.group_label||a.group;
+    const g=gLabel?groups.find(gg=>(gg.label||'').toLowerCase().includes(gLabel.toLowerCase())):null;
+    const gm=g?nigByGid(g.id):[];
+    const isImg=!!(a.thumbnail_url||a.url);
+    const nw=a.w||(isImg?280:DW),nh=a.h||(isImg?210:DH);
+    let x,y,gid=null;
     if(g){
-      const cols=Math.max(1,Math.ceil(Math.sqrt(gm.length+1)));const idx=gm.length;
-      x=g.x+NPAD+(idx%cols)*(DW+NPAD);y=g.y+GH+NPAD+Math.floor(idx/cols)*(NH+NPAD);
-      const nw=NPAD+cols*(DW+NPAD);const nr=Math.ceil((gm.length+1)/cols);const nh=GH+NPAD+nr*(NH+NPAD);
-      g.w=Math.max(g.w,nw);g.h=Math.max(g.h,nh);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);gid=g.id;
-    } else {x=(Math.random()-0.5)*400;y=(Math.random()-0.5)*300;}
-    _tw('canvas_nodes',id);await sb.from('canvas_nodes').insert({id,label:a.label,type:a.nodeType||'idea',url:'',img_url:'',author:'claude',x:Math.round(x),y:Math.round(y),w:DW,h:DH,group_id:gid});
-    nodes.push({id,label:a.label,type:a.nodeType||'idea',url:'',img_url:'',author:'claude',x,y,w:DW,h:DH,group_id:gid});
+      gid=g.id;
+      if(a.x!==undefined&&a.y!==undefined){
+        x=g.x+a.x;y=g.y+GH+a.y;
+      }else{
+        const cols=Math.max(1,Math.floor((g.w-20)/(nw+10)));const idx=gm.length;
+        x=g.x+10+(idx%cols)*(nw+10);y=g.y+GH+10+Math.floor(idx/cols)*(nh+10);
+      }
+      const bw=10+Math.max(1,Math.ceil((gm.length+1)/Math.max(1,Math.floor((g.w-20)/(nw+10)))))*(nw+10);
+      const nr=Math.ceil((gm.length+1)/Math.max(1,Math.floor((g.w-20)/(nw+10))));
+      g.w=Math.max(g.w,bw);g.h=Math.max(g.h,GH+10+nr*(nh+10));
+      _tw('canvas_groups',g.id);await sb.from('canvas_groups').update({w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
+    }else{x=a.x!==undefined?a.x:(Math.random()-0.5)*400;y=a.y!==undefined?a.y:(Math.random()-0.5)*300;}
+    const row={id,label:a.label||'',type:nodeType,url:a.url||'',img_url:'',author:'claude',x:Math.round(x),y:Math.round(y),w:nw,h:nh,group_id:gid};
+    if(a.description)row.description=a.description;
+    if(a.thumbnail_url)row.thumbnail_url=a.thumbnail_url;
+    if(a.favicon_url)row.favicon_url=a.favicon_url;
+    _tw('canvas_nodes',id);await sb.from('canvas_nodes').insert(row);
+    nodes.push({...row,x,y});
     if(g){const m=nigByGid(g.id);sizeGAN(g,m);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
+    // Trigger fetchTitle for URL nodes to get screenshots
+    if(a.url&&!a.thumbnail_url)fetchTitle(id,a.url);
     toast(`Node "${a.label}" added`);
+    return row;
   } else if(a.type==='create_link'){
-    const src=nodes.find(n=>n.label===a.from),tgt=nodes.find(n=>n.label===a.to);
-    if(src&&tgt)await addLink(src.id,tgt.id);else toast('Nodes not found');
+    const fromLabel=a.from||a.source_label;const toLabel=a.to||a.target_label;
+    const src=nodes.find(n=>n.label===fromLabel),tgt=nodes.find(n=>n.label===toLabel);
+    if(src&&tgt)await addLink(src.id,tgt.id,a.link_type);else toast('Nodes not found');
   } else if(a.type==='move_to_group'){
-    const n=nodes.find(x=>x.label===a.label);
-    const g=a.group?groups.find(gg=>gg.label.toLowerCase().includes(a.group.toLowerCase())):null;
+    const nodeLabel=a.node_label||a.label;const gLabel=a.group_label||a.group;
+    const n=nodes.find(x=>x.label===nodeLabel);
+    const g=gLabel?groups.find(gg=>(gg.label||'').toLowerCase().includes(gLabel.toLowerCase())):null;
     if(n&&g){n.group_id=g.id;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({group_id:g.id}).eq('id',n.id);const m=nigByGid(g.id);sizeGAN(g,m);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);toast(`Moved "${n.label}" → "${g.label}"`);}
-    else toast(`Could not move "${a.label||'node'}"`);
+    else toast(`Could not move "${nodeLabel||'node'}"`);
+  } else if(a.type==='delete_group'){
+    const gLabel=a.group_label||a.label;
+    const g=groups.find(gg=>(gg.label||'').toLowerCase()===gLabel.toLowerCase());
+    if(g){if(a.delete_contents){const mems=nigByGid(g.id);for(const n of mems){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').delete().eq('id',n.id);nodes=nodes.filter(x=>x.id!==n.id);}}_tw('canvas_groups',g.id);await sb.from('canvas_groups').delete().eq('id',g.id);groups=groups.filter(x=>x.id!==g.id);toast(`Deleted group "${gLabel}"`);}
+  } else if(a.type==='delete_node'){
+    const nLabel=a.node_label||a.label;const n=nodes.find(x=>x.label===nLabel);
+    if(n){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').delete().eq('id',n.id);nodes=nodes.filter(x=>x.id!==n.id);toast(`Deleted node "${nLabel}"`);}
   }
 }
 async function execAll(actions){
@@ -2697,90 +2737,190 @@ async function execAll(actions){
   for(const a of actions.filter(x=>x.type==='create_node'))await execA(a);
   for(const a of actions.filter(x=>x.type==='move_to_group'))await execA(a);
   for(const a of actions.filter(x=>x.type==='create_link'))await execA(a);
+  for(const a of actions.filter(x=>x.type==='delete_node'))await execA(a);
+  for(const a of actions.filter(x=>x.type==='delete_group'))await execA(a);
   await repairGroups();await runLayout();await validateCanvas(true);_cacheHash='';toast(`Done — ${actions.length} actions`);if(claudeOn)setTimeout(analyzeCanvas,600);
 }
 async function askClaude(){
-  const prompt=document.getElementById('cpp').value.trim();if(!prompt)return;
-  const body=document.getElementById('cpb');const prev=body.innerHTML;body.innerHTML='<div class="cplo">Thinking...</div>';
+  const input=document.getElementById('cpp');
+  const msg=input.value.trim();if(!msg)return;
+  input.value='';
+  addChatMsg(msg,true);
   const{graphCtx,nl,ll,gl}=cCtxGraph();
   const sys=(_soundBrain||'You are an AI collaborator for 100xbtr_sound.')+`\n\n--- CURRENT CANVAS STATE ---
 ${_cacheSummary?'Canvas summary:\n'+_cacheSummary+'\n':''}Structure overview:\n${graphCtx}
-Canvas Nodes: ${nl||'(none)'}\nLinks: ${ll||'(none)'}\nGroups: ${gl||'(none)'}`;
-  try{
-    const text=await callClaude([{role:'user',content:'User: '+prompt}],sys,4000);
-    const parsed=extractJSON(text);
-    if(parsed?.actions){
-      body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${parsed.response||'Done.'}</div></div>`;
-      let ah='<div class="cps"><div class="cpst">Proposed actions</div>';
-      const allId=_sa(parsed.actions);
-      parsed.actions.forEach(a=>{const id=_sa(a);ah+=`<div class="cpac"><div class="cpact">${aLabel(a)}</div><div class="cpacb">${a.description||''}</div><button class="cpado" onclick="execA(_ac[${id}])">Do it</button><button class="cpadx" onclick="this.parentElement.remove()">Skip</button></div>`;});
-      ah+=`<button class="cpsend" style="margin-top:4px;" onclick="execAll(_ac[${allId}])">Do all ↵</button>`;
-      body.innerHTML+=ah+'</div>';
-      logClaude(prompt,parsed.response||text.slice(0,300),parsed.actions,'chat');
-    } else {body.innerHTML=prev+`<div class="cps"><div class="cpst">Claude</div><div class="cpr">${text.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</div></div>`;logClaude(prompt,text.slice(0,300),null,'chat');}
-    document.getElementById('cpp').value='';
-  }catch(e){
-    const hint=e.message?.includes('504')||e.message?.includes('timeout')?'Request timed out — try "Build in phases" for large requests.':e.message?.includes('max_tokens')||e.message?.includes('truncat')?'Response too large — use "Build in phases" below.':'Error: '+e.message;
-    body.innerHTML=prev+`<div class="cplo">${hint}</div>`;
+Canvas Nodes: ${nl||'(none)'}\nLinks: ${ll||'(none)'}\nGroups: ${gl||'(none)'}
+
+Respond with JSON: {"response":"brief message","actions":[...]}
+Action types: create_group, create_node (with node_type, group_label, url, description), create_link (source_label, target_label, link_type), move_to_group, delete_group, delete_node.`;
+  const cpb=document.getElementById('cpb');
+  const loading=document.createElement('div');loading.className='cplo';loading.textContent='Thinking...';
+  cpb.appendChild(loading);cpb.scrollTop=cpb.scrollHeight;
+  const reply=await callClaude([{role:'user',content:msg}],sys,4000);
+  loading.remove();
+  const json=extractJSON(reply);
+  if(json){
+    addChatMsg(json.response||'Done.',false);
+    if(json.actions?.length)showActionApproval(json.actions);
+    logClaude(msg,json.response||reply,json.actions||null,'chat');
+  }else{
+    addChatMsg(reply,false);
+    logClaude(msg,reply,null,'chat');
   }
 }
 
+function esc(s){return(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showActionApproval(actions){
+  const cpb=document.getElementById('cpb');
+  window._pendingActions=actions;
+  const container=document.createElement('div');container.style.cssText='margin-top:8px;';
+  actions.forEach((a,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='background:var(--bg3,#3a3a38);border:1px solid var(--border);border-radius:var(--r);padding:6px 8px;margin-bottom:4px;';
+    const label=a.type==='create_group'?`Group: "${a.label}"`
+      :a.type==='create_node'?`${a.node_type||a.nodeType||'idea'}: "${a.label}"`
+      :a.type==='create_link'?`Wire: ${a.source_label||a.from} → ${a.target_label||a.to}`
+      :a.type==='move_to_group'?`Move "${a.node_label||a.label}" → ${a.group_label||a.group}`
+      :a.type==='delete_group'?`Delete group: "${a.group_label||a.label}"`
+      :a.type==='delete_node'?`Delete node: "${a.node_label||a.label}"`
+      :JSON.stringify(a).substring(0,50);
+    row.innerHTML=`<div style="font-size:10px;color:var(--tx);margin-bottom:4px;">${esc(label)}</div>
+      <button style="font-size:9px;padding:2px 6px;border:none;border-radius:var(--r);background:var(--accent);color:#fff;cursor:pointer;font-family:var(--font);margin-right:3px;" onclick="approveAction(${i},this.parentElement)">Do it</button>
+      <button style="font-size:9px;padding:2px 6px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--tx3);cursor:pointer;font-family:var(--font);" onclick="this.parentElement.remove()">Skip</button>`;
+    container.appendChild(row);
+  });
+  const doAll=document.createElement('button');
+  doAll.style.cssText='width:100%;padding:5px;border-radius:var(--r);border:none;background:var(--accent);color:#fff;font-size:10px;cursor:pointer;font-family:var(--font);margin-top:4px;';
+  doAll.textContent='Do all ('+actions.length+')';
+  doAll.onclick=async()=>{await execAll(actions);container.remove();toast('All actions applied');};
+  container.appendChild(doAll);
+  cpb.appendChild(container);cpb.scrollTop=cpb.scrollHeight;
+}
+async function approveAction(idx,el){
+  const a=window._pendingActions?.[idx];if(!a)return;
+  await execA(a);if(el)el.remove();toast('Action applied');
+}
+
+function getBuildSystemPrompt(){
+  return `You are building a structured canvas inside 100xbtr_sound.
+
+Respond with JSON ONLY (no prose outside the JSON):
+{"response":"<one short sentence>","actions":[ ... ]}
+
+Action types you can emit:
+- {"type":"create_group","label":"...","color":"#hex","x":NUM,"y":NUM,"w":NUM,"h":NUM}
+- {"type":"create_node","label":"...","node_type":"idea|reference|material|decision|question|anchor","group_label":"<existing group>","description":"...","url":"...","w":NUM,"h":NUM}
+- {"type":"create_link","source_label":"<exact node label>","target_label":"<exact node label>","link_type":"supports|blocks|spawned|depends_on|related"}
+
+Keep responses concise. For research/web topics, use node_type: "reference" with a real url field.`;
+}
+
 async function askClaudeBuild(){
-  const prompt=document.getElementById('cpp').value.trim();if(!prompt)return;
-  const body=document.getElementById('cpb');
+  const input=document.getElementById('cpp');
+  const msg=input.value.trim();if(!msg)return;
+  input.value='';
   const sendBtn=document.getElementById('cp-send'),buildBtn=document.getElementById('cp-build');
   sendBtn.disabled=true;buildBtn.disabled=true;buildBtn.textContent='Building...';
-  document.getElementById('cpp').value='';
-  let totalActions=0;
 
-  const phasePrompt=(phase,extra)=>{
-    const{graphCtx,nl,ll,gl}=cCtxGraph();
-    const base=`You are building a visual canvas for 100xbtr_sound (Will, Brendan, Nishant — boutique horn speakers).
-User request: "${prompt}"
-Structure overview:\n${graphCtx}
-Current groups: ${gl||'(none)'}\nCurrent nodes: ${nl||'(none)'}
-${extra}
-Respond ONLY with valid JSON, no markdown fences:`;
-    if(phase==='groups')return base+`
-{"response":"brief message","actions":[{"type":"create_group","label":"Group Name","color":"#378ADD","description":"why"},...]}
-Create ALL groups needed. Groups only — no nodes or links.`;
-    if(phase==='nodes')return base+`
-{"response":"brief message","actions":[{"type":"create_node","label":"Label","nodeType":"idea","group":"Group Name","description":"why"},...]}
-Create ALL nodes. Valid nodeType: idea, reference, material, decision, question, anchor. Nodes only — no groups or links.`;
-    if(phase==='links')return base+`
-{"response":"brief message","actions":[{"type":"create_link","from":"source label","to":"target label","description":"why"},...]}
-Create ALL meaningful connections between existing nodes. Links only — no groups or nodes.`;
-  };
+  const researchMode=!!document.getElementById('research-mode')?.checked;
+  addChatMsg(msg+(researchMode?' (research mode — URLs only)':' (building in phases)'),true);
 
-  const runPhase=async(phase,label,extra='')=>{
-    body.innerHTML+=`<div class="cpphase"><b>Phase: ${label}</b> — thinking...</div>`;
-    body.scrollTop=body.scrollHeight;
-    const phaseEl=body.lastElementChild;
-    try{
-      const text=await callClaude([{role:'user',content:phasePrompt(phase,extra)}],null,6000);
-      const parsed=extractJSON(text);
-      if(parsed?.actions?.length){
-        const filtered=parsed.actions.filter(a=>
-          (phase==='groups'&&a.type==='create_group')||
-          (phase==='nodes'&&a.type==='create_node')||
-          (phase==='links'&&a.type==='create_link'));
-        for(const a of filtered)await execA(a);
-        totalActions+=filtered.length;
-        phaseEl.innerHTML=`<b>Phase: ${label}</b> — ${filtered.length} actions done`;
-      } else {phaseEl.innerHTML=`<b>Phase: ${label}</b> — nothing to do`;}
-    }catch(e){phaseEl.innerHTML=`<b>Phase: ${label}</b> — failed: ${e.message?.substring(0,80)}`;}
-  };
+  const context=getCanvasContextSlim();
+  const researchDirective=researchMode
+    ?'\n\nRESEARCH MODE: For every item, use create_node with node_type: "reference" and include a real url field (the homepage or canonical page for that entity). Set w:280, h:210 on every node. No stock photos — text reference nodes with URLs only. The canvas will auto-fetch website screenshots.'
+    :'';
+  const system=getBuildSystemPrompt()+researchDirective;
+  const cpb=document.getElementById('cpb');
 
-  await runPhase('groups','Groups');
-  await runPhase('nodes','Nodes');
-  await runPhase('links','Connections');
-  await repairGroups();await runLayout();await validateCanvas(true);_cacheHash='';
+  // Phase 1: Groups
+  let phaseMsg=document.createElement('div');
+  phaseMsg.className='cplo';phaseMsg.textContent='Phase 1/3: Creating groups...';
+  cpb.appendChild(phaseMsg);cpb.scrollTop=cpb.scrollHeight;
+
+  let reply=await callClaude([{
+    role:'user',
+    content:`${msg}\n\nPhase 1 of 3: Create ONLY the groups needed. If the request implies spatial order (timeline, hierarchy, comparison), provide explicit x/y coordinates.\n\nLAYOUT RULES:\n- TIMELINES → LEFT-TO-RIGHT, same y, step x by ~1400. Width: 1100, height: 900.\n- HIERARCHIES → TOP-TO-BOTTOM along Y axis.\n- COMPARISONS → LEFT-TO-RIGHT.\n\nRespond with create_group actions only.\n\nCurrent canvas:\n${context}`
+  }],system,4000);
+
+  phaseMsg.remove();
+  let json=extractJSON(reply);
+  let phase1GroupLabels=[];
+  if(json?.actions){
+    phase1GroupLabels=json.actions.filter(a=>a.type==='create_group'&&a.label).map(a=>a.label);
+    for(const a of json.actions.filter(x=>x.type==='create_group'))await execA(a);
+  }
+  if(json?.response)addChatMsg('Phase 1: '+json.response,false);
+  if(!phase1GroupLabels.length)phase1GroupLabels=groups.map(g=>g.label).filter(Boolean);
+
+  // Phase 2: Nodes — ONE Claude call per group
+  for(let gi=0;gi<phase1GroupLabels.length;gi++){
+    const gLabel=phase1GroupLabels[gi];
+    phaseMsg=document.createElement('div');phaseMsg.className='cplo';
+    phaseMsg.textContent=`Phase 2/3 (${gi+1}/${phase1GroupLabels.length}): Populating "${gLabel}"...`;
+    cpb.appendChild(phaseMsg);cpb.scrollTop=cpb.scrollHeight;
+
+    const groupListCtx=phase1GroupLabels.map(l=>`- ${l}`).join('\n');
+    const groupReply=await callClaude([{
+      role:'user',
+      content:`${msg}\n\nPhase 2 of 3 — Populating ONE group only: "${gLabel}".\n\nCreate AT LEAST 6 nodes (ideally 6–10) that belong inside this group. Set group_label: "${gLabel}" on every action. Do NOT create nodes for any other group.\n\nUse create_node actions. For research/visual subjects include a real url field and set w:280, h:210. Keep labels SHORT (2–4 words).\n\nAll groups in this build:\n${groupListCtx}`
+    }],system,6000);
+
+    phaseMsg.remove();
+    const gJson=extractJSON(groupReply);
+    if(gJson?.actions){
+      gJson.actions.forEach(a=>{if(a.type==='create_node')a.group_label=gLabel;});
+      for(const a of gJson.actions.filter(x=>x.type==='create_node'))await execA(a);
+    }
+    if(gJson?.response)addChatMsg(`Phase 2 (${gLabel}): ${gJson.response}`,false);
+  }
+
+  // Retry: underpopulated groups get one more chance
+  const MIN_PER_GROUP=6;
+  const lightGroups=phase1GroupLabels.filter(label=>{
+    const g=groups.find(gg=>(gg.label||'').trim()===label.trim());
+    return g&&nigByGid(g.id).length<MIN_PER_GROUP;
+  });
+  for(const gLabel of lightGroups){
+    const gCheck=groups.find(gg=>(gg.label||'').trim()===gLabel.trim());
+    const existing=gCheck?nigByGid(gCheck.id).length:0;
+    const needed=MIN_PER_GROUP-existing;
+    phaseMsg=document.createElement('div');phaseMsg.className='cplo';
+    phaseMsg.textContent=`Retry: topping up "${gLabel}" (${existing} nodes)...`;
+    cpb.appendChild(phaseMsg);cpb.scrollTop=cpb.scrollHeight;
+    const existingLabels=gCheck?nigByGid(gCheck.id).map(n=>n.label).filter(Boolean):[];
+    const retryReply=await callClaude([{
+      role:'user',
+      content:`${msg}\n\nThe group "${gLabel}" has only ${existing} nodes. Add ${needed}+ more. Set group_label: "${gLabel}" on every action.\n\nDo NOT duplicate: ${existingLabels.join(', ')||'(none)'}`
+    }],system,4000);
+    phaseMsg.remove();
+    const rJson=extractJSON(retryReply);
+    if(rJson?.actions){
+      rJson.actions.forEach(a=>{if(a.type==='create_node')a.group_label=gLabel;});
+      for(const a of rJson.actions.filter(x=>x.type==='create_node'))await execA(a);
+    }
+  }
+
+  // Phase 3: Links
+  phaseMsg=document.createElement('div');phaseMsg.className='cplo';
+  phaseMsg.textContent='Phase 3/3: Creating links...';
+  cpb.appendChild(phaseMsg);cpb.scrollTop=cpb.scrollHeight;
+  const ctx3=getCanvasContextSlim();
+  reply=await callClaude([{
+    role:'user',
+    content:`${msg}\n\nPhase 3 of 3: Create ONLY the links between nodes. Use create_link actions with source_label and target_label (EXACT node labels). link_type: supports, blocks, spawned, depends_on, related.\n\nCanvas state:\n${ctx3}`
+  }],system,8000);
+  phaseMsg.remove();
+  json=extractJSON(reply);
+  if(json?.actions){for(const a of json.actions.filter(x=>x.type==='create_link'))await execA(a);}
+  if(json?.response)addChatMsg('Phase 3: '+json.response,false);
+
+  // Final tidy
+  await repairGroups();_cacheHash='';
+  addChatMsg('Build complete.',false);
   setTimeout(()=>fitAll(),100);
-  body.innerHTML+=`<div class="cplo">Build complete — ${totalActions} actions executed.</div>`;
-  body.scrollTop=body.scrollHeight;
-  sendBtn.disabled=false;buildBtn.disabled=false;buildBtn.textContent='⬡ Build in phases';
-  logClaude(prompt,`Build complete — ${totalActions} actions executed`,null,'build');
-  regenerateSummary().catch(()=>{});// auto-fire summary in background
+  sendBtn.disabled=false;buildBtn.disabled=false;buildBtn.textContent='Build in phases (groups / nodes / links)';
+  logClaude(msg,'Build complete',null,'build');
+  regenerateSummary().catch(()=>{});
 }
 
 // DB / RT
