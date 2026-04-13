@@ -150,14 +150,14 @@ textarea.nei{line-height:1.4;}
 .gesv{flex:1;padding:3px;border-radius:var(--r);border:none;background:#C96B3A;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;}
 .gedl{padding:3px 7px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--tx3);font-size:9px;cursor:pointer;font-family:inherit;}
 /* CTX MENU */
-#ctx{position:absolute;background:var(--chrome2);border:1px solid var(--border);border-radius:var(--r);padding:3px 0;z-index:150;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.15);min-width:170px;}
-.ctxi{padding:5px 11px;font-size:10px;color:var(--tx);cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;}
+#ctx{position:absolute;background:var(--chrome2);border:1px solid var(--border);border-radius:var(--r);padding:4px 0;z-index:150;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:180px;}
+.ctxi{padding:6px 14px;font-size:11px;color:var(--tx);cursor:pointer;display:flex;align-items:center;gap:8px;font-family:inherit;transition:background 0.1s;}
 .ctxi:hover{background:var(--chrome);}
-.ctxi.danger{color:#c0392b;}
-.ctxi.head{color:var(--tx3);font-size:9px;text-transform:uppercase;letter-spacing:0.05em;cursor:default;padding:5px 11px 2px;}
+.ctxi.danger{color:#ef4444;}
+.ctxi.head{color:var(--tx3);font-size:9px;text-transform:uppercase;letter-spacing:0.06em;cursor:default;padding:6px 14px 3px;}
 .ctxi.head:hover{background:transparent;}
-.ctxd{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
-.ctxs{height:1px;background:var(--border);margin:3px 0;}
+.ctxd{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+.ctxs{height:1px;background:var(--border);margin:4px 0;}
 #win-sel{position:absolute;pointer-events:none;border:1px dashed #378ADD66;background:rgba(55,138,221,0.05);display:none;}
 #toast{position:absolute;bottom:65px;left:50%;transform:translateX(-50%);background:var(--tx);color:#fff;font-size:10px;padding:4px 12px;border-radius:20px;opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:200;font-family:inherit;}
 #input-bar{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);width:min(500px,82vw);background:var(--chrome);border:1px solid var(--border);border-radius:var(--r);padding:5px 9px;display:flex;gap:6px;align-items:center;box-shadow:0 2px 12px rgba(0,0,0,0.12);z-index:50;}
@@ -1173,38 +1173,49 @@ function onRC(e){
   const n=hNode(wx,wy);const g=hGroup(wx,wy);const menu=document.getElementById('ctx');
   menu.innerHTML='';
   if(n){
-    if(n.url)ci(menu,'Open URL ↗','',()=>window.open(n.url,'_blank'));
     ci(menu,'Edit node','',()=>openNE(n,cx,cy));
-    ci(menu,'Disconnect all wires','',async()=>{
-      _tw('canvas_links','*');
-      await sb.from('canvas_links').delete().or(`source.eq.${n.id},target.eq.${n.id}`);
-      links=links.filter(l=>(l.source?.id||l.source)!==n.id&&(l.target?.id||l.target)!==n.id);
-      toast('Disconnected');
-    });
-    // if multiple selected, offer group operations
-    if(selected.nodes.length>1){
+    if(n.url)ci(menu,'Open URL ↗','',()=>window.open(n.url,'_blank'));
+    ci(menu,'Delete node','danger',async()=>{if(!confirm('Delete?'))return;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').delete().eq('id',n.id);await sb.from('canvas_links').delete().or(`source.eq.${n.id},target.eq.${n.id}`);nodes=nodes.filter(x=>x.id!==n.id);links=links.filter(l=>(l.source?.id||l.source)!==n.id&&(l.target?.id||l.target)!==n.id);});
+    // Wire operations
+    const nodeLinks=links.filter(l=>(l.source?.id||l.source)===n.id||(l.target?.id||l.target)===n.id);
+    if(nodeLinks.length){
       cs(menu);
-      ci(menu,`Group ${selected.nodes.length} selected nodes`,'',()=>groupSelected());
-      if(groups.length)ci(menu,'Add selected to group...','',()=>showAddToGroupMenu(cx,cy));
+      ci(menu,`Disconnect all wires (${nodeLinks.length})`,'',async()=>{_tw('canvas_links','*');await sb.from('canvas_links').delete().or(`source.eq.${n.id},target.eq.${n.id}`);links=links.filter(l=>(l.source?.id||l.source)!==n.id&&(l.target?.id||l.target)!==n.id);toast('Disconnected');});
     }
-    cs(menu);
-    ci(menu,'Delete','danger',async()=>{if(!confirm('Delete?'))return;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').delete().eq('id',n.id);await sb.from('canvas_links').delete().or(`source.eq.${n.id},target.eq.${n.id}`);nodes=nodes.filter(x=>x.id!==n.id);links=links.filter(l=>(l.source?.id||l.source)!==n.id&&(l.target?.id||l.target)!==n.id);});
-  } else if(g){
-    ci(menu,'Edit group','',()=>openGE(g,cx,cy));cs(menu);
-    ci(menu,'Grid layout nodes','',()=>gridLayoutGroup(g));cs(menu);
-    ci(menu,'Delete group','danger',async()=>{if(!confirm('Delete group?'))return;_tw('canvas_groups',g.id);await sb.from('canvas_groups').delete().eq('id',g.id);groups=groups.filter(x=>x.id!==g.id);nodes.filter(n=>n.group_id===g.id).forEach(n=>n.group_id=null);});
+    // Selection operations
+    if(selected.nodes.length>=1||selected.groups.length>=1){
+      cs(menu);
+      const totalSel=selected.nodes.length+selected.groups.length;
+      ci(menu,`Clean up selection (${totalSel})`,'',()=>cleanUpSelection());
+      if(selected.nodes.length>=1){
+        ci(menu,`Group selected nodes`,'',()=>groupSelected());
+        if(groups.length){ch(menu,'Add to group');groups.forEach(gg=>ci(menu,gg.label,'',()=>addSelectedToGroup(gg.id)));}
+      }
+    }
+  } else if(g&&!n){
+    ci(menu,'Edit group','',()=>openGE(g,cx,cy));
+    ci(menu,'Clean up group','',()=>cleanUpGroup(g.id));
+    if(selected.nodes.length+selected.groups.length>1)ci(menu,`Clean up selection (${selected.nodes.length+selected.groups.length})`,'',()=>cleanUpSelection());
+    const gMems=nigByGid(g.id);const gLinks=links.filter(l=>gMems.some(m=>m.id===(l.source?.id||l.source)||m.id===(l.target?.id||l.target)));
+    if(gLinks.length)ci(menu,`Disconnect all wires in group (${gLinks.length})`,'',async()=>{for(const m of gMems){_tw('canvas_links','*');await sb.from('canvas_links').delete().or(`source.eq.${m.id},target.eq.${m.id}`);}links=links.filter(l=>!gMems.some(m=>m.id===(l.source?.id||l.source)||m.id===(l.target?.id||l.target)));toast('Disconnected');});
+    ci(menu,'Delete group','danger',async()=>{if(!confirm('Delete group?'))return;_tw('canvas_groups',g.id);await sb.from('canvas_groups').delete().eq('id',g.id);groups=groups.filter(x=>x.id!==g.id);nodes.filter(nd=>nd.group_id===g.id).forEach(nd=>nd.group_id=null);});
   } else {
-    // check if nodes are selected — show group option
-    if(selected.nodes.length>0){
-      ci(menu,`Group ${selected.nodes.length} selected`,'',()=>groupSelected());
-      if(groups.length)ci(menu,'Add selected to group...','',()=>showAddToGroupMenu(cx,cy));
+    ch(menu,'Add node');
+    TYPES.forEach(t=>ciDot(menu,t,TC[t],()=>addNA(t,wx,wy)));
+    cs(menu);
+    ci(menu,'Add group here','',()=>addGA(wx,wy));
+    if(selected.nodes.length>=1||selected.groups.length>=1){
       cs(menu);
+      const totalSel=selected.nodes.length+selected.groups.length;
+      ci(menu,`Clean up selection (${totalSel})`,'',()=>cleanUpSelection());
     }
-    ch(menu,'Add node');TYPES.forEach(t=>ci(menu,t,'',()=>addNA(t,wx,wy)));cs(menu);
-    ci(menu,'Add group','',()=>addGA(wx,wy));cs(menu);
-    ci(menu,'Repair groups','',()=>repairGroups());ci(menu,'Select all','',()=>selAll());
+    if(selected.nodes.length>=1){
+      cs(menu);
+      ci(menu,'Group selected nodes','',()=>groupSelected());
+      if(groups.length){ch(menu,'Add to group');groups.forEach(gg=>ci(menu,gg.label,'',()=>addSelectedToGroup(gg.id)));}
+    }
   }
-  menu.style.display='block';menu.style.left=Math.min(cx,canvas.width-185)+'px';menu.style.top=Math.min(cy,canvas.height-300)+'px';
+  menu.style.display='block';menu.style.left=Math.min(cx,canvas.width-190)+'px';menu.style.top=Math.min(cy,canvas.height-300)+'px';
 }
 async function groupSelected(){
   const selNodes=selected.nodes.map(id=>nById(id)).filter(Boolean);if(!selNodes.length)return;
@@ -1232,6 +1243,7 @@ async function addSelectedToGroup(gid){
   toast('Added to group');
 }
 function ci(m,l,c,f){const d=document.createElement('div');d.className='ctxi'+(c?' '+c:'');d.textContent=l;d.onclick=()=>{closeCtx();f();};m.appendChild(d);}
+function ciDot(m,l,color,f){const d=document.createElement('div');d.className='ctxi';d.innerHTML=`<div class="ctxd" style="background:${color}"></div>${l.replace(/</g,'&lt;')}`;d.onclick=()=>{closeCtx();f();};m.appendChild(d);}
 function cs(m,l){
   if(l){const d=document.createElement('div');d.className='ctxi head';d.textContent=l;m.appendChild(d);}
   else{const d=document.createElement('div');d.className='ctxs';m.appendChild(d);}
