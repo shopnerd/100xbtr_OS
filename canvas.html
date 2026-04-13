@@ -2684,7 +2684,7 @@ async function expandImageSearch(action){
   if(!existingGroup)out.push({type:'create_group',label:groupLabel,color:'#7F77DD'});
   for(let i=0;i<images.length;i++){
     const img=images[i];
-    out.push({type:'create_node',label:(img.title||query).substring(0,60),node_type:'reference',group_label:groupLabel,thumbnail_url:img.thumbnail||img.url,url:img.sourcePage||img.url,description:(img.description||'')+(img.artist?'\n\nBy: '+img.artist:''),w:280,h:210});
+    out.push({type:'create_node',label:(img.title||query).substring(0,60),node_type:'image',group_label:groupLabel,thumbnail_url:img.thumbnail||img.url,description:(img.description||'')+(img.artist?'\n\nBy: '+img.artist:''),w:280,h:210});
   }
   return out;
 }
