@@ -667,12 +667,12 @@ function drawGroups(){
     const gfs=Math.min(GH*0.55,w*0.075);ctx.font=`500 ${gfs}px 'SF Mono',monospace`;
     ctx.fillStyle='#1a1a18';ctx.textBaseline='middle';ctx.textAlign='left';
     ctx.fillText(g.label||'Group',x+8/cam.z,y+GH/2);
-    // cleanup button ⋯ in top-right of header
+    // cleanup button ▾ in top-right of header
     const btnSize=GH*0.6;const btnX=x+w-btnSize-4/cam.z;
     const isHoverBtn=_hoverGroupCleanup===g.id;
     ctx.fillStyle=isHoverBtn?'rgba(0,0,0,0.8)':'rgba(0,0,0,0.5)';ctx.font=`bold ${btnSize}px 'SF Mono',monospace`;
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText('\u22ef',btnX+btnSize/2,y+GH/2);ctx.textAlign='left';
+    ctx.fillText('\u25BE',btnX+btnSize/2,y+GH/2);ctx.textAlign='left';
     // Corner resize handle — diagonal lines (like macOS)
     const cornerSize=12/cam.z;
     const cornerX=x+w-cornerSize-2/cam.z,cornerY=y+h-cornerSize-2/cam.z;
