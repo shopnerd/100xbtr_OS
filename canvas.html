@@ -375,7 +375,7 @@ textarea.nei{line-height:1.4;}
     </div>
     <!-- NODE EDIT -->
     <div id="ne">
-      <div class="nel">Edit node</div>
+      <div class="nel" style="display:flex;justify-content:space-between;align-items:center;">Edit node<span onclick="closeNE()" style="cursor:pointer;font-size:14px;color:var(--tx3);line-height:1;padding:0 2px;">✕</span></div>
       <textarea class="nei" id="nel-i" placeholder="Label… (Enter = new line, Ctrl+Enter = save)" rows="3"></textarea>
       <textarea class="nei" id="ne-desc" placeholder="Description (optional)" rows="2" style="font-size:9px;"></textarea>
       <input class="nei" id="neu" placeholder="URL (optional)">
@@ -846,7 +846,7 @@ function drawNodes(){
     // ports — drawn last so they sit on top; white=open, black=wired
     const pr=(PR+1)/cam.z;
     // Broken URL badge
-    if(n.url_broken===true){ctx.font=`${Math.max(12,h*0.28)/cam.z}px sans-serif`;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle='#D85A30';ctx.fillText('⚠',n.x+w-14/cam.z,n.y+1/cam.z);}
+    if(n.url_broken===true){ctx.font=`${Math.max(12,h*0.28)/cam.z}px sans-serif`;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle='#D85A30';ctx.fillText('⚠',n.x+2/cam.z,n.y+1/cam.z);}
     drawPort(pPos(n,'in'),pr,portLeft.has(n.id));
     drawPort(pPos(n,'out'),pr,portRight.has(n.id));
     // Reset search state
