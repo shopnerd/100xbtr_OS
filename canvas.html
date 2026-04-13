@@ -2129,11 +2129,11 @@ async function loadCanvas(id){
   await loadAll();
   _activeCanvasId=id;_activeCanvasName=data.name||'';_activeCanvasHash=_liveHash();
   await sb.from('canvas_config').upsert({key:'active_canvas',value:JSON.stringify({id,name:data.name||'',who,at:new Date().toISOString()}),updated_at:new Date().toISOString()});
-  await loadCanvasList();toast('Canvas loaded ✓');
+  resetClaudePanel();await loadCanvasList();toast('Canvas loaded ✓');
   setTimeout(()=>fitAll(),100);
 }
 async function delCanvas(id){if(!confirm('Delete saved canvas?'))return;await sb.from('saved_canvases').delete().eq('id',id);if(_activeCanvasId===id){_activeCanvasId=null;_activeCanvasName=null;_activeCanvasHash=null;}await loadCanvasList();}
-async function newCanvas(){const modified=_activeCanvasId&&_activeCanvasHash&&_liveHash()!==_activeCanvasHash;const msg=modified?'You have unsaved changes. Clear canvas anyway?':'Clear canvas?';if(!confirm(msg))return;await sb.from('canvas_nodes').delete().neq('id','_');await sb.from('canvas_links').delete().neq('id','_');await sb.from('canvas_groups').delete().neq('id','_');nodes=[];links=[];groups=[];_activeCanvasId=null;_activeCanvasName=null;_activeCanvasHash=null;await sb.from('canvas_config').upsert({key:'active_canvas',value:JSON.stringify({id:null,who,at:new Date().toISOString()}),updated_at:new Date().toISOString()});await loadCanvasList();toast('Blank canvas');}
+async function newCanvas(){const modified=_activeCanvasId&&_activeCanvasHash&&_liveHash()!==_activeCanvasHash;const msg=modified?'You have unsaved changes. Clear canvas anyway?':'Clear canvas?';if(!confirm(msg))return;await sb.from('canvas_nodes').delete().neq('id','_');await sb.from('canvas_links').delete().neq('id','_');await sb.from('canvas_groups').delete().neq('id','_');await sb.from('claude_logs').delete().neq('id','_');nodes=[];links=[];groups=[];_activeCanvasId=null;_activeCanvasName=null;_activeCanvasHash=null;await sb.from('canvas_config').upsert({key:'active_canvas',value:JSON.stringify({id:null,who,at:new Date().toISOString()}),updated_at:new Date().toISOString()});resetClaudePanel();await loadCanvasList();toast('Blank canvas');}
 
 // CLAUDE
 // HOT CACHE — compressed semantic summary of canvas state
