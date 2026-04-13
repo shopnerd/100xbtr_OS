@@ -492,8 +492,10 @@ async function loadSoundBrain(){try{const r=await fetch('./SOUND_BRAIN.md');if(r
 let clipboard=null; // {nodes:[...snapshots], links:[...]}
 let _skipImgPaste=false;
 const undoStack=[];
-function pushUndo(fn){if(undoStack.length>=20)undoStack.shift();undoStack.push(fn);}
-async function undo(){if(!undoStack.length){toast('Nothing to undo');return;}await undoStack.pop()();}
+const redoStack=[];
+function pushUndo(fn,redoFn){if(undoStack.length>=30)undoStack.shift();undoStack.push({undo:fn,redo:redoFn||null});redoStack.length=0;}
+async function undo(){if(!undoStack.length){toast('Nothing to undo');return;}const entry=undoStack.pop();await entry.undo();if(entry.redo)redoStack.push(entry);}
+async function redo(){if(!redoStack.length){toast('Nothing to redo');return;}const entry=redoStack.pop();await entry.redo();undoStack.push(entry);}
 let canvas,ctx;
 let cam={x:0,y:0,z:1};
 let drag={on:false};
@@ -1189,7 +1191,7 @@ function onKey(e){
   if((e.key==='Delete'||e.key==='Backspace')&&!drag.on)delSel();
   if(e.key==='e'&&!e.ctrlKey&&!e.metaKey){fitAll();return;}
   if((e.ctrlKey||e.metaKey)&&e.key==='a'){e.preventDefault();selAll();}
-  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();if(mkCanvas&&mkCanvas.style.pointerEvents==='auto')undoMarkup();else undo();}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='z'||e.key==='Z')){e.preventDefault();if(e.shiftKey){redo();}else{if(mkCanvas&&mkCanvas.style.pointerEvents==='auto')undoMarkup();else undo();}}
   if((e.ctrlKey||e.metaKey)&&e.key==='c'){e.preventDefault();copySelected();}
   if((e.ctrlKey||e.metaKey)&&e.key==='v'){e.preventDefault();if(clipboard?.nodes?.length){_skipImgPaste=true;setTimeout(()=>_skipImgPaste=false,80);}pasteClipboard();}
 }
