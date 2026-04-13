@@ -2667,8 +2667,35 @@ async function addGapNode(question){
   nodes.push({id,label:question.substring(0,60),type:'question',url:'',img_url:'',author:'claude',x,y,w:DW,h:DH,group_id:null});toast('Gap node added');
 }
 async function addSugLink(fl,tl){const src=nodes.find(n=>n.label===fl),tgt=nodes.find(n=>n.label===tl);if(!src||!tgt){toast('Nodes not found');return;}await addLink(src.id,tgt.id);}
+async function expandImageSearch(action){
+  const query=action.query||action.label||'';
+  const count=Math.min(Math.max(1,parseInt(action.count)||6),12);
+  const groupLabel=action.group_label||query;
+  if(!query)return[];
+  toast('Searching images for "'+query+'"...');
+  let images=[];
+  try{
+    const res=await fetch('/.netlify/functions/image-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,count})});
+    const data=await res.json();images=data.images||[];
+  }catch(e){toast('Image search failed: '+e.message);return[];}
+  if(!images.length){toast('No images found for "'+query+'"');return[];}
+  const out=[];
+  const existingGroup=groups.find(g=>(g.label||'').trim().toLowerCase()===groupLabel.trim().toLowerCase());
+  if(!existingGroup)out.push({type:'create_group',label:groupLabel,color:'#7F77DD'});
+  for(let i=0;i<images.length;i++){
+    const img=images[i];
+    out.push({type:'create_node',label:(img.title||query).substring(0,60),node_type:'reference',group_label:groupLabel,thumbnail_url:img.thumbnail||img.url,url:img.sourcePage||img.url,description:(img.description||'')+(img.artist?'\n\nBy: '+img.artist:''),w:280,h:210});
+  }
+  return out;
+}
 async function execA(a){
   if(typeof a==='string')a=JSON.parse(a);
+  // Expand image_search into create_group + create_node actions
+  if(a.type==='image_search'){
+    const expanded=await expandImageSearch(a);
+    for(const ea of expanded)await execA(ea);
+    return;
+  }
   if(a.type==='create_group'){
     const id='g-'+Date.now()+'-'+Math.random().toString(36).slice(2,5);
     const color=a.color||GC[groups.length%GC.length];
@@ -2734,6 +2761,7 @@ async function execA(a){
 }
 async function execAll(actions){
   for(const a of actions.filter(x=>x.type==='create_group'))await execA(a);
+  for(const a of actions.filter(x=>x.type==='image_search'))await execA(a);
   for(const a of actions.filter(x=>x.type==='create_node'))await execA(a);
   for(const a of actions.filter(x=>x.type==='move_to_group'))await execA(a);
   for(const a of actions.filter(x=>x.type==='create_link'))await execA(a);
@@ -2756,12 +2784,13 @@ You MUST respond with JSON ONLY: {"response":"brief message","actions":[...]}
 Action types you can emit:
 - {"type":"create_group","label":"...","color":"#hex"}
 - {"type":"create_node","label":"...","node_type":"idea|reference|material|decision|question|anchor","group_label":"<existing group>","description":"...","url":"https://...","w":280,"h":210}
+- {"type":"image_search","query":"<specific search terms>","group_label":"<existing group>","count":6,"node_label":"<short caption>"}
 - {"type":"create_link","source_label":"<exact node label>","target_label":"<exact node label>","link_type":"supports|blocks|spawned|depends_on|related"}
 - {"type":"move_to_group","node_label":"...","group_label":"..."}
 - {"type":"delete_group","group_label":"...","delete_contents":true}
 - {"type":"delete_node","node_label":"..."}
 
-You CAN create any kind of content the user asks for — not just business content. For visual/image/research topics, create reference nodes with real URLs (set w:280, h:210). The canvas will auto-fetch website screenshots as thumbnails. Always respond with actions when the user asks you to create, add, build, or show things.`;
+You CAN create any kind of content the user asks for — not just business content. Prefer image_search for visual subjects (photos, objects, places, art, inspiration). Use specific search queries. Always respond with actions when the user asks you to create, add, build, or show things.`;
   const cpb=document.getElementById('cpb');
   const loading=document.createElement('div');loading.className='cplo';loading.textContent='Thinking...';
   cpb.appendChild(loading);cpb.scrollTop=cpb.scrollHeight;
@@ -2819,9 +2848,10 @@ Respond with JSON ONLY (no prose outside the JSON):
 Action types you can emit:
 - {"type":"create_group","label":"...","color":"#hex","x":NUM,"y":NUM,"w":NUM,"h":NUM}
 - {"type":"create_node","label":"...","node_type":"idea|reference|material|decision|question|anchor","group_label":"<existing group>","description":"...","url":"...","w":NUM,"h":NUM}
+- {"type":"image_search","query":"<specific search terms>","group_label":"<existing group>","count":6,"node_label":"<short caption>"}
 - {"type":"create_link","source_label":"<exact node label>","target_label":"<exact node label>","link_type":"supports|blocks|spawned|depends_on|related"}
 
-Keep responses concise. For research/web topics, use node_type: "reference" with a real url field.`;
+Keep responses concise. Prefer image_search for visual subjects (photos, objects, places, art). Use specific search queries.`;
 }
 
 async function askClaudeBuild(){
