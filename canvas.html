@@ -1532,10 +1532,14 @@ async function cleanUpGroup(gid){
   const g=groups.find(gr=>gr.id===gid);if(!g)return;
   const mems=nigByGid(gid);if(!mems.length)return;
   compactGroup(g);
+  // Persist group bounds + all node positions
+  const gUpdate={x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)};
   _tw('canvas_groups',g.id);
-  await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
-  for(const n of mems){_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y)}).eq('id',n.id);}
-  toast('Group cleaned up');
+  await sb.from('canvas_groups').update(gUpdate).eq('id',g.id);
+  for(const n of mems){
+    _tw('canvas_nodes',n.id);
+    await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y),w:n.w||DW,h:n.h||DH}).eq('id',n.id);
+  }
 }
 // Tidy selected groups + loose selected nodes
 async function cleanUpSelection(){
@@ -2739,13 +2743,10 @@ async function execA(a){
       if(a.x!==undefined&&a.y!==undefined){
         x=g.x+a.x;y=g.y+GH+a.y;
       }else{
-        const cols=Math.max(1,Math.floor((g.w-20)/(nw+10)));const idx=gm.length;
-        x=g.x+10+(idx%cols)*(nw+10);y=g.y+GH+10+Math.floor(idx/cols)*(nh+10);
+        // Place at next available slot; cleanUpGroup will grid-arrange after batch
+        const idx=gm.length;
+        x=g.x+12+(idx%3)*(nw+12);y=g.y+GH+12+Math.floor(idx/3)*(nh+12);
       }
-      const bw=10+Math.max(1,Math.ceil((gm.length+1)/Math.max(1,Math.floor((g.w-20)/(nw+10)))))*(nw+10);
-      const nr=Math.ceil((gm.length+1)/Math.max(1,Math.floor((g.w-20)/(nw+10))));
-      g.w=Math.max(g.w,bw);g.h=Math.max(g.h,GH+10+nr*(nh+10));
-      _tw('canvas_groups',g.id);await sb.from('canvas_groups').update({w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);
     }else{x=a.x!==undefined?a.x:(Math.random()-0.5)*400;y=a.y!==undefined?a.y:(Math.random()-0.5)*300;}
     const row={id,label:a.label||'',type:nodeType,url:a.url||'',img_url:'',author:'claude',x:Math.round(x),y:Math.round(y),w:nw,h:nh,group_id:gid};
     if(a.description)row.description=a.description;
@@ -2753,7 +2754,7 @@ async function execA(a){
     if(a.favicon_url)row.favicon_url=a.favicon_url;
     _tw('canvas_nodes',id);await sb.from('canvas_nodes').insert(row);
     nodes.push({...row,x,y});
-    if(g){const m=nigByGid(g.id);sizeGAN(g,m);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
+    // Group resize deferred to cleanUpGroup (called by execAll/approveAction)
     // Trigger fetchTitle for URL nodes to get screenshots
     if(a.url&&!a.thumbnail_url)fetchTitle(id,a.url);
     toast(`Node "${a.label}" added`);
