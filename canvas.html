@@ -2712,10 +2712,6 @@ async function execA(a){
   if(a.type==='image_search'){
     const expanded=await expandImageSearch(a);
     for(const ea of expanded)await execA(ea);
-    // Auto-organize the group after images land
-    const gLabel=a.group_label||a.query;
-    const g=groups.find(gg=>(gg.label||'').trim().toLowerCase()===(gLabel||'').trim().toLowerCase());
-    if(g){await cleanUpGroup(g.id);}
     return;
   }
   if(a.type==='create_group'){
@@ -2789,7 +2785,10 @@ async function execAll(actions){
   for(const a of actions.filter(x=>x.type==='create_link'))await execA(a);
   for(const a of actions.filter(x=>x.type==='delete_node'))await execA(a);
   for(const a of actions.filter(x=>x.type==='delete_group'))await execA(a);
-  await repairGroups();await runLayout();await validateCanvas(true);_cacheHash='';toast(`Done — ${actions.length} actions`);
+  // Clean up all groups that have members (grid + resize)
+  for(const g of groups){if(nigByGid(g.id).length)await cleanUpGroup(g.id);}
+  _cacheHash='';toast(`Done — ${actions.length} actions`);
+  setTimeout(()=>fitAll(),100);
 }
 async function askClaude(){
   const input=document.getElementById('cpp');
@@ -2859,7 +2858,14 @@ function showActionApproval(actions){
 }
 async function approveAction(idx,el){
   const a=window._pendingActions?.[idx];if(!a)return;
-  await execA(a);if(el)el.remove();toast('Action applied');
+  await execA(a);
+  // Clean up groups after image_search or create_node
+  if(a.type==='image_search'||a.type==='create_node'){
+    const gLabel=a.group_label||a.query||a.group;
+    const g=gLabel?groups.find(gg=>(gg.label||'').toLowerCase().includes(gLabel.toLowerCase())):null;
+    if(g&&nigByGid(g.id).length)await cleanUpGroup(g.id);
+  }
+  if(el)el.remove();toast('Action applied');
 }
 
 function getBuildSystemPrompt(){
