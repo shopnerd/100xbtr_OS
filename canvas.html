@@ -1061,13 +1061,9 @@ async function onUp(e){
   } else if(d.node&&mMoved){
     // push undo before saving
     const snap=d.preDragPos;
-    pushUndo(async()=>{
-      for(const{id,x,y}of snap){const nd=nById(id);if(!nd)continue;nd.x=x;nd.y=y;_tw('canvas_nodes',id);await sb.from('canvas_nodes').update({x:Math.round(x),y:Math.round(y)}).eq('id',id);}
-      // resize any affected groups so their box snaps back
-      const affGids=new Set(snap.map(({id})=>nById(id)?.group_id).filter(Boolean));
-      for(const gid of affGids){const g=groups.find(x=>x.id===gid);if(!g)continue;const m=nigByGid(gid);sizeGAN(g,m);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}
-      toast('Move undone');
-    });
+    const afterSnap=d.mn.map(({n})=>({id:n.id,x:n.x,y:n.y}));
+    const moveUndo=async(positions,msg)=>{for(const{id,x,y}of positions){const nd=nById(id);if(!nd)continue;nd.x=x;nd.y=y;_tw('canvas_nodes',id);await sb.from('canvas_nodes').update({x:Math.round(x),y:Math.round(y)}).eq('id',id);}const affGids=new Set(positions.map(({id})=>nById(id)?.group_id).filter(Boolean));for(const gid of affGids){const g=groups.find(x=>x.id===gid);if(!g)continue;const m=nigByGid(gid);sizeGAN(g,m);_tw('canvas_groups',g.id);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)}).eq('id',g.id);}toast(msg);};
+    pushUndo(()=>moveUndo(snap,'Move undone'),()=>moveUndo(afterSnap,'Move redone'));
     _tw('canvas_nodes','*');
     const oldGids=new Set(d.mn.map(({n})=>n.group_id).filter(Boolean));
     for(const{n}of d.mn){const gid=getGid(n);n.group_id=gid;_tw('canvas_nodes',n.id);await sb.from('canvas_nodes').update({x:Math.round(n.x),y:Math.round(n.y),group_id:gid||null}).eq('id',n.id);}
@@ -1080,7 +1076,9 @@ async function onUp(e){
     }).filter(Boolean));
   } else if(d.group&&mMoved){
     const pgSnap=d.preDragGroup,pmSnap=d.preDragMembers,groupId=d.group.id;
-    pushUndo(async()=>{const g=groups.find(x=>x.id===groupId);if(!g)return;g.x=pgSnap.x;g.y=pgSnap.y;_tw('canvas_groups',groupId);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y)}).eq('id',groupId);for(const{id,x,y}of pmSnap){const nd=nById(id);if(!nd)continue;nd.x=x;nd.y=y;_tw('canvas_nodes',id);await sb.from('canvas_nodes').update({x:Math.round(x),y:Math.round(y)}).eq('id',id);}toast('Move undone');});
+    const pgAfter={x:d.group.x,y:d.group.y},pmAfter=d.members.map(({n})=>({id:n.id,x:n.x,y:n.y}));
+    const gmMove=async(gp,mp,msg)=>{const g=groups.find(x=>x.id===groupId);if(!g)return;g.x=gp.x;g.y=gp.y;_tw('canvas_groups',groupId);await sb.from('canvas_groups').update({x:Math.round(g.x),y:Math.round(g.y)}).eq('id',groupId);for(const{id,x,y}of mp){const nd=nById(id);if(!nd)continue;nd.x=x;nd.y=y;_tw('canvas_nodes',id);await sb.from('canvas_nodes').update({x:Math.round(x),y:Math.round(y)}).eq('id',id);}toast(msg);};
+    pushUndo(()=>gmMove(pgSnap,pmSnap,'Move undone'),()=>gmMove(pgAfter,pmAfter,'Move redone'));
     _tw('canvas_groups',d.group.id);
     await sb.from('canvas_groups').update({x:Math.round(d.group.x),y:Math.round(d.group.y)}).eq('id',d.group.id);
     if(d.members?.length){
@@ -1216,7 +1214,8 @@ async function pasteClipboard(){
     _tw('canvas_nodes',newId);
     await sb.from('canvas_nodes').insert({...nx,x:Math.round(nx.x),y:Math.round(nx.y)});
     nodes.push(nx);newIds.push(newId);
-    pushUndo(async()=>{_tw('canvas_nodes',newId);await sb.from('canvas_nodes').delete().eq('id',newId);nodes=nodes.filter(nd=>nd.id!==newId);toast('Paste undone');});
+    const nxCopy={...nx};
+    pushUndo(async()=>{_tw('canvas_nodes',newId);await sb.from('canvas_nodes').delete().eq('id',newId);nodes=nodes.filter(nd=>nd.id!==newId);toast('Paste undone');},async()=>{_tw('canvas_nodes',newId);await sb.from('canvas_nodes').insert({...nxCopy,x:Math.round(nxCopy.x),y:Math.round(nxCopy.y)});nodes.push({...nxCopy});toast('Paste redone');});
   }
   for(const l of clipboard.links){
     const s=idMap[l.source?.id||l.source],t=idMap[l.target?.id||l.target];
@@ -1240,7 +1239,7 @@ async function addNA(type,wx,wy){
   const node={id,label:type,type,url:'',img_url:'',author:who,x:Math.round(wx),y:Math.round(wy),w:DW,h:DH,group_id:null};
   await sb.from('canvas_nodes').insert(node);nodes.push({...node,x:wx,y:wy});
   logActivity('node_create',type,id);
-  pushUndo(async()=>{_tw('canvas_nodes',id);await sb.from('canvas_nodes').delete().eq('id',id);nodes=nodes.filter(n=>n.id!==id);links=links.filter(l=>(l.source?.id||l.source)!==id&&(l.target?.id||l.target)!==id);toast('Node creation undone');});
+  pushUndo(async()=>{_tw('canvas_nodes',id);await sb.from('canvas_nodes').delete().eq('id',id);nodes=nodes.filter(n=>n.id!==id);links=links.filter(l=>(l.source?.id||l.source)!==id&&(l.target?.id||l.target)!==id);toast('Node creation undone');},async()=>{_tw('canvas_nodes',id);await sb.from('canvas_nodes').insert(node);nodes.push({...node,x:wx,y:wy});toast('Node creation redone');});
   toast('Added — dbl-click to edit');
 }
 async function addGA(wx,wy){
@@ -1254,9 +1253,10 @@ async function quickAdd(){
   const id='n-'+Date.now();const x=(Math.random()-0.5)*300,y=(Math.random()-0.5)*200;
   let label=text;if(isURL){try{label=new URL(text).hostname.replace('www.','');}catch(e){}}
   label=label.substring(0,60);_tw('canvas_nodes',id);
-  await sb.from('canvas_nodes').insert({id,label,type,url:isURL?text:'',img_url:'',author:who,x:Math.round(x),y:Math.round(y),w:DW,h:DH,group_id:null});
-  nodes.push({id,label,type,url:isURL?text:'',img_url:'',author:who,x,y,w:DW,h:DH,group_id:null});
-  pushUndo(async()=>{_tw('canvas_nodes',id);await sb.from('canvas_nodes').delete().eq('id',id);nodes=nodes.filter(n=>n.id!==id);links=links.filter(l=>(l.source?.id||l.source)!==id&&(l.target?.id||l.target)!==id);toast('Node creation undone');});
+  const qaNode={id,label,type,url:isURL?text:'',img_url:'',author:who,x:Math.round(x),y:Math.round(y),w:DW,h:DH,group_id:null};
+  await sb.from('canvas_nodes').insert(qaNode);
+  nodes.push({...qaNode,x,y});
+  pushUndo(async()=>{_tw('canvas_nodes',id);await sb.from('canvas_nodes').delete().eq('id',id);nodes=nodes.filter(n=>n.id!==id);links=links.filter(l=>(l.source?.id||l.source)!==id&&(l.target?.id||l.target)!==id);toast('Node creation undone');},async()=>{_tw('canvas_nodes',id);await sb.from('canvas_nodes').insert(qaNode);nodes.push({...qaNode,x,y});toast('Node creation redone');});
   if(isURL)fetchTitle(id,text);inp.value='';toast('Added');
 }
 async function addWebNode(){
@@ -1296,7 +1296,7 @@ async function addLink(srcId,tgtId,linkType){
   await sb.from('canvas_links').insert({id,source:srcId,target:tgtId,claude:false,sport:0,tport:0,link_type:lt});
   links.push({id,source:srcId,target:tgtId,claude:false,link_type:lt});
   logActivity('link_create',`${nById(srcId)?.label||srcId} → ${nById(tgtId)?.label||tgtId}`,null);
-  pushUndo(async()=>{_tw('canvas_links',id);await sb.from('canvas_links').delete().eq('id',id);links=links.filter(l=>l.id!==id);toast('Wire undone');});
+  pushUndo(async()=>{_tw('canvas_links',id);await sb.from('canvas_links').delete().eq('id',id);links=links.filter(l=>l.id!==id);toast('Wire undone');},async()=>{_tw('canvas_links',id);await sb.from('canvas_links').insert({id,source:srcId,target:tgtId,claude:false,sport:0,tport:0,link_type:lt});links.push({id,source:srcId,target:tgtId,claude:false,link_type:lt});toast('Wire redone');});
   toast('Connected');
 }
 
