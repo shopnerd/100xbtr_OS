@@ -227,7 +227,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div id="app">
   <div class="top-bar">
-    <div class="wordmark">100xbtr<span>_sound</span></div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <div class="wordmark">100xbtr<span>_sound</span></div>
+      <button class="nav-btn" onclick="window.open('canvas.html','_blank')">Canvas ↗</button>
+    </div>
     <div class="top-right">
       <span class="user-pill"><span class="live-dot"></span><span id="user-email-display">...</span></span>
       <button class="signout-btn" onclick="signOut()">sign out</button>
@@ -242,7 +245,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="nav-btn" data-tab="roadmap" onclick="show('roadmap')">Roadmap</button>
     <button class="nav-btn" data-tab="log" onclick="show('log')">Log</button>
     <button class="nav-btn" data-tab="canvas" onclick="show('canvas')">Canvas Log</button>
-    <button class="nav-btn" onclick="window.open('canvas.html','_blank')">Canvas ↗</button>
   </div>
 
   <!-- OVERVIEW -->
